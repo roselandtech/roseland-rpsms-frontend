@@ -782,4 +782,59 @@ export const RoselandApi = {
         body: JSON.stringify(inquiry),
       }),
   },
+
+  // 9. Dedicated PDF & Document Generation Service (Port 8089 via Gateway)
+  pdf: {
+    downloadReceipt: async (receiptData: any, filename?: string) => {
+      return downloadPdfStream('/api/v1/pdf/render/receipt', receiptData, filename || `Receipt_${receiptData.receiptNumber || 'Official'}.pdf`);
+    },
+    downloadReportCard: async (reportData: any, filename?: string) => {
+      return downloadPdfStream('/api/v1/pdf/render/report-card', reportData, filename || `ReportCard_${reportData.studentName || 'Student'}_${reportData.term || 'Term'}.pdf`);
+    },
+    downloadAdmissionLetter: async (admissionData: any, filename?: string) => {
+      return downloadPdfStream('/api/v1/pdf/render/admission-letter', admissionData, filename || `AdmissionLetter_${admissionData.studentName || 'Student'}.pdf`);
+    },
+    downloadTimetable: async (timetableData: any, filename?: string) => {
+      return downloadPdfStream('/api/v1/pdf/render/timetable', timetableData, filename || `Timetable_${timetableData.classGrade || 'Class'}.pdf`);
+    },
+    queueBatchReportCards: (items: any[], jobTitle?: string) =>
+      apiRequest('/api/v1/pdf/batch/report-cards', {
+        method: 'POST',
+        body: JSON.stringify({ items, jobTitle }),
+      }),
+    getBatchJobStatus: (jobId: string) =>
+      apiRequest(`/api/v1/pdf/batch/jobs/${jobId}`),
+  },
 };
+
+export async function downloadPdfStream(
+  endpoint: string,
+  payload: any,
+  defaultFilename: string = 'document.pdf'
+): Promise<void> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('roseland_token') : null;
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || err.detail || 'Failed to generate PDF document');
+  }
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = defaultFilename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+}
+

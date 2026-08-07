@@ -1,7 +1,8 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
+import { RoselandApi } from '@/lib/api';
 
 export interface OfficialReceiptData {
   receiptNo: string;
@@ -37,10 +38,42 @@ export const OfficialReceiptModal: React.FC<OfficialReceiptModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
   if (!isOpen || !receipt) return null;
 
-  const handlePrint = () => {
-    window.print();
+  const handleDownloadPdf = async () => {
+    try {
+      setIsGeneratingPdf(true);
+      const cleanNum = (str?: string, num?: number) => {
+        if (num !== undefined) return num;
+        if (!str) return 0;
+        return parseFloat(str.replace(/[^0-9.-]+/g, '')) || 0;
+      };
+
+      await RoselandApi.pdf.downloadReceipt({
+        receiptNumber: receipt.receiptNo,
+        transactionDate: receipt.settlementDate || new Date().toLocaleString(),
+        studentName: receipt.studentName,
+        studentIndex: receipt.studentIndexNo,
+        classGrade: receipt.classGrade || 'N/A',
+        academicYear: '2026/2027',
+        term: receipt.academicTerm || 'Term 2',
+        feeType: 'Tuition & Academic Levies',
+        paymentMethod: receipt.paymentMethod,
+        amountPaid: cleanNum(receipt.amountPaid, receipt.amountPaidNum),
+        totalBill: cleanNum(receipt.totalBilled),
+        previousBalance: cleanNum(receipt.previousPaid),
+        balanceRemaining: cleanNum(receipt.balanceDue, receipt.balanceDueNum),
+        cashierName: 'Chief Bursar & Accounts Directorate',
+        status: receipt.status || 'PAID',
+      });
+    } catch (err: any) {
+      console.warn('[PDF Service] Server download failed, falling back to local print:', err.message);
+      window.print();
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   const formattedDate = receipt.settlementDate 
@@ -63,7 +96,6 @@ export const OfficialReceiptModal: React.FC<OfficialReceiptModalProps> = ({
         {/* Sticky/Fixed Action Controls (Hidden in Print) */}
         <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4 shrink-0 print:hidden">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
               Verified Digital Receipt
             </span>
@@ -71,10 +103,12 @@ export const OfficialReceiptModal: React.FC<OfficialReceiptModalProps> = ({
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handlePrint}
-              className="px-3.5 py-1.5 bg-brand-violet text-white text-xs font-bold rounded-xl hover:bg-brand-violetDark shadow-sm flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+              onClick={handleDownloadPdf}
+              disabled={isGeneratingPdf}
+              className="px-3.5 py-1.5 bg-brand-violet text-white text-xs font-bold rounded-xl hover:bg-brand-violetDark shadow-sm flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
             >
-              <i className="ph-bold ph-printer"></i> Print / PDF
+              <i className={isGeneratingPdf ? "ph ph-spinner animate-spin" : "ph-bold ph-file-pdf"}></i>
+              {isGeneratingPdf ? "Rendering PDF..." : "Download Official PDF"}
             </button>
             <button
               onClick={onClose}
