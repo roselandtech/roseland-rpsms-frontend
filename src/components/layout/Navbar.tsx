@@ -116,7 +116,6 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-brand-yellow animate-pulse"></span>
               <strong className="text-brand-yellow font-semibold uppercase tracking-wider text-[10px]">2026/2027 Admissions:</strong> Open for Crèche through JHS
             </span>
             <span className="text-white/40">|</span>
@@ -126,9 +125,6 @@ export default function Navbar() {
             <a href="tel:+233200000000" className="hover:text-brand-yellow transition-colors flex items-center gap-1">
               <i className="ph-fill ph-phone text-sm text-brand-yellow"></i> +233 20 000 0000
             </a>
-            <Link href="/portals" className="hover:text-brand-yellow transition-colors flex items-center gap-1">
-              <i className="ph-fill ph-grid-four text-sm text-brand-yellow"></i> Portals Hub
-            </Link>
           </div>
         </div>
       </div>
@@ -352,15 +348,6 @@ export default function Navbar() {
             >
               <span>Contact Us</span>
               <i className="ph ph-phone text-lg text-gray-400"></i>
-            </Link>
-
-            <Link
-              href="/portals"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-between px-4 py-3 text-base font-bold text-brand-violet bg-brand-violetLight/50 rounded-xl"
-            >
-              <span>All School Portals Hub</span>
-              <i className="ph ph-grid-four text-lg text-brand-violet"></i>
             </Link>
 
             <div className="h-px w-full bg-gray-100 my-4"></div>

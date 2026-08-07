@@ -60,8 +60,7 @@ export default function PageHeader({
 
         {/* Badge */}
         {badge && (
-          <span className="inline-flex items-center gap-1.5 py-1 px-3.5 rounded-full bg-brand-yellow/20 border border-brand-yellow/40 text-brand-yellow text-xs font-bold uppercase tracking-widest mb-4">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-yellow animate-pulse"></span>
+          <span className="inline-flex items-center py-1 px-3.5 rounded-full bg-brand-yellow/20 border border-brand-yellow/40 text-brand-yellow text-xs font-bold uppercase tracking-widest mb-4">
             {badge}
           </span>
         )}

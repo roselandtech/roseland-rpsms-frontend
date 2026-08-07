@@ -28,8 +28,7 @@ export default function Home() {
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-start pt-8">
           {/* Admissions Badge (Static, Refined, No Logo, No Blinking) */}
-          <div className="inline-flex items-center gap-2.5 py-1.5 px-4 rounded-full bg-amber-400/90 backdrop-blur-sm text-slate-950 text-xs font-semibold uppercase tracking-wider shadow-md border border-amber-300/30 mb-6 animate-fade-in">
-            <span className="w-2 h-2 rounded-full bg-slate-950/70"></span>
+          <div className="inline-flex items-center py-1.5 px-4 rounded-full bg-amber-400/90 backdrop-blur-sm text-slate-950 text-xs font-semibold uppercase tracking-wider shadow-md border border-amber-300/30 mb-6 animate-fade-in">
             2026/2027 Admissions Now Open
           </div>
 

@@ -63,8 +63,8 @@ export default function Footer() {
 
           {/* Column 2: Academics */}
           <div>
-            <h4 className="text-white font-bold mb-5 uppercase tracking-wider text-xs flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-brand-violet"></span> Academics
+            <h4 className="text-white font-bold mb-5 uppercase tracking-wider text-xs">
+              Academics
             </h4>
             <ul className="space-y-3 text-sm text-gray-400">
               <li><Link href="/academics" className="hover:text-brand-yellow transition-colors">Curriculum Overview</Link></li>
@@ -77,8 +77,8 @@ export default function Footer() {
 
           {/* Column 3: Admissions & About */}
           <div>
-            <h4 className="text-white font-bold mb-5 uppercase tracking-wider text-xs flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-brand-yellow"></span> Admissions
+            <h4 className="text-white font-bold mb-5 uppercase tracking-wider text-xs">
+              Admissions
             </h4>
             <ul className="space-y-3 text-sm text-gray-400">
               <li><Link href="/admissions" className="hover:text-brand-yellow transition-colors">Enrollment Guide</Link></li>
@@ -92,8 +92,8 @@ export default function Footer() {
 
           {/* Column 4: Quick Portals & Contact */}
           <div>
-            <h4 className="text-white font-bold mb-5 uppercase tracking-wider text-xs flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-500"></span> Portals & Contact
+            <h4 className="text-white font-bold mb-5 uppercase tracking-wider text-xs">
+              Portals & Contact
             </h4>
             <ul className="space-y-3 text-sm text-gray-400 mb-6">
               <li><Link href="/parent" className="hover:text-white text-brand-violetLight font-medium flex items-center gap-1.5"><i className="ph ph-user"></i> Parent Portal</Link></li>

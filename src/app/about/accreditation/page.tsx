@@ -36,8 +36,7 @@ export default function AccreditationPage() {
               </div>
             </div>
             <div className="shrink-0">
-              <span className="px-4 py-2 bg-green-100 text-green-800 text-xs font-bold rounded-full border border-green-300 uppercase tracking-wider inline-flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-green-600 animate-pulse"></span>
+              <span className="px-4 py-2 bg-green-100 text-green-800 text-xs font-bold rounded-full border border-green-300 uppercase tracking-wider inline-flex items-center">
                 Active & Certified
               </span>
             </div>
