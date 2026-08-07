@@ -18,9 +18,12 @@ export const metadata: Metadata = {
   title: "The Roseland Preparatory School | Pokuase ACP Estates, Accra",
   description: "Building a Foundation for Excellence. GES-accredited basic education from Crèche to JHS.",
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png"
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/logo.png", type: "image/png" }
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png"
   }
 };
 
