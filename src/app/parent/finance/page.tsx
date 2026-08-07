@@ -485,7 +485,7 @@ export default function ParentFinance() {
                     studentName: studentName,
                     classGrade: studentClass,
                     academicTerm: 'Term 2',
-                    payerName: user?.name || 'Parent / Guardian',
+                    payerName: (user as any)?.name || user?.fullName || 'Parent / Guardian',
                     payerPhone: user?.phone || 'N/A',
                     paymentMethod: activeReceipt.method,
                     amountPaid: `GH₵ ${activeReceipt.amount.toLocaleString()}.00`,

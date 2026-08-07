@@ -222,6 +222,7 @@ interface FacultyAllocationRecord {
 interface StaffDirectoryRecord {
   id: string;
   fullName: string;
+  name?: string;
   email?: string;
   role?: string;
   assignedClass?: string;

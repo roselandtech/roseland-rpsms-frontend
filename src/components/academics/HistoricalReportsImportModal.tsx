@@ -192,9 +192,10 @@ export default function HistoricalReportsImportModal({
         // Pre-fill every enrolled student with their official index number
         csvRows = roster.map((s, idx) => {
           const samplePres = Math.min(termSchoolDays, 60 + (idx % 8));
+          const studentDisplayName = (s as any).student_name || s.full_name || '';
           return [
             `"${s.index_no}"`,
-            `"${s.student_name}"`,
+            `"${studentDisplayName}"`,
             samplePres,
             termSchoolDays,
             80 + (idx % 15),

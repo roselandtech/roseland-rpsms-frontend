@@ -115,6 +115,7 @@ export default function BulkStudentImportModal({
   // ---------------------------------------------------------------------------
   const handleDownloadTemplate = () => {
     const sampleClass1 = validClassesList.find(c => c.toLowerCase().includes('4')) || validClassesList[3] || 'Class 4';
+    const sampleClass2 = validClassesList.find(c => c.toLowerCase().includes('1')) || validClassesList[0] || 'Class 1';
     const headers = [
       'admission_number',
       'first_name',
