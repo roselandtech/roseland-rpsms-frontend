@@ -246,7 +246,7 @@ export default function AdminAcademicsPage() {
 
   // Historical Report Cards & Attendance Digitize Modal State
   const [isHistoricalImportOpen, setIsHistoricalImportOpen] = useState(false);
-  const [historicalTargetClass, setHistoricalTargetClass] = useState<string>('Primary 1');
+  const [historicalTargetClass, setHistoricalTargetClass] = useState<string>('');
 
   // Canonical Subject Registry Hook
   const { subjects: registeredSubjects, getSubjectsForLevel, refresh: refreshSubjects } = useSubjects();
@@ -1519,7 +1519,7 @@ export default function AdminAcademicsPage() {
             className="text-xs px-4 py-2.5 shadow-sm border-purple-200 text-brand-violet hover:bg-purple-50"
             icon={<i className="ph-bold ph-archive-box text-brand-violet"></i>}
             onClick={() => {
-              setHistoricalTargetClass('Primary 1');
+              setHistoricalTargetClass(selectedTimetableClass || streams[0]?.classGrade || '');
               setIsHistoricalImportOpen(true);
             }}
           >
@@ -2355,7 +2355,7 @@ export default function AdminAcademicsPage() {
               className="bg-white hover:bg-gray-100 text-purple-950 font-bold text-xs px-5 py-3 rounded-xl shadow-lg shrink-0 relative z-10 flex items-center gap-2 border-0"
               icon={<i className="ph-bold ph-file-arrow-up text-brand-violet text-base"></i>}
               onClick={() => {
-                setHistoricalTargetClass('Primary 1');
+                setHistoricalTargetClass(selectedTimetableClass || streams[0]?.classGrade || '');
                 setIsHistoricalImportOpen(true);
               }}
             >
@@ -4595,7 +4595,8 @@ export default function AdminAcademicsPage() {
         onSuccess={() => {
           loadReportStatus();
         }}
-        defaultClass={historicalTargetClass}
+        defaultClass={historicalTargetClass || selectedTimetableClass || streams[0]?.classGrade || ''}
+        availableClasses={streams.map((s) => s.classGrade)}
       />
 
     </div>

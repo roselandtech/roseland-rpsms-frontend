@@ -12,6 +12,7 @@ interface HistoricalReportsImportModalProps {
   defaultClass?: string;
   defaultYear?: string;
   defaultTerm?: string;
+  availableClasses?: string[] | Array<{ id?: string; name: string }>;
 }
 
 export interface ParsedHistoricalRow {
@@ -58,12 +59,43 @@ export default function HistoricalReportsImportModal({
   isOpen,
   onClose,
   onSuccess,
-  defaultClass = 'Primary 1',
+  defaultClass = '',
   defaultYear = '2023/2024',
-  defaultTerm = 'Term 1'
+  defaultTerm = 'Term 1',
+  availableClasses
 }: HistoricalReportsImportModalProps) {
-  const { classes: registeredClasses } = useClasses();
+  const { classes: registeredClasses, isLoading: isLoadingClasses } = useClasses();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Compute live classes from database (props or useClasses hook)
+  const classOptions = useMemo(() => {
+    const list: string[] = [];
+    const seen = new Set<string>();
+
+    const addClass = (raw?: string) => {
+      if (!raw) return;
+      const trimmed = raw.trim();
+      if (trimmed && !seen.has(trimmed.toLowerCase())) {
+        seen.add(trimmed.toLowerCase());
+        list.push(trimmed);
+      }
+    };
+
+    if (availableClasses && availableClasses.length > 0) {
+      availableClasses.forEach((c) => {
+        const name = typeof c === 'string' ? c : c?.name;
+        addClass(name);
+      });
+    }
+
+    if (registeredClasses && registeredClasses.length > 0) {
+      registeredClasses.forEach((c) => {
+        addClass(c?.name);
+      });
+    }
+
+    return list;
+  }, [availableClasses, registeredClasses]);
 
   const [selectedYear, setSelectedYear] = useState(defaultYear);
   const [selectedTerm, setSelectedTerm] = useState(defaultTerm);
@@ -86,13 +118,17 @@ export default function HistoricalReportsImportModal({
   // Sync default values on open
   useEffect(() => {
     if (isOpen) {
-      if (defaultClass) setSelectedClass(defaultClass);
+      if (defaultClass && classOptions.includes(defaultClass)) {
+        setSelectedClass(defaultClass);
+      } else if (classOptions.length > 0) {
+        setSelectedClass((prev) => (prev && classOptions.includes(prev) ? prev : classOptions[0]));
+      }
       if (defaultYear) setSelectedYear(defaultYear);
       if (defaultTerm) setSelectedTerm(defaultTerm);
       setStep('config');
       setRows([]);
     }
-  }, [isOpen, defaultClass, defaultYear, defaultTerm]);
+  }, [isOpen, defaultClass, defaultYear, defaultTerm, classOptions]);
 
   // Fetch live SIS students for the selected class to verify index numbers
   useEffect(() => {
@@ -585,11 +621,20 @@ export default function HistoricalReportsImportModal({
                   <select
                     value={selectedClass}
                     onChange={(e) => setSelectedClass(e.target.value)}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-brand-textMain outline-none focus:border-brand-violet"
+                    disabled={isLoadingClasses && classOptions.length === 0}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-brand-textMain outline-none focus:border-brand-violet disabled:bg-gray-50 disabled:text-gray-400"
                   >
-                    {registeredClasses.map(c => (
-                      <option key={c.id} value={c.name}>{c.name}</option>
-                    ))}
+                    {classOptions.length === 0 ? (
+                      <option value="" disabled>
+                        {isLoadingClasses ? 'Loading classes from database...' : 'No registered classes in database'}
+                      </option>
+                    ) : (
+                      classOptions.map((cName) => (
+                        <option key={cName} value={cName}>
+                          {cName}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
 
