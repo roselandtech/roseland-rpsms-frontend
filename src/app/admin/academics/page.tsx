@@ -925,10 +925,30 @@ export default function AdminAcademicsPage() {
     return true;
   }), [roster, scoreFilter]);
 
+  // Memoized active staff lookup set to ensure deleted teachers never appear anywhere in dropdowns
+  const activeStaffSet = useMemo(() => {
+    const set = new Set<string>();
+    staffDirectory.forEach((s) => {
+      const name = (s.name || s.fullName || '').trim().toLowerCase();
+      if (name && name !== 'unassigned') {
+        set.add(name);
+      }
+    });
+    return set;
+  }, [staffDirectory]);
+
+  const isTeacherActive = useCallback(
+    (name?: string | null) => {
+      if (!name || name === 'Unassigned') return false;
+      return activeStaffSet.has(name.trim().toLowerCase());
+    },
+    [activeStaffSet]
+  );
+
   /**
-   * Returns teachers categorized based on their allocated subjects:
-   * 1. Teachers explicitly allocated to `subjectName`
-   * 2. Other faculty and staff
+   * Intelligently builds teacher options for a subject:
+   * 1. Teachers explicitly allocated to `subjectName` (verified active only)
+   * 2. Other faculty and staff (verified active only)
    * 3. General roles (Form Master, Duty Master, Unassigned)
    */
   const getTeacherOptionsForSubject = useCallback(
@@ -959,21 +979,23 @@ export default function AdminAcademicsPage() {
 
       const normalizedSub = (subjectName || '').trim().toLowerCase();
 
-      // Find all teachers in facultyAllocations who have this subject
+      // Find all ACTIVE teachers in facultyAllocations who have this subject
       const allocatedTeachers: Array<{ name: string; detail: string; isClassMaster: boolean; subjects: string[] }> = [];
       const allocatedTeacherNames = new Set<string>();
 
       facultyAllocations.forEach((a) => {
+        if (!a.teacherName || !isTeacherActive(a.teacherName)) return;
+
         const teachesSubject = (a.subjects || []).some((s: string) => {
           const norm = s.trim().toLowerCase();
           return norm === normalizedSub || norm.includes(normalizedSub) || normalizedSub.includes(norm);
         });
 
-        if (teachesSubject && a.teacherName) {
-          allocatedTeacherNames.add(a.teacherName.toLowerCase());
+        if (teachesSubject) {
+          allocatedTeacherNames.add(a.teacherName.trim().toLowerCase());
           const isClassMaster = a.formClass?.toLowerCase() === targetClass.toLowerCase();
           allocatedTeachers.push({
-            name: a.teacherName,
+            name: a.teacherName.trim(),
             detail: isClassMaster
               ? `${a.formClass} Form Master`
               : a.formClass
@@ -988,51 +1010,55 @@ export default function AdminAcademicsPage() {
       // Sort: class form master first, then others
       allocatedTeachers.sort((a, b) => (b.isClassMaster ? 1 : 0) - (a.isClassMaster ? 1 : 0));
 
-      // Other teaching staff
+      // Other active teaching staff
       const otherTeachers: Array<{ name: string; role: string }> = [];
 
       facultyAllocations.forEach((a) => {
-        if (a.teacherName && !allocatedTeacherNames.has(a.teacherName.toLowerCase())) {
-          allocatedTeacherNames.add(a.teacherName.toLowerCase());
+        if (!a.teacherName || !isTeacherActive(a.teacherName)) return;
+        const normalizedName = a.teacherName.trim().toLowerCase();
+        if (!allocatedTeacherNames.has(normalizedName)) {
+          allocatedTeacherNames.add(normalizedName);
           otherTeachers.push({
-            name: a.teacherName,
+            name: a.teacherName.trim(),
             role: a.formClass ? `${a.formClass} Form Master` : 'Faculty Member',
           });
         }
       });
 
       staffDirectory.forEach((s) => {
+        const staffName = (s.name || s.fullName || '').trim();
+        if (!staffName || !isTeacherActive(staffName)) return;
+        const normalizedName = staffName.toLowerCase();
+
         if (
-          s.fullName &&
-          !allocatedTeacherNames.has(s.fullName.toLowerCase()) &&
+          !allocatedTeacherNames.has(normalizedName) &&
           (s.role?.toLowerCase().includes('teacher') ||
             s.role?.toLowerCase().includes('faculty') ||
             s.role?.toLowerCase().includes('headmaster') ||
             s.role?.toLowerCase().includes('master'))
         ) {
-          allocatedTeacherNames.add(s.fullName.toLowerCase());
+          allocatedTeacherNames.add(normalizedName);
           otherTeachers.push({
-            name: s.fullName,
+            name: staffName,
             role: s.role || 'Teaching Staff',
           });
         }
       });
 
-      const currentFormMaster = streams.find((s) => s.classGrade === targetClass)?.formMaster;
+      const streamFormMaster = streams.find((s) => s.classGrade === targetClass)?.formMaster;
+      const currentFormMaster = streamFormMaster && isTeacherActive(streamFormMaster) ? streamFormMaster : null;
 
       return {
         allocatedTeachers,
         otherTeachers,
         roles: [
-          currentFormMaster && currentFormMaster !== 'Unassigned'
-            ? `Form Master (${currentFormMaster})`
-            : 'Class Form Master',
+          currentFormMaster ? `Form Master (${currentFormMaster})` : 'Class Form Master',
           'Duty Master & Prefects',
           'Unassigned / Self-Study',
         ],
       };
     },
-    [facultyAllocations, staffDirectory, streams]
+    [facultyAllocations, staffDirectory, streams, isTeacherActive]
   );
 
   /**
@@ -1041,11 +1067,11 @@ export default function AdminAcademicsPage() {
   const getClassAllocatedSubjects = useCallback(
     (targetClass: string) => {
       const classAllocations = facultyAllocations.filter(
-        (a) => a.formClass?.toLowerCase() === targetClass?.toLowerCase()
+        (a) => a.formClass?.toLowerCase() === targetClass?.toLowerCase() && isTeacherActive(a.teacherName)
       );
       return Array.from(new Set(classAllocations.flatMap((a) => a.subjects || [])));
     },
-    [facultyAllocations]
+    [facultyAllocations, isTeacherActive]
   );
 
   /**

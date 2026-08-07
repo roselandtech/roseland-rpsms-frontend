@@ -253,13 +253,14 @@ export default function AdminStaffPage() {
     try {
       await RoselandApi.auth.deleteStaff(staff.id);
       
-      // Proactively clear academic allocations and class assignments
+      // Proactively clear academic allocations, class assignments, and timetable slots
       try {
         await Promise.allSettled([
           RoselandApi.academic.deleteFacultyAllocation(staff.name),
           RoselandApi.academic.deleteFacultyAllocation(staff.id),
           staff.email ? RoselandApi.academic.deleteFacultyAllocation(staff.email) : Promise.resolve(),
           staff.assignedClass ? RoselandApi.academic.deleteClassAllocation(staff.assignedClass) : Promise.resolve(),
+          RoselandApi.academic.unassignTeacherSlots(staff.name),
         ]);
       } catch (cleanupErr) {
         console.warn("Cleanup allocation warning:", cleanupErr);

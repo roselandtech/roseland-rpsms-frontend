@@ -178,6 +178,10 @@ export const RoselandApi = {
       apiRequest(`/api/v1/academic/timetable/slot/${slotId}`, {
         method: 'DELETE',
       }),
+    unassignTeacherSlots: (teacherName: string) =>
+      apiRequest(`/api/v1/academic/timetable/slots/by-teacher/${encodeURIComponent(teacherName)}`, {
+        method: 'DELETE',
+      }),
     getTimetableConflicts: (classGrade?: string) => {
       const q = classGrade ? `?class_grade=${encodeURIComponent(classGrade)}` : '';
       return apiRequest(`/api/v1/academic/timetable/conflicts${q}`);
