@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { RoselandApi } from '@/lib/api';
+import { printReceipt } from '@/lib/pdf-printer';
 
 export interface OfficialReceiptData {
   receiptNo: string;
@@ -69,8 +70,9 @@ export const OfficialReceiptModal: React.FC<OfficialReceiptModalProps> = ({
         status: receipt.status || 'PAID',
       });
     } catch (err: any) {
-      console.warn('[PDF Service] Server download failed, falling back to local print:', err.message);
-      window.print();
+      console.warn('[PDF Service] Server endpoint unreachable, printing isolated voucher:', err.message);
+      // Isolated receipt document printing without dashboard elements
+      printReceipt(receipt);
     } finally {
       setIsGeneratingPdf(false);
     }
@@ -91,10 +93,10 @@ export const OfficialReceiptModal: React.FC<OfficialReceiptModalProps> = ({
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto print:p-0 print:bg-white print:static">
       
       {/* Modal Container */}
-      <div className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl border border-gray-100 relative animate-fade-in my-auto max-h-[92vh] flex flex-col print:shadow-none print:border-none print:p-0 print:max-w-full print:max-h-full">
+      <div className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl border border-gray-100 relative animate-fade-in my-auto max-h-[92vh] flex flex-col print-isolate">
         
         {/* Sticky/Fixed Action Controls (Hidden in Print) */}
-        <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4 shrink-0 print:hidden">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4 shrink-0 no-print print:hidden">
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
               Verified Digital Receipt
@@ -109,6 +111,13 @@ export const OfficialReceiptModal: React.FC<OfficialReceiptModalProps> = ({
             >
               <i className={isGeneratingPdf ? "ph ph-spinner animate-spin" : "ph-bold ph-file-pdf"}></i>
               {isGeneratingPdf ? "Rendering PDF..." : "Download Official PDF"}
+            </button>
+            <button
+              onClick={() => printReceipt(receipt)}
+              title="Print Receipt"
+              className="p-1.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-200 flex items-center cursor-pointer transition-all active:scale-95"
+            >
+              <i className="ph-bold ph-printer text-sm"></i>
             </button>
             <button
               onClick={onClose}

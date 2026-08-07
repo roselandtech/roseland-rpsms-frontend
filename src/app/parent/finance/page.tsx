@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { AuthService, RoselandUser } from '@/lib/auth';
 import { RoselandApi } from '@/lib/api';
+import { printReceipt } from '@/lib/pdf-printer';
 
 interface PaymentRecord {
   id: string;
@@ -477,8 +478,21 @@ export default function ParentFinance() {
               <button
                 type="button"
                 onClick={() => {
-                  window.print();
-                  toast.success("Printing receipt...");
+                  printReceipt({
+                    receiptNo: activeReceipt.receiptNo,
+                    transactionRef: activeReceipt.id,
+                    studentIndexNo: studentIndex,
+                    studentName: studentName,
+                    classGrade: studentClass,
+                    academicTerm: 'Term 2',
+                    payerName: user?.name || 'Parent / Guardian',
+                    payerPhone: user?.phone || 'N/A',
+                    paymentMethod: activeReceipt.method,
+                    amountPaid: `GH₵ ${activeReceipt.amount.toLocaleString()}.00`,
+                    status: 'PAID',
+                    settlementDate: activeReceipt.date,
+                  });
+                  toast.success("Printing official receipt...");
                 }}
                 className="w-full py-2.5 bg-brand-violet text-white rounded-xl font-bold text-xs hover:bg-brand-violetDark transition-all flex items-center justify-center gap-2 cursor-pointer"
               >

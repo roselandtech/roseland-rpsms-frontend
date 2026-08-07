@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { RoselandApi } from '@/lib/api';
+import { printAdmissionLetter } from '@/lib/pdf-printer';
 
 interface Applicant {
   id: string;
@@ -891,7 +892,13 @@ export default function AdminAdmissionsPage() {
                   </button>
                   <button
                     onClick={() => {
-                      window.print();
+                      printAdmissionLetter({
+                        parentName: selectedApplicant.parentName,
+                        childName: selectedApplicant.childName,
+                        targetClass: selectedApplicant.targetClass,
+                        refNo: selectedApplicant.refNo,
+                      });
+                      toast.success("Printing official admission letter...");
                     }}
                     className="px-4 py-2.5 bg-brand-violet text-white font-bold rounded-xl text-xs hover:bg-brand-violetDark shadow-md flex items-center gap-1.5 cursor-pointer"
                   >

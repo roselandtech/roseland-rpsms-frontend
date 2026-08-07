@@ -67,3 +67,59 @@ html {
 .animate-modal-pop {
     animation: modalPop 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* ==========================================================================
+   Global Print Isolation Rules
+   ========================================================================== */
+@media print {
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Hide navigation, sidebars, buttons, headers, footers and unprintable overlays */
+  nav,
+  aside,
+  header,
+  footer,
+  button,
+  .no-print,
+  .print-hidden,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Reset fixed backgrounds & backdrops */
+  .fixed {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Ensure printable elements render cleanly */
+  .print-isolate,
+  .printable-document {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    page-break-inside: avoid;
+  }
+}
+
