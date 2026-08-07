@@ -252,6 +252,19 @@ export default function AdminStaffPage() {
     if (!confirm(`Are you sure you want to remove ${staff.name} from the database?`)) return;
     try {
       await RoselandApi.auth.deleteStaff(staff.id);
+      
+      // Proactively clear academic allocations and class assignments
+      try {
+        await Promise.allSettled([
+          RoselandApi.academic.deleteFacultyAllocation(staff.name),
+          RoselandApi.academic.deleteFacultyAllocation(staff.id),
+          staff.email ? RoselandApi.academic.deleteFacultyAllocation(staff.email) : Promise.resolve(),
+          staff.assignedClass ? RoselandApi.academic.deleteClassAllocation(staff.assignedClass) : Promise.resolve(),
+        ]);
+      } catch (cleanupErr) {
+        console.warn("Cleanup allocation warning:", cleanupErr);
+      }
+
       toast.success(`${staff.name} has been removed from the institutional database.`);
       await loadStaff();
     } catch (err: any) {

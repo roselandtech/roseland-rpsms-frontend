@@ -399,6 +399,17 @@ export default function AdminAcademicsPage() {
       setFacultyAllocations(allocationList);
       setStaffDirectory(staffList);
 
+      // Create a set of normalized active staff names to verify form master assignments
+      const activeStaffNames = new Set(
+        staffList
+          .map((s) => (s.name || s.fullName || '').trim().toLowerCase())
+          .filter((n) => n.length > 0)
+      );
+      const isStaffActive = (name?: string | null) => {
+        if (!name || name === 'Unassigned') return false;
+        return activeStaffNames.has(name.trim().toLowerCase());
+      };
+
       const enrolledByClass = new Map<string, Set<string>>();
       studentList.forEach((s) => {
         const key = s.class_grade;
@@ -416,7 +427,7 @@ export default function AdminAcademicsPage() {
 
       const masterByClass = new Map<string, { name: string; subjects: string[] }>();
       allocationList.forEach((a) => {
-        if (a.formClass) {
+        if (a.formClass && isStaffActive(a.teacherName)) {
           masterByClass.set(a.formClass, {
             name: a.teacherName || 'Unassigned',
             subjects: Array.isArray(a.subjects) ? a.subjects : [],
@@ -454,6 +465,14 @@ export default function AdminAcademicsPage() {
             else orphaned += 1;
           });
 
+          // Verify that the assigned class teacher is still an active staff member
+          let verifiedFormMaster = 'Unassigned';
+          if (reg?.class_teacher_name && isStaffActive(reg.class_teacher_name)) {
+            verifiedFormMaster = reg.class_teacher_name;
+          } else if (allocation?.name && isStaffActive(allocation.name)) {
+            verifiedFormMaster = allocation.name;
+          }
+
           return {
             classId: reg?.id,
             classGrade,
@@ -463,8 +482,8 @@ export default function AdminAcademicsPage() {
             roomNumber: reg?.room_number || 'Room 101',
             capacity: reg?.capacity || 35,
             baseTuitionFee: reg?.base_tuition_fee,
-            formMaster: reg?.class_teacher_name || allocation?.name || 'Unassigned',
-            subjects: allocation?.subjects || [],
+            formMaster: verifiedFormMaster,
+            subjects: isStaffActive(allocation?.name) ? (allocation?.subjects || []) : [],
             pupils: enrolled.size,
             pupilsWithScores: scoredAndEnrolled,
             caSubmissionPct: enrolled.size > 0

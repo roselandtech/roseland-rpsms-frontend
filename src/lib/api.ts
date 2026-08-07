@@ -114,6 +114,14 @@ export const RoselandApi = {
         method: 'POST',
         body: JSON.stringify(allocationData),
       }),
+    deleteFacultyAllocation: (teacherIdentifier: string) =>
+      apiRequest(`/api/v1/academic/faculty/allocation/by-teacher/${encodeURIComponent(teacherIdentifier)}`, {
+        method: 'DELETE',
+      }),
+    deleteClassAllocation: (classGrade: string) =>
+      apiRequest(`/api/v1/academic/faculty/allocation/by-class/${encodeURIComponent(classGrade)}`, {
+        method: 'DELETE',
+      }),
     getScores: (params?: { classGrade?: string; class_grade?: string; subject?: string; studentIndex?: string; student_index?: string }) => {
       const q = new URLSearchParams();
       if (params?.classGrade || params?.class_grade) q.set('class_grade', (params.classGrade || params.class_grade)!);
