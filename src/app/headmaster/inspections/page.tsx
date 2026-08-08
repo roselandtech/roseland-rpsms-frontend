@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import Modal from '@/components/ui/Modal';
 import { RoselandApi } from '@/lib/api';
 import { AuthService } from '@/lib/auth';
+import { printInspectionReport } from '@/lib/pdf-printer';
 
 interface LessonScheme {
   id: string;
@@ -497,7 +498,31 @@ export default function HeadmasterInspectionsPage() {
               <div>
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={() => {
+                    if (!selectedPlan) return;
+                    const combinedContent = [
+                      selectedPlan.objectives ? `OBJECTIVES:\n${selectedPlan.objectives}` : '',
+                      selectedPlan.starter ? `STARTER / INTRODUCTION:\n${selectedPlan.starter}` : '',
+                      selectedPlan.main_activity ? `MAIN ACTIVITY / CORE METHODOLOGY:\n${selectedPlan.main_activity}` : '',
+                      selectedPlan.plenary ? `PLENARY / EVALUATION:\n${selectedPlan.plenary}` : '',
+                      selectedPlan.tlr ? `TEACHING & LEARNING RESOURCES:\n${selectedPlan.tlr}` : '',
+                    ].filter(Boolean).join('\n\n');
+
+                    printInspectionReport({
+                      title: `Week ${selectedPlan.week} Lesson Scheme`,
+                      teacherName: selectedPlan.teacher_name,
+                      subject: selectedPlan.subject,
+                      classGrade: selectedPlan.class_grade,
+                      strand: selectedPlan.strand,
+                      subStrand: selectedPlan.sub_strand,
+                      status: selectedPlan.status,
+                      content: combinedContent,
+                      differentiation: selectedPlan.differentiation,
+                      headmasterNotes: selectedPlan.headmaster_notes,
+                      vettedBy: selectedPlan.vetted_by || 'Rev. Dr. Emmanuel Appiah',
+                    });
+                    toast.success("Printing Official Pedagogical Audit Report");
+                  }}
                   className="px-4 py-2.5 bg-white hover:bg-gray-100 text-brand-textMain border border-gray-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <i className="ph-bold ph-printer"></i> Print Scheme

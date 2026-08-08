@@ -51,6 +51,11 @@ export default function PortalLayout({
     setIsAuthenticating(false);
   }, [router, pathname]);
 
+  // Close mobile sidebar automatically on route navigation
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [pathname]);
+
   // Global Keyboard shortcuts: Ctrl+B (sidebar) and Ctrl+K / '/' (command palette)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -96,12 +101,13 @@ export default function PortalLayout({
 
   return (
     <div className="flex h-screen overflow-hidden font-sans antialiased bg-brand-bg text-brand-textMain">
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile Sidebar Backdrop Overlay */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 lg:hidden transition-opacity" 
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs z-40 lg:hidden transition-opacity cursor-pointer animate-fade-in" 
           onClick={() => setIsSidebarOpen(false)}
-        ></div>
+          aria-hidden="true"
+        />
       )}
 
       {/* SIDEBAR */}

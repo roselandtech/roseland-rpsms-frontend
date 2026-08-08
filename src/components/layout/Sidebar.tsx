@@ -58,7 +58,7 @@ export default function Sidebar({
 
   return (
     <aside 
-      className={`bg-white h-full border-r border-gray-100 flex flex-col fixed lg:relative z-30 lg:z-20 transition-all duration-300 ease-in-out ${
+      className={`bg-white h-full border-r border-gray-100 flex flex-col fixed inset-y-0 left-0 lg:static z-50 lg:z-20 transition-all duration-300 ease-in-out shadow-2xl lg:shadow-none ${
         isCollapsed ? 'lg:w-20' : 'lg:w-72'
       } ${
         isOpen ? 'w-72 translate-x-0' : '-translate-x-full lg:translate-x-0'
@@ -82,10 +82,12 @@ export default function Sidebar({
 
         {/* Close button for mobile */}
         <button 
-          className="lg:hidden text-gray-500 hover:text-brand-violet p-1.5 rounded-lg bg-gray-50"
+          type="button"
+          aria-label="Close menu"
+          className="lg:hidden text-gray-500 hover:text-brand-violet p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
           onClick={() => setIsOpen(false)}
         >
-          <i className="ph ph-x text-xl"></i>
+          <i className="ph-bold ph-x text-lg"></i>
         </button>
       </div>
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { RoselandApi } from '@/lib/api';
 import { AuthService } from '@/lib/auth';
+import { printCbtExamResult } from '@/lib/pdf-printer';
 
 interface Question {
   id: number;
@@ -754,7 +755,21 @@ export default function CBTPage() {
                   Return to Terminal Login
                 </button>
                 <button
-                  onClick={() => window.print()}
+                  onClick={() => {
+                    if (!submissionResult) return;
+                    printCbtExamResult({
+                      candidateName: submissionResult.studentName,
+                      indexNo: submissionResult.studentIndexNo,
+                      examTitle: currentExam?.title || 'Continuous Assessment',
+                      classGrade: currentExam?.classGrade || 'Basic Grade',
+                      totalQuestions: submissionResult.totalQuestions,
+                      correctCount: submissionResult.correctCount,
+                      scorePercentage: parseFloat(submissionResult.scorePercentage) || 0,
+                      grade: `Grade ${submissionResult.stanineGrade} (${submissionResult.descriptor})`,
+                      dateCompleted: new Date().toLocaleString(),
+                    });
+                    toast.success("Printing Official CBT Result Slip");
+                  }}
                   className="px-5 py-2.5 bg-brand-violet hover:bg-brand-violetDark text-white font-bold rounded-xl text-xs cursor-pointer shadow"
                 >
                   Print Assessment Slip

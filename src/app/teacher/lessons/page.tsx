@@ -7,6 +7,7 @@ import { RoselandApi } from '@/lib/api';
 import { AuthService } from '@/lib/auth';
 import { useClasses } from '@/hooks/useClasses';
 import { useSubjects } from '@/hooks/useSubjects';
+import { printLessonPlan } from '@/lib/pdf-printer';
 
 interface LessonSchemeRecord {
   id: string;
@@ -810,7 +811,31 @@ export default function TeacherLessons() {
               <div>
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={() => {
+                    if (!selectedScheme) return;
+                    const combinedContent = [
+                      selectedScheme.objectives ? `OBJECTIVES:\n${selectedScheme.objectives}` : '',
+                      selectedScheme.starter ? `STARTER / INTRODUCTION:\n${selectedScheme.starter}` : '',
+                      selectedScheme.main_activity ? `MAIN ACTIVITY / CORE METHODOLOGY:\n${selectedScheme.main_activity}` : '',
+                      selectedScheme.plenary ? `PLENARY / EVALUATION:\n${selectedScheme.plenary}` : '',
+                      selectedScheme.tlr ? `TEACHING & LEARNING RESOURCES:\n${selectedScheme.tlr}` : '',
+                    ].filter(Boolean).join('\n\n');
+
+                    printLessonPlan({
+                      title: `Week ${selectedScheme.week} Lesson Scheme`,
+                      teacherName: selectedScheme.teacher_name,
+                      subject: selectedScheme.subject,
+                      classGrade: selectedScheme.class_grade,
+                      weekRange: `Week ${selectedScheme.week}`,
+                      strand: selectedScheme.strand,
+                      subStrand: selectedScheme.sub_strand,
+                      status: selectedScheme.status,
+                      content: combinedContent,
+                      differentiation: selectedScheme.differentiation,
+                      headmasterNotes: selectedScheme.headmaster_notes,
+                    });
+                    toast.success("Printing Official Lesson Scheme");
+                  }}
                   className="px-4 py-2.5 bg-white hover:bg-gray-100 text-brand-textMain border border-gray-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <i className="ph-bold ph-printer"></i> Print Scheme
