@@ -8,37 +8,37 @@ export default function CampusPage() {
     {
       title: "State-of-the-Art ICT & CBT Center",
       desc: "Our climate-controlled computer laboratory is equipped with high-speed networked desktop workstations, dedicated fiber internet, and specialized educational software for coding, digital literacy, and Computer-Based Testing (CBT).",
-      img: "https://images.unsplash.com/photo-1588072432836-e10032774350?auto=format&fit=crop&q=80&w=1000",
+      img: "/IMG_2537.jpg",
       features: ["1:1 Student-to-Workstation setup", "Secure CBT Exam Intranet", "Coding & Scratch Robotics Kits"]
     },
     {
       title: "Integrated Science Laboratory",
       desc: "Designed to bridge theoretical science and practical experimentation. Students conduct experiments in biology, physics, and basic chemistry using standard safety apparatus and lab reagents under teacher supervision.",
-      img: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80&w=1000",
+      img: "/IMG_9165.jpg",
       features: ["Microscopes & Optical Kits", "Safety Eye-wash & Fire Protocols", "Hands-on Practical Workbench"]
     },
     {
       title: "School Library & Learning Commons",
       desc: "A quiet sanctuary of learning boasting over 3,000 carefully curated titles spanning Ghanaian folklore, African literature, encyclopedias, international fiction, and BECE past questions archives.",
-      img: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&q=80&w=1000",
+      img: "/IMG_9458.jpg",
       features: ["Early Readers Section", "Study Carrels for JHS Candidates", "Digital Catalog System"]
     },
     {
       title: "Early Years Sensory Playground",
       desc: "Specially engineered for our Crèche and Nursery pupils with shock-absorbing safety turf, age-appropriate slides, sensory climbing frames, and shaded outdoor learning spaces.",
-      img: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&q=80&w=1000",
+      img: "/IMG_9373.jpg",
       features: ["Impact-absorbent padded flooring", "24/7 Caregiver supervision", "Gross motor skill stations"]
     },
     {
       title: "Campus Infirmary & Sick Bay",
       desc: "Staffed by a qualified full-time resident nurse equipped with first-aid essentials, emergency oxygen, observation beds, and direct rapid referral linkages with Ga West Municipal Hospital.",
-      img: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=1000",
+      img: "/IMG_9127.jpg",
       features: ["Full-time registered nurse", "Secure medical records tracking", "Comfortable observation cubicles"]
     },
     {
       title: "Hygienic Dining Hall & Canteen",
       desc: "A sanitary, spacious dining facility where hot, freshly prepared Ghanaian and continental meals are served daily under strict food safety and nutritional standards.",
-      img: "https://images.unsplash.com/photo-1567521464027-f127ff144326?auto=format&fit=crop&q=80&w=1000",
+      img: "/IMG_9376.jpg",
       features: ["FDA compliant kitchen hygiene", "Balanced weekly meal plans", "Filter-purified drinking water"]
     }
   ];
@@ -56,7 +56,7 @@ export default function CampusPage() {
           { label: 'About Us', href: '/about' },
           { label: 'Campus & Facilities' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_3008.JPG.jpeg"
       />
 
       {/* 1. CAMPUS HIGHLIGHTS INTRO */}

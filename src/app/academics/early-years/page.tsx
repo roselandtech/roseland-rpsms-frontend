@@ -17,7 +17,7 @@ export default function EarlyYearsPage() {
           { label: 'Academics', href: '/academics' },
           { label: 'Early Years' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1544367567-0f2fcb046ebf?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_9454.jpg"
       />
 
       <section className="py-20 bg-white">
@@ -51,7 +51,7 @@ export default function EarlyYearsPage() {
 
             <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
               <img
-                src="https://images.unsplash.com/photo-1587654780291-39c9404d746b?auto=format&fit=crop&q=80&w=800"
+                src="/IMG_9464.jpg"
                 alt="Toddlers Learning and Playing"
                 className="w-full h-[450px] object-cover"
               />

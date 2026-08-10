@@ -9,15 +9,15 @@ export default function GalleryPage() {
   const [filter, setFilter] = useState('all');
 
   const photos = [
-    { title: "Graduation & Speech Day Ceremony", category: "Speech Day", img: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=800" },
-    { title: "Science & STEAM Innovation Expo", category: "Academics", img: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80&w=800" },
-    { title: "Inter-House 100m Sprint Finals", category: "Sports", img: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=800" },
-    { title: "ICT Lab Keyboarding Session", category: "Campus", img: "https://images.unsplash.com/photo-1588072432836-e10032774350?auto=format&fit=crop&q=80&w=800" },
-    { title: "Crèche Sensory Play Hour", category: "Early Years", img: "https://images.unsplash.com/photo-1544367567-0f2fcb046ebf?auto=format&fit=crop&q=80&w=800" },
-    { title: "Cultural Troupe Drumming Festival", category: "Arts", img: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=800" },
-    { title: "JHS Debate Championship", category: "Academics", img: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=800" },
-    { title: "Primary School Library Reading Commons", category: "Campus", img: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&q=80&w=800" },
-    { title: "Football Academy Training Match", category: "Sports", img: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=800" }
+    { title: "Graduation & Speech Day Ceremony", category: "Speech Day", img: "/IMG_9414.jpg" },
+    { title: "Science & STEAM Innovation Expo", category: "Academics", img: "/IMG_9165.jpg" },
+    { title: "Inter-House 100m Sprint Finals", category: "Sports", img: "/IMG_7392.PNG" },
+    { title: "ICT Lab Keyboarding Session", category: "Campus", img: "/IMG_2537.jpg" },
+    { title: "Crèche Sensory Play Hour", category: "Early Years", img: "/IMG_9454.jpg" },
+    { title: "Cultural Troupe Drumming Festival", category: "Arts", img: "/IMG_2934.jpg" },
+    { title: "JHS Debate Championship", category: "Academics", img: "/IMG_3098.JPG.jpeg" },
+    { title: "Primary School Library Reading Commons", category: "Campus", img: "/IMG_9458.jpg" },
+    { title: "Football Academy Training Match", category: "Sports", img: "/IMG_9124.jpg" }
   ];
 
   const filteredPhotos = filter === 'all'
@@ -36,7 +36,7 @@ export default function GalleryPage() {
           { label: 'Home', href: '/' },
           { label: 'Photo Gallery' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_3008.JPG.jpeg"
       />
 
       <section className="py-20 bg-white">

@@ -30,7 +30,7 @@ export default function PrimaryPage() {
           { label: 'Academics', href: '/academics' },
           { label: 'Primary School' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_9376.jpg"
       />
 
       {/* 1. OVERVIEW & PEDAGOGY */}
@@ -67,7 +67,7 @@ export default function PrimaryPage() {
 
             <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
               <img
-                src="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=800"
+                src="/IMG_3031.JPG.jpeg"
                 alt="Primary Pupils in Class"
                 className="w-full h-[450px] object-cover"
               />

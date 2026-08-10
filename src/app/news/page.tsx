@@ -16,7 +16,7 @@ export default function NewsPage() {
       category: "Academic",
       date: "October 18, 2025",
       snippet: "Our graduating JHS class recorded stellar Single-Digit aggregates across all subject areas, with over 90% securing their first-choice Senior High School placements.",
-      img: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=800"
+      img: "/IMG_9414.jpg"
     },
     {
       slug: "new-high-speed-cbt-computer-lab-commissioned",
@@ -24,7 +24,7 @@ export default function NewsPage() {
       category: "Infrastructure",
       date: "November 04, 2025",
       snippet: "Equipped with 40 new networked workstations and automated exam testing engines, the new center elevates pupils' digital literacy and ICT preparedness.",
-      img: "https://images.unsplash.com/photo-1588072432836-e10032774350?auto=format&fit=crop&q=80&w=800"
+      img: "/IMG_2537.jpg"
     },
     {
       slug: "inter-house-athletics-championship-2026-red-house",
@@ -32,7 +32,7 @@ export default function NewsPage() {
       category: "Sports",
       date: "February 28, 2026",
       snippet: "A thrilling day of sprint relays, tug of war, and gymnastics culminated in Red House lifting the championship cup amidst jubilation.",
-      img: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=800"
+      img: "/IMG_7392.PNG"
     },
     {
       slug: "term-2-pta-general-meeting-resolutions",
@@ -40,7 +40,7 @@ export default function NewsPage() {
       category: "PTA",
       date: "January 24, 2026",
       snippet: "Parents and school executives met to review student welfare initiatives and greenlit the funding for new digital optical microscopes.",
-      img: "https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=800"
+      img: "/IMG_3023.JPG.jpeg"
     }
   ];
 
@@ -60,7 +60,7 @@ export default function NewsPage() {
           { label: 'Home', href: '/' },
           { label: 'News & Announcements' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_2191.jpg"
       />
 
       <section className="py-20 bg-white">

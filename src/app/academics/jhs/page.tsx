@@ -29,7 +29,7 @@ export default function JHSPage() {
           { label: 'Academics', href: '/academics' },
           { label: 'Junior High School' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_3098.JPG.jpeg"
       />
 
       {/* 1. JHS PHILOSOPHY & BECE MASTERY */}
@@ -68,7 +68,7 @@ export default function JHSPage() {
 
             <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
               <img
-                src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=800"
+                src="/IMG_3008.JPG.jpeg"
                 alt="JHS Students studying together"
                 className="w-full h-[450px] object-cover"
               />

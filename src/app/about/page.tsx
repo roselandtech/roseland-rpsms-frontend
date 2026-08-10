@@ -16,7 +16,7 @@ export default function AboutPage() {
           { label: 'Home', href: '/' },
           { label: 'About Us' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_3064.JPG.jpeg"
       />
 
       {/* 1. OUR STORY & HERITAGE */}
@@ -55,7 +55,7 @@ export default function AboutPage() {
             <div className="relative">
               <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
                 <img
-                  src="https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=800"
+                  src="/IMG_9414.jpg"
                   alt="Roseland Classroom Interaction"
                   className="w-full h-[460px] object-cover"
                 />

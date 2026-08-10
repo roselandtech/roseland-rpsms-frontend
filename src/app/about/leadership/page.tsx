@@ -17,7 +17,7 @@ export default function LeadershipPage() {
           { label: 'About Us', href: '/about' },
           { label: 'Leadership & Faculty' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_1558.JPG.jpeg"
       />
 
       {/* 1. PROPRIETRESS DESK */}
@@ -27,7 +27,7 @@ export default function LeadershipPage() {
             <div className="lg:col-span-5">
               <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
                 <img
-                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800"
+                  src="/Rose-Boateng.jpg"
                   alt="Mrs. Rose Boateng - Proprietress"
                   className="w-full h-[480px] object-cover object-top"
                 />
@@ -68,10 +68,10 @@ export default function LeadershipPage() {
                 Academic Administration
               </span>
               <h2 className="text-3xl sm:text-4xl font-serif font-bold text-brand-textMain mb-4 leading-tight">
-                Mr. Kwame Asamoah
+                Mrs. Grace
               </h2>
               <p className="text-sm font-semibold text-yellow-800 mb-6 uppercase tracking-wider">
-                Headmaster & Academic Dean
+                Headmistress
               </p>
               <div className="space-y-4 text-brand-textMuted text-base leading-relaxed">
                 <p>
@@ -85,8 +85,8 @@ export default function LeadershipPage() {
             <div className="lg:col-span-5 order-1 lg:order-2">
               <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
                 <img
-                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800"
-                  alt="Mr. Kwame Asamoah - Headmaster"
+                  src="/Mrs.%20Grace.jpg"
+                  alt="Mrs. Grace - Headmistress"
                   className="w-full h-[480px] object-cover object-top"
                 />
               </div>

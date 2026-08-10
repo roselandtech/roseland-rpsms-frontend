@@ -24,7 +24,7 @@ export default function SportsPage() {
           { label: 'Student Life' },
           { label: 'Sports & Athletics' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_7392.PNG"
       />
 
       <section className="py-20 bg-white">
@@ -47,7 +47,7 @@ export default function SportsPage() {
 
             <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
               <img
-                src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80&w=800"
+                src="/IMG_9124.jpg"
                 alt="Students playing sports"
                 className="w-full h-[450px] object-cover"
               />

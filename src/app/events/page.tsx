@@ -25,7 +25,7 @@ export default function EventsPage() {
       day: "23",
       featured: true,
       desc: "Our flagship annual celebration honoring academic distinction, co-curricular leadership, outstanding faculty, and graduating JHS 3 candidates.",
-      img: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=1000",
+      img: "/IMG_9414.jpg",
       highlights: ["Guest of Honor Keynote", "Award Conferments & Scholarships", "Cultural Troupe & Brass Band Performances"]
     },
     {
@@ -39,7 +39,7 @@ export default function EventsPage() {
       day: "28",
       featured: false,
       desc: "Red, Yellow, Green, and Blue Houses battle across 100m dashes, 4x100m relays, high jump, tug of war, and gymnastics.",
-      img: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=800",
+      img: "/IMG_7392.PNG",
       highlights: ["Track & Field Events", "House March Past & Cadet Salute", "Parent-Teacher Friendly Relay"]
     },
     {
@@ -53,7 +53,7 @@ export default function EventsPage() {
       day: "27",
       featured: false,
       desc: "Pupils showcase hands-on robotics prototypes, renewable solar gadgets, chemical experiments, and Scratch programming demos.",
-      img: "https://images.unsplash.com/photo-1588072432836-e10032774350?auto=format&fit=crop&q=80&w=800",
+      img: "/IMG_2537.jpg",
       highlights: ["Pupil Invention Pavilions", "Live Robot Driving Demos", "Judge Panel Evaluations"]
     },
     {
@@ -67,7 +67,7 @@ export default function EventsPage() {
       day: "14",
       featured: false,
       desc: "A collaborative session between parents, management, and subject teachers to review Term 2 academic metrics and developmental projects.",
-      img: "https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=800",
+      img: "/IMG_3023.JPG.jpeg",
       highlights: ["Headmaster's Academic Briefing", "One-on-One Teacher Consultations", "Financial & Project Updates"]
     },
     {
@@ -81,7 +81,7 @@ export default function EventsPage() {
       day: "06",
       featured: false,
       desc: "A patriotic durbar of chiefs, pupil cadet inspection, traditional drumming and dancing, and cultural folklore recitals.",
-      img: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=800",
+      img: "/IMG_2934.jpg",
       highlights: ["School Cadet Inspection", "Traditional Attire Display", "National History Quiz"]
     },
     {
@@ -95,7 +95,7 @@ export default function EventsPage() {
       day: "20",
       featured: false,
       desc: "A solemn benediction service for our final year Junior High School scholars as they enter the national examination period.",
-      img: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=800",
+      img: "/IMG_3098.JPG.jpeg",
       highlights: ["Candidate Blessing Ceremony", "Proprietress Encouragement", "Exam Stationery Kits Distribution"]
     }
   ];
@@ -135,7 +135,7 @@ export default function EventsPage() {
           { label: 'Community', href: '/news' },
           { label: 'Upcoming Events' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_2294.jpg"
       />
 
       {/* 1. FEATURED COUNTDOWN EVENT */}

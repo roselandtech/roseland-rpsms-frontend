@@ -14,7 +14,7 @@ export default function Home() {
         {/* Background Image with Rich Editorial Gradient */}
         <div className="absolute inset-0 z-0">
           <img
-            src="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=2000"
+            src="/IMG_3023.JPG.jpeg"
             alt="The Roseland Preparatory School Students"
             className="w-full h-full object-cover object-center scale-105 animate-fade-in"
           />
@@ -181,7 +181,7 @@ export default function Home() {
             <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all flex flex-col">
               <div className="relative h-56 overflow-hidden">
                 <img
-                  src="https://images.unsplash.com/photo-1544367567-0f2fcb046ebf?auto=format&fit=crop&q=80&w=800"
+                  src="/IMG_2210.jpg"
                   alt="Early Years Crèche & Nursery"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
@@ -216,7 +216,7 @@ export default function Home() {
             <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all flex flex-col">
               <div className="relative h-56 overflow-hidden">
                 <img
-                  src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=800"
+                  src="/IMG_9400.jpg"
                   alt="Primary School Class"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
@@ -251,7 +251,7 @@ export default function Home() {
             <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all flex flex-col">
               <div className="relative h-56 overflow-hidden">
                 <img
-                  src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=800"
+                  src="/IMG_3098.JPG.jpeg"
                   alt="Junior High Students"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
@@ -290,22 +290,36 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Visual Collage */}
-            <div className="lg:col-span-5 relative">
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
-                <img
-                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800"
-                  alt="Proprietress Mrs. Rose Boateng"
-                  className="w-full h-[450px] object-cover object-top"
-                />
-              </div>
-              <div className="absolute -bottom-6 -right-6 bg-brand-yellow text-yellow-950 p-6 rounded-2xl shadow-xl max-w-xs border-2 border-white">
-                <p className="font-serif font-bold text-lg leading-tight">Mrs. Rose Boateng</p>
-                <p className="text-xs font-medium uppercase tracking-wider text-yellow-900 mt-0.5">Proprietress & Founder</p>
+            <div className="lg:col-span-6 relative">
+              <div className="grid grid-cols-2 gap-4 sm:gap-6">
+                <div className="relative mt-8 sm:mt-12 rounded-3xl overflow-hidden shadow-2xl border-4 border-white group">
+                  <img
+                    src="/Rose-Boateng.jpg"
+                    alt="Proprietress Mrs. Rose Boateng"
+                    className="w-full h-[350px] sm:h-[420px] object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-5">
+                    <p className="text-white font-serif font-bold text-lg leading-tight">Mrs. Rose Boateng</p>
+                    <p className="text-brand-yellow text-xs font-bold uppercase tracking-wider mt-1">Proprietress & Founder</p>
+                  </div>
+                </div>
+                
+                <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white mb-8 sm:mb-12 group">
+                  <img
+                    src="/Mrs.%20Grace.jpg"
+                    alt="Headmistress Mrs. Grace"
+                    className="w-full h-[350px] sm:h-[420px] object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-5">
+                    <p className="text-white font-serif font-bold text-lg leading-tight">Mrs. Grace</p>
+                    <p className="text-brand-yellow text-xs font-bold uppercase tracking-wider mt-1">Headmistress</p>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Narrative Content */}
-            <div className="lg:col-span-7 lg:pl-6">
+            <div className="lg:col-span-6 lg:pl-8">
               <span className="text-brand-violet font-bold uppercase tracking-widest text-xs mb-2 block">
                 Message from Leadership
               </span>
@@ -361,7 +375,7 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-gray-800/80 rounded-2xl overflow-hidden border border-gray-700 hover:border-brand-yellow/60 transition-all group">
               <img
-                src="https://images.unsplash.com/photo-1588072432836-e10032774350?auto=format&fit=crop&q=80&w=600"
+                src="/IMG_2537.jpg"
                 alt="Modern Computer Lab"
                 className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
               />
@@ -373,7 +387,7 @@ export default function Home() {
 
             <div className="bg-gray-800/80 rounded-2xl overflow-hidden border border-gray-700 hover:border-brand-yellow/60 transition-all group">
               <img
-                src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80&w=600"
+                src="/IMG_9165.jpg"
                 alt="Integrated Science Lab"
                 className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
               />
@@ -385,7 +399,7 @@ export default function Home() {
 
             <div className="bg-gray-800/80 rounded-2xl overflow-hidden border border-gray-700 hover:border-brand-yellow/60 transition-all group">
               <img
-                src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&q=80&w=600"
+                src="/IMG_9458.jpg"
                 alt="Well-Stocked Library"
                 className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
               />
@@ -397,7 +411,7 @@ export default function Home() {
 
             <div className="bg-gray-800/80 rounded-2xl overflow-hidden border border-gray-700 hover:border-brand-yellow/60 transition-all group">
               <img
-                src="https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&q=80&w=600"
+                src="/IMG_9373.jpg"
                 alt="Early Years Play Area"
                 className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
               />

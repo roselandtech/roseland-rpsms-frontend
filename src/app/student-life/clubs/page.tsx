@@ -62,7 +62,7 @@ export default function ClubsPage() {
           { label: 'Student Life' },
           { label: 'Clubs & STEAM' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_2294.jpg"
       />
 
       <section className="py-20 bg-white">

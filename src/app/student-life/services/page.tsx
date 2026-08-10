@@ -31,7 +31,7 @@ export default function ServicesPage() {
           { label: 'Student Life' },
           { label: 'Canteen & Bus Services' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1567521464027-f127ff144326?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_2320.jpg"
       />
 
       {/* 1. CANTEEN NUTRITION MENU */}

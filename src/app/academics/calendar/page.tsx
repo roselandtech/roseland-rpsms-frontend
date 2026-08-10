@@ -64,7 +64,7 @@ export default function CalendarPage() {
           { label: 'Academics', href: '/academics' },
           { label: 'Calendar' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_2934.jpg"
       />
 
       <section className="py-20 bg-white">

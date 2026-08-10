@@ -16,7 +16,7 @@ export default function AcademicsPage() {
           { label: 'Home', href: '/' },
           { label: 'Academics' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_2191.jpg"
       />
 
       {/* 1. CURRICULAR PHILOSOPHY */}
@@ -91,7 +91,7 @@ export default function AcademicsPage() {
             <div className="bg-white rounded-3xl p-8 sm:p-12 shadow-sm border border-gray-100 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-4 rounded-2xl overflow-hidden shadow-md">
                 <img
-                  src="https://images.unsplash.com/photo-1544367567-0f2fcb046ebf?auto=format&fit=crop&q=80&w=800"
+                  src="/IMG_9446%20(1).jpg"
                   alt="Early Years Crèche"
                   className="w-full h-64 object-cover"
                 />
@@ -127,7 +127,7 @@ export default function AcademicsPage() {
             <div className="bg-white rounded-3xl p-8 sm:p-12 shadow-sm border border-gray-100 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-4 rounded-2xl overflow-hidden shadow-md">
                 <img
-                  src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=800"
+                  src="/IMG_9400.jpg"
                   alt="Primary School Class"
                   className="w-full h-64 object-cover"
                 />
@@ -163,7 +163,7 @@ export default function AcademicsPage() {
             <div className="bg-white rounded-3xl p-8 sm:p-12 shadow-sm border border-gray-100 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-4 rounded-2xl overflow-hidden shadow-md">
                 <img
-                  src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=800"
+                  src="/IMG_3098.JPG.jpeg"
                   alt="Junior High School"
                   className="w-full h-64 object-cover"
                 />

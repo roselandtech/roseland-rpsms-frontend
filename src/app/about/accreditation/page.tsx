@@ -17,7 +17,7 @@ export default function AccreditationPage() {
           { label: 'About Us', href: '/about' },
           { label: 'Accreditation' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_9427.jpg"
       />
 
       <section className="py-20 bg-white">

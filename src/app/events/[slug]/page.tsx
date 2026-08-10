@@ -40,7 +40,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
           
           <div className="rounded-3xl overflow-hidden shadow-2xl mb-12 border-4 border-white">
             <img
-              src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=1200"
+              src="/IMG_9414.jpg"
               alt="Roseland Speech Day Celebration"
               className="w-full h-[440px] object-cover"
             />

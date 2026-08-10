@@ -17,7 +17,7 @@ export default function WelfarePage() {
           { label: 'Student Life' },
           { label: 'Welfare & Health' }
         ]}
-        bgImage="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2000"
+        bgImage="/IMG_9427.jpg"
       />
 
       <section className="py-20 bg-white">
