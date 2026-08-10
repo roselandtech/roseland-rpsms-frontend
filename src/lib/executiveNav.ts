@@ -8,6 +8,8 @@ export const executiveNavGroups: NavGroup[] = [
     items: [
       { name: 'Executive Cockpit', href: '/headmaster', icon: 'ph ph-gauge' },
       { name: 'Timetable & Class Streams', href: '/admin/academics', icon: 'ph ph-chalkboard-teacher' },
+      { name: 'Curriculum & Subjects', href: '/admin/academics/curriculum', icon: 'ph ph-book-open' },
+      { name: 'Academic Calendar', href: '/admin/academics/calendar', icon: 'ph ph-calendar' },
       { name: 'Lesson Plans & Inspections', href: '/headmaster/inspections', icon: 'ph ph-clipboard-text' },
       { name: 'Report Card Sign-Offs', href: '/headmaster/approvals', icon: 'ph ph-seal-check' },
       { name: 'BECE Mock Analytics', href: '/headmaster/bece-analytics', icon: 'ph ph-chart-line-up' },

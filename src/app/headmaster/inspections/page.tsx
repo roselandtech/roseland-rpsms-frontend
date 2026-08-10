@@ -519,7 +519,7 @@ export default function HeadmasterInspectionsPage() {
                       content: combinedContent,
                       differentiation: selectedPlan.differentiation,
                       headmasterNotes: selectedPlan.headmaster_notes,
-                      vettedBy: selectedPlan.vetted_by || 'Rev. Dr. Emmanuel Appiah',
+                      vettedBy: selectedPlan.vetted_by || currentUser?.fullName || 'Headmaster',
                     });
                     toast.success("Printing Official Pedagogical Audit Report");
                   }}

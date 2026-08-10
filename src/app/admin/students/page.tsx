@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { RoselandApi } from '@/lib/api';
+import { AuthService } from '@/lib/auth';
 import Modal from '@/components/ui/Modal';
 import BulkStudentImportModal from '@/components/students/BulkStudentImportModal';
 import {
@@ -1631,7 +1632,7 @@ export default function AdminStudentsPage() {
                   <span className="text-gray-400 text-[10px]">Academic Board Resolution RPS-AB-2026/07</span>
                 </div>
                 <div className="text-right">
-                  <div className="font-serif italic font-bold text-brand-violet text-sm">Rev. Dr. Emmanuel Appiah</div>
+                  <div className="font-serif italic font-bold text-brand-violet text-sm">{AuthService.getCurrentUser()?.fullName || 'Headmaster'}</div>
                   <span className="text-[9px] text-gray-400 uppercase font-mono">Headmaster, The Roseland</span>
                 </div>
               </div>
@@ -1666,7 +1667,7 @@ export default function AdminStudentsPage() {
                     sourceCohort: committedBatchSummary ? committedBatchSummary.sourceCohort : (promoSourceCohort === 'all' ? 'All Classes' : promoSourceCohort),
                     totalEvaluated: recordsToPrint.length,
                     records: recordsToPrint,
-                    authorizedBy: 'Rev. Dr. Emmanuel Appiah',
+                    authorizedBy: AuthService.getCurrentUser()?.fullName || 'Headmaster',
                     resolutionNo: 'RPS-AB-2026/07',
                   });
                   toast.success("Generated Endorsed Promotion Gazette");

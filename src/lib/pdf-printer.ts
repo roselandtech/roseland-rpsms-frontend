@@ -2,6 +2,7 @@
  * The Roseland Preparatory School OS - Universal PDF & Isolated Document Printer
  * Ensures 100% clean, isolated document generation and printing without page chrome/dashboard leaks.
  */
+import { AuthService } from './auth';
 
 export interface ReceiptPrintData {
   receiptNo: string;
@@ -575,7 +576,7 @@ export function printStudentDossier(data: StudentDossierPrintData): void {
           </td>
           <td style="text-align: right; vertical-align: bottom; width: 40%;">
             <div class="font-serif" style="font-size: 13px; font-weight: 800; color: #1e1b4b; font-style: italic; border-bottom: 1px solid #94a3b8; display: inline-block; padding-bottom: 2px;">
-              Rev. Dr. Emmanuel Appiah
+              ${AuthService.getCurrentUser()?.fullName || 'Headmaster'}
             </div>
             <span style="font-size: 8.5px; text-transform: uppercase; color: #64748b; font-weight: 700; display: block; margin-top: 2px;">Headmaster & Academic Director</span>
           </td>
@@ -699,7 +700,7 @@ export function printStudentIdCard(data: StudentIdCardPrintData): void {
                     <span class="font-mono" style="font-size: 7px; color: #64748b;">AUTH REF: RPS-${data.indexNo.replace(/[^a-zA-Z0-9]/g, '')}</span>
                   </td>
                   <td style="text-align: right; vertical-align: middle;">
-                    <span class="font-serif" style="font-size: 9px; font-weight: 700; font-style: italic; color: #1e1b4b;">Rev. Dr. Emmanuel Appiah</span>
+                    <span class="font-serif" style="font-size: 9px; font-weight: 700; font-style: italic; color: #1e1b4b;">${AuthService.getCurrentUser()?.fullName || 'Headmaster'}</span>
                     <span style="font-size: 6.5px; text-transform: uppercase; color: #64748b; display: block;">Headmaster Sign</span>
                   </td>
                 </tr>
@@ -813,7 +814,7 @@ export function printPromotionGazette(data: PromotionGazettePrintData): void {
           </td>
           <td style="text-align: right; vertical-align: bottom; width: 40%;">
             <div class="font-serif" style="font-size: 13px; font-weight: 800; color: #1e1b4b; font-style: italic; border-bottom: 1px solid #94a3b8; display: inline-block; padding-bottom: 2px;">
-              ${data.authorizedBy || 'Rev. Dr. Emmanuel Appiah'}
+              ${data.authorizedBy || AuthService.getCurrentUser()?.fullName || 'Headmaster'}
             </div>
             <span style="font-size: 8.5px; text-transform: uppercase; color: #64748b; font-weight: 700; display: block; margin-top: 2px;">Headmaster & Directorate Sign-Off</span>
           </td>
@@ -959,7 +960,7 @@ export function printTimetableGazette(data: TimetableGazettePrintData): void {
   const days = Object.keys(schedule);
   const className = data.classGrade || data.className || 'Master Timetable';
   const effective = data.officialGazetteSignOff?.effectiveDate || data.effectiveDate || 'Current Term';
-  const headmaster = data.officialGazetteSignOff?.headmaster || data.headmasterName || 'Rev. Dr. Emmanuel Appiah';
+  const headmaster = data.officialGazetteSignOff?.headmaster || data.headmasterName || AuthService.getCurrentUser()?.fullName || 'Headmaster';
 
   const rows = days.map(day => {
     const slots = (schedule as any)[day] || [];
@@ -1165,7 +1166,7 @@ export function printTerminalReportCard(data: TerminalReportCardPrintData): void
         <tr>
           <td style="font-size: 8px; color: #94a3b8;">Compliant with Ghana National Association of Private Schools & GES Standards.</td>
           <td style="text-align: right;">
-            <span class="font-serif" style="font-size: 11px; font-weight: 700; font-style: italic; color: #1e1b4b;">Rev. Dr. Emmanuel Appiah</span>
+            <span class="font-serif" style="font-size: 11px; font-weight: 700; font-style: italic; color: #1e1b4b;">${AuthService.getCurrentUser()?.fullName || 'Headmaster'}</span>
             <span style="font-size: 7.5px; text-transform: uppercase; color: #64748b; display: block;">Headmaster Signature & Stamp</span>
           </td>
         </tr>
@@ -1329,7 +1330,7 @@ export function printInspectionReport(data: InspectionReportPrintData): void {
         <tr>
           <td style="font-size: 8px; color: #94a3b8;">Official RPS Headmaster Inspection Archive.</td>
           <td style="text-align: right;">
-            <span class="font-serif" style="font-size: 11px; font-weight: 700; font-style: italic; color: #1e1b4b;">${data.vettedBy || 'Rev. Dr. Emmanuel Appiah'}</span>
+            <span class="font-serif" style="font-size: 11px; font-weight: 700; font-style: italic; color: #1e1b4b;">${data.vettedBy || AuthService.getCurrentUser()?.fullName || 'Headmaster'}</span>
             <span style="font-size: 7.5px; text-transform: uppercase; color: #64748b; display: block;">Headmaster Signature</span>
           </td>
         </tr>

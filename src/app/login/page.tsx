@@ -24,19 +24,19 @@ function LoginForm() {
 
   const heroSlides = [
     {
-      image: "https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=1600",
+      image: "/IMG_3023.JPG.jpeg",
       headline: "Nurturing Character & Intellectual Brilliance",
       subline: "From Crèche through Junior High School, shaping the next generation of Ghanaian leaders in Ga West, Greater Accra.",
       tag: "Academic Excellence"
     },
     {
-      image: "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=1600",
+      image: "/IMG_3064.JPG.jpeg",
       headline: "Modern STEAM Labs & 40-Node CBT Center",
       subline: "Equipping pupils with computational literacy, robotics, and real-time computer-based examination readiness.",
       tag: "Technological Edge"
     },
     {
-      image: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&q=80&w=1600",
+      image: "/IMG_2191.jpg",
       headline: "Holistic Pupil Care & Safe Fleet Logistics",
       subline: "GPS-monitored student transit, on-campus health clinic, and dedicated faculty-parent communication.",
       tag: "Child Flourishing"
