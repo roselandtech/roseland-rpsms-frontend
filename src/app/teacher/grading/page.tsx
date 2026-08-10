@@ -17,23 +17,16 @@ interface StudentGrade {
 }
 
 export default function TeacherGrading() {
-  const [subject, setSubject] = useState('Mathematics');
-  const [availableSubjects, setAvailableSubjects] = useState<string[]>([
-    'Mathematics',
-    'English Language',
-    'Integrated Science',
-    'Computing / ICT',
-    'Social Studies',
-    'Creative Arts & Design',
-    'French Language',
-    'Religious & Moral Education (RME)'
-  ]);
+  const [subject, setSubject] = useState('');
+  const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
   const [assignedClass, setAssignedClass] = useState('');
   const [classList, setClassList] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [isCbtModalOpen, setIsCbtModalOpen] = useState(false);
   const [grades, setGrades] = useState<StudentGrade[]>([]);
+  const [activeTerm, setActiveTerm] = useState('Active Term Not Found');
+  const [activeYear, setActiveYear] = useState('N/A');
 
   // 1. Initial Class and Subject context resolution
   useEffect(() => {
@@ -42,29 +35,46 @@ export default function TeacherGrading() {
         const user = AuthService.getCurrentUser();
         let targetClass = user?.assignedClass || '';
 
-        const classRes = await RoselandApi.sis.getClasses();
-        const available = Array.isArray(classRes?.data) ? classRes.data : Array.isArray(classRes) ? classRes : [];
+        let available: {id: string, name: string}[] = [];
+        if (user) {
+          try {
+            const alloc = await RoselandApi.academic.getTeacherAllocation(user.email || user.username || user.id);
+            // Combine assignedClasses and formClass to ensure they have access to all their classes
+            const allowedClasses = new Set<string>();
+            if (alloc?.formClass) allowedClasses.add(alloc.formClass);
+            if (alloc?.assignedClasses && Array.isArray(alloc.assignedClasses)) {
+              alloc.assignedClasses.forEach((c: string) => allowedClasses.add(c));
+            }
+            available = Array.from(allowedClasses).map(c => ({ id: c, name: c }));
+          } catch (allocErr) {
+            console.warn("Could not fetch specific teacher allocation, falling back to empty list.", allocErr);
+          }
+        }
+
         setClassList(available);
 
+        // Fallback default selection
         if (!targetClass && available.length > 0) {
           targetClass = available[0].name;
+        } else if (targetClass && !available.find(c => c.name === targetClass) && available.length > 0) {
+          // If the cached assigned class is no longer in their allowed list, force select the first valid one
+          targetClass = available[0].name;
         }
+
         setAssignedClass(targetClass);
 
-        // Fetch subjects
+        // Subjects are now dynamically loaded when assignedClass changes.
+
         try {
-          const subRes = await RoselandApi.academic.getSubjects();
-          const subList = Array.isArray(subRes?.data) ? subRes.data : Array.isArray(subRes) ? subRes : [];
-          if (subList.length > 0) {
-            const names = subList.map((s: any) => s.name || s.subject_name).filter(Boolean);
-            if (names.length > 0) {
-              setAvailableSubjects(names);
-              if (!names.includes(subject)) {
-                setSubject(names[0]);
-              }
-            }
+          const calRes = await RoselandApi.academic.calendar.getCurrentState();
+          if (calRes && calRes.academic_term) {
+            setActiveTerm(calRes.academic_term.name || 'Unknown Term');
+            setActiveYear(calRes.academic_year?.name || 'Unknown Year');
           }
-        } catch {}
+        } catch(err) {
+            setActiveTerm('No Active Term');
+            setActiveYear('');
+        }
       } catch (err) {
         console.warn("Failed to load class registry", err);
       }
@@ -80,14 +90,18 @@ export default function TeacherGrading() {
       const studentsRes = await RoselandApi.sis.getStudents({ class_grade: assignedClass });
       const studentList = Array.isArray(studentsRes?.data) ? studentsRes.data : Array.isArray(studentsRes) ? studentsRes : [];
 
-      // 2. Fetch Scores from Academic Service
-      const scoresRes = await RoselandApi.academic.getScores({ classGrade: assignedClass, subject });
-      const scoreMap: Record<string, any> = {};
-      if (scoresRes && Array.isArray(scoresRes)) {
-        scoresRes.forEach((s: any) => {
-          const idx = s.student_index_no || s.studentIndexNo;
-          if (idx) scoreMap[idx] = s;
-        });
+      // 2. Fetch Scores from Academic Service (wrap in try-catch to avoid failing student fetch if calendar is missing)
+      let scoreMap: Record<string, any> = {};
+      try {
+        const scoresRes = await RoselandApi.academic.getScores({ classGrade: assignedClass, subject });
+        if (scoresRes && Array.isArray(scoresRes)) {
+          scoresRes.forEach((s: any) => {
+            const idx = s.student_index_no || s.studentIndexNo;
+            if (idx) scoreMap[idx] = s;
+          });
+        }
+      } catch(err) {
+        console.warn("Could not fetch academic scores (likely no active academic term). Proceeding with empty scores.");
       }
 
       if (studentList.length > 0) {
@@ -120,6 +134,31 @@ export default function TeacherGrading() {
     loadGradebook();
   }, [loadGradebook]);
 
+  // Dynamic Subject Population based on Curriculum Mapping
+  useEffect(() => {
+    const loadCurriculum = async () => {
+      if (!assignedClass) return;
+      try {
+        const res = await RoselandApi.academic.curriculum.getForClass(assignedClass);
+        if (res && Array.isArray(res) && res.length > 0) {
+          const names = res.map((s: any) => s.subject_name);
+          setAvailableSubjects(names);
+          if (!names.includes(subject)) {
+            setSubject(names[0]);
+          }
+        } else {
+          setAvailableSubjects([]);
+          setSubject('');
+        }
+      } catch (err) {
+        console.warn("Failed to load class curriculum", err);
+        setAvailableSubjects([]);
+        setSubject('');
+      }
+    };
+    loadCurriculum();
+  }, [assignedClass]);
+
   const updateScore = async (id: string, field: keyof Omit<StudentGrade, 'id' | 'name'>, value: number) => {
     const val = Math.max(0, isNaN(value) ? 0 : value);
     const updated = grades.map(g => g.id === id ? { ...g, [field]: val } : g);
@@ -135,8 +174,8 @@ export default function TeacherGrading() {
         student_name: studentRec.name,
         class_grade: assignedClass,
         subject,
-        academic_term: 'Term 2',
-        academic_year: '2025/2026',
+        academic_term: activeTerm,
+        academic_year: activeYear,
         classwork_10: studentRec.test1,
         project_10: studentRec.project,
         midterm_10: studentRec.test2,
@@ -238,7 +277,7 @@ export default function TeacherGrading() {
         </div>
 
         <div className="flex items-center gap-4 text-xs font-bold text-gray-500">
-          <span>Term: <strong className="text-brand-textMain">Term 2 (2025/2026)</strong></span>
+          <span>Term: <strong className="text-brand-textMain">{activeTerm} {activeYear ? `(${activeYear})` : ''}</strong></span>
           <span>•</span>
           <span className="text-brand-violet font-mono">{grades.length} Scholars Listed</span>
         </div>

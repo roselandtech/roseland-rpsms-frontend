@@ -16,6 +16,7 @@ export interface StaffMember {
   rawRole: 'SUPER_ADMIN' | 'HEADMASTER' | 'TEACHER' | 'BURSAR' | 'SUPPORT';
   department: 'Teaching' | 'Admin' | 'Transport' | 'Support';
   assignedClass?: string;
+  assignedClasses?: string[];
   subjects?: string[];
   ntcLicense?: string;
   cpdPoints?: number;
@@ -38,6 +39,7 @@ export default function AdminStaffPage() {
 
   // Allocation Form State
   const [allocClass, setAllocClass] = useState('');
+  const [allocAssignedClasses, setAllocAssignedClasses] = useState<string[]>([]);
   const [allocSubjects, setAllocSubjects] = useState<string[]>([]);
   const [allocPeriods, setAllocPeriods] = useState(22);
 
@@ -48,9 +50,10 @@ export default function AdminStaffPage() {
     username: '',
     phone: '+233 24 ',
     role: 'TEACHER' as 'SUPER_ADMIN' | 'HEADMASTER' | 'TEACHER' | 'BURSAR' | 'SUPPORT',
-    password: 'password123',
+    password: '',
     ntcLicense: '',
     assignedClass: '',
+    assignedClasses: [] as string[],
     subjects: [] as string[],
     weeklyPeriods: 22,
     avatar: ''
@@ -102,6 +105,7 @@ export default function AdminStaffPage() {
 
           const alloc = allocMap.get(u.email?.toLowerCase()) || allocMap.get(u.fullName?.toLowerCase());
           const subs = alloc?.subjects || [];
+          const aClasses = alloc?.assignedClasses || [];
           const periods = alloc?.weeklyPeriods || 0;
           const assignedForm = u.assignedClass || alloc?.formClass || undefined;
 
@@ -120,6 +124,7 @@ export default function AdminStaffPage() {
             rawRole: r,
             department: dept,
             assignedClass: assignedForm,
+            assignedClasses: aClasses,
             subjects: subs,
             ntcLicense: u.ntcLicense || undefined,
             cpdPoints: u.cpdPoints || undefined,
@@ -151,6 +156,7 @@ export default function AdminStaffPage() {
   const handleOpenAllocation = (staff: StaffMember) => {
     setAllocatingStaff(staff);
     setAllocClass(staff.assignedClass || '');
+    setAllocAssignedClasses(staff.assignedClasses && staff.assignedClasses.length > 0 ? staff.assignedClasses : (staff.assignedClass ? [staff.assignedClass] : []));
     setAllocSubjects(staff.subjects && staff.subjects.length > 0 ? staff.subjects : (registeredSubjects.length > 0 ? [registeredSubjects[0].name] : []));
     setAllocPeriods(staff.assignedPeriods || 22);
   };
@@ -172,7 +178,8 @@ export default function AdminStaffPage() {
         teacher_id: allocatingStaff.id,
         teacher_name: allocatingStaff.name,
         teacher_email: allocatingStaff.email,
-        form_class: allocClass,
+        form_class: allocClass || undefined,
+        assigned_classes: allocAssignedClasses,
         subjects: allocSubjects,
         weekly_periods: allocPeriods
       });
@@ -216,7 +223,8 @@ export default function AdminStaffPage() {
         await RoselandApi.academic.saveFacultyAllocation({
           teacher_name: onboardForm.fullName,
           teacher_email: onboardForm.email,
-          form_class: onboardForm.assignedClass,
+          form_class: onboardForm.assignedClass || undefined,
+          assigned_classes: onboardForm.assignedClasses,
           subjects: onboardForm.subjects,
           weekly_periods: onboardForm.weeklyPeriods
         });
@@ -232,9 +240,10 @@ export default function AdminStaffPage() {
         username: '',
         phone: '+233 24 ',
         role: 'TEACHER',
-        password: 'password123',
+        password: '',
         ntcLicense: '',
         assignedClass: '',
+        assignedClasses: [],
         subjects: registeredSubjects.length > 0 ? [registeredSubjects[0].name] : [],
         weeklyPeriods: 22,
         avatar: ''
@@ -785,6 +794,42 @@ export default function AdminStaffPage() {
                     <option key={cls.id} value={cls.name}>{cls.name} (Form Master)</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-brand-textMain block mb-2">
+                  Assigned Teaching Classes (Select all classes taught by this teacher)
+                </label>
+                <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto p-2 bg-brand-bg rounded-xl border border-gray-200">
+                  {classes.length > 0 ? (
+                    classes.map(clsObj => {
+                      const cls = clsObj.name;
+                      const isSelected = allocAssignedClasses.includes(cls);
+                      return (
+                        <button
+                          key={clsObj.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setAllocAssignedClasses(prev => prev.filter(c => c !== cls));
+                            } else {
+                              setAllocAssignedClasses(prev => [...prev, cls]);
+                            }
+                          }}
+                          className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-brand-violet text-white shadow-xs'
+                              : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          {isSelected ? `✓ ${cls}` : cls}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <p className="text-xs text-gray-400 p-2">No classes available.</p>
+                  )}
+                </div>
               </div>
 
               <div>

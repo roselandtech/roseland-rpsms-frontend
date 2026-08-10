@@ -25,6 +25,7 @@ import { useClasses } from '@/hooks/useClasses';
 import { useSubjects } from '@/hooks/useSubjects';
 
 import { useEffect } from 'react';
+import Modal from '@/components/ui/Modal';
 
 export default function CbtAssessmentBuilderModal({
   isOpen,
@@ -67,8 +68,6 @@ export default function CbtAssessmentBuilderModal({
   ]);
 
   const [activeQuestionIdx, setActiveQuestionIdx] = useState(0);
-
-  if (!isOpen) return null;
 
   const currentQ = questions[activeQuestionIdx] || questions[0];
 
@@ -276,17 +275,9 @@ export default function CbtAssessmentBuilderModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl border border-gray-100 animate-fade-in relative max-h-[92vh] flex flex-col justify-between">
+    <Modal isOpen={isOpen} onClose={onClose} size="4xl" hideHeader bodyClassName="!p-0">
+      <div className="bg-white flex flex-col justify-between h-full p-6 sm:p-8">
         
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center text-sm cursor-pointer"
-        >
-          ✕
-        </button>
-
         {/* Modal Header */}
         <div className="border-b border-gray-100 pb-4 shrink-0">
           <span className="text-xs font-bold uppercase tracking-wider text-brand-violet">
@@ -531,6 +522,6 @@ export default function CbtAssessmentBuilderModal({
         </div>
 
       </div>
-    </div>
+    </Modal>
   );
 }

@@ -100,13 +100,27 @@ export const RoselandApi = {
 
   // 2. Academic Core & SBA Engine (Port 8082 via Gateway)
   academic: {
+    curriculum: {
+      getForClass: (classGrade: string) => 
+        apiRequest(`/api/v1/academic/curriculum/${encodeURIComponent(classGrade)}`),
+      bulkAssign: (classGrade: string, subjects: any[]) =>
+        apiRequest(`/api/v1/academic/curriculum/${encodeURIComponent(classGrade)}`, {
+          method: 'POST',
+          body: JSON.stringify(subjects),
+        }),
+      removeSubject: (id: string) =>
+        apiRequest(`/api/v1/academic/curriculum/${id}`, {
+          method: 'DELETE',
+        }),
+    },
     getFacultyAllocations: () => apiRequest('/api/v1/academic/faculty/allocations'),
     getTeacherAllocation: (identifier: string) => apiRequest(`/api/v1/academic/faculty/allocation/${encodeURIComponent(identifier)}`),
     saveFacultyAllocation: (allocationData: {
       teacher_id?: string;
       teacher_name: string;
       teacher_email?: string;
-      form_class: string;
+      form_class?: string;
+      assigned_classes: string[];
       subjects: string[];
       weekly_periods?: number;
     }) =>
@@ -193,8 +207,12 @@ export const RoselandApi = {
         body: JSON.stringify(body),
       });
     },
-    getReportStatus: (term = 'Term 2', academicYear = '2025/2026') =>
-      apiRequest(`/api/v1/academic/reports/status?term=${encodeURIComponent(term)}&academic_year=${encodeURIComponent(academicYear)}`),
+    getReportStatus: (term?: string, academicYear?: string) => {
+      const p = new URLSearchParams();
+      if (term) p.append('term', term);
+      if (academicYear) p.append('academic_year', academicYear);
+      return apiRequest(`/api/v1/academic/reports/status${p.toString() ? '?' + p.toString() : ''}`);
+    },
     signOffReports: (payload: { class_grade: string; term?: string; academic_year?: string; signed_by?: string }) =>
       apiRequest('/api/v1/academic/reports/sign-off', {
         method: 'POST',
@@ -231,10 +249,19 @@ export const RoselandApi = {
       }),
     getPromotionGazette: (classGrade?: string) =>
       apiRequest(`/api/v1/academic/promotion/gazette${classGrade ? `?class_grade=${encodeURIComponent(classGrade)}` : ''}`),
-    getTerminalReportCard: (studentIndexNo: string, term = 'Term 2', academicYear = '2025/2026') =>
-      apiRequest(`/api/v1/academic/reports/card/${studentIndexNo}?term=${term}&academic_year=${academicYear}`),
-    getRosterTemplate: (classGrade: string, academicYear = '2023/2024', academicTerm = 'Term 1') =>
-      apiRequest(`/api/v1/academic/reports/roster-template?class_grade=${encodeURIComponent(classGrade)}&academic_year=${encodeURIComponent(academicYear)}&academic_term=${encodeURIComponent(academicTerm)}`),
+    getTerminalReportCard: (studentIndexNo: string, term?: string, academicYear?: string) => {
+      const p = new URLSearchParams();
+      if (term) p.append('term', term);
+      if (academicYear) p.append('academic_year', academicYear);
+      return apiRequest(`/api/v1/academic/reports/card/${studentIndexNo}${p.toString() ? '?' + p.toString() : ''}`);
+    },
+    getRosterTemplate: (classGrade: string, academicYear?: string, academicTerm?: string) => {
+      const p = new URLSearchParams();
+      p.append('class_grade', classGrade);
+      if (academicYear) p.append('academic_year', academicYear);
+      if (academicTerm) p.append('academic_term', academicTerm);
+      return apiRequest(`/api/v1/academic/reports/roster-template?${p.toString()}`);
+    },
     bulkImportHistoricalReports: (payload: {
       academic_year: string;
       academic_term: string;
@@ -417,6 +444,20 @@ export const RoselandApi = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    calendar: {
+      getCurrentState: () => apiRequest('/api/v1/academic/calendar/current'),
+      getYears: () => apiRequest('/api/v1/academic/calendar/years'),
+      createYear: (data: { name: string; start_date: string; end_date: string }) => 
+        apiRequest('/api/v1/academic/calendar/years', { method: 'POST', body: JSON.stringify(data) }),
+      getTerms: (yearId?: string) => 
+        apiRequest(`/api/v1/academic/calendar/terms${yearId ? `?year_id=${yearId}` : ''}`),
+      createTerm: (data: { academic_year_id: string; name: string; start_date: string; end_date: string }) => 
+        apiRequest('/api/v1/academic/calendar/terms', { method: 'POST', body: JSON.stringify(data) }),
+      getEvents: (termId?: string) => 
+        apiRequest(`/api/v1/academic/calendar/events${termId ? `?term_id=${termId}` : ''}`),
+      createEvent: (data: { academic_term_id?: string; title: string; start_date: string; end_date: string; event_type: string; description?: string }) => 
+        apiRequest('/api/v1/academic/calendar/events', { method: 'POST', body: JSON.stringify(data) }),
+    },
   },
 
   // 3. SIS & Admissions (Port 8083 via Gateway)

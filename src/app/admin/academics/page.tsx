@@ -8,6 +8,7 @@ import { RoselandApi } from '@/lib/api';
 import { useSubjects } from '@/hooks/useSubjects';
 import HistoricalReportsImportModal from '@/components/academics/HistoricalReportsImportModal';
 import { printTimetableGazette, printStudentReportCard } from '@/lib/pdf-printer';
+import ClassSubjectMapping from '@/components/academics/ClassSubjectMapping';
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as const;
 type Weekday = typeof WEEKDAYS[number];
@@ -244,7 +245,7 @@ const EMPTY_SLOT_DRAFT = {
 };
 
 export default function AdminAcademicsPage() {
-  const [activeTab, setActiveTab] = useState<'streams' | 'subjects' | 'timetable' | 'reports'>('streams');
+  const [activeTab, setActiveTab] = useState<'streams' | 'subjects' | 'mapping' | 'timetable' | 'reports'>('streams');
 
   // Historical Report Cards & Attendance Digitize Modal State
   const [isHistoricalImportOpen, setIsHistoricalImportOpen] = useState(false);
@@ -1597,6 +1598,7 @@ export default function AdminAcademicsPage() {
         {([
           { key: 'streams', icon: 'ph-chalkboard-teacher', label: 'Class Streams & Form Masters' },
           { key: 'subjects', icon: 'ph-book-bookmark', label: 'Curriculum & Subjects Registry' },
+          { key: 'mapping', icon: 'ph-tree-structure', label: 'Class Curriculum Map' },
           { key: 'timetable', icon: 'ph-calendar-check', label: 'Master Timetable & Period Scheduler' },
           { key: 'reports', icon: 'ph-file-text', label: 'Report Cards Sign-Off Console' },
         ] as const).map((tab) => (
@@ -2074,6 +2076,13 @@ export default function AdminAcademicsPage() {
       })()}
 
       {/* ========================================================================= */}
+      {/* 2.5 CLASS CURRICULUM MAPPING */}
+      {/* ========================================================================= */}
+      {activeTab === 'mapping' && (
+        <ClassSubjectMapping />
+      )}
+
+      {/* ========================================================================= */}
       {/* 3. MASTER TIMETABLE & PERIOD SCHEDULER STUDIO */}
       {/* ========================================================================= */}
       {activeTab === 'timetable' && (
@@ -2355,7 +2364,7 @@ export default function AdminAcademicsPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* 3. REPORT CARDS SIGN-OFF CONSOLE */}
+      {/* 4. REPORT CARDS SIGN-OFF CONSOLE */}
       {/* ========================================================================= */}
       {activeTab === 'reports' && (
         <div className="space-y-6">

@@ -43,7 +43,8 @@ export default function TeacherAssignments() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
 
   const [newTitle, setNewTitle] = useState('');
-  const [newSubject, setNewSubject] = useState('Mathematics');
+  const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
+  const [newSubject, setNewSubject] = useState('');
   const [newDueDate, setNewDueDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 3);
@@ -74,6 +75,18 @@ export default function TeacherAssignments() {
             setClassScholarCount(list.length);
           } catch {}
         }
+        
+        try {
+          const subRes = await RoselandApi.academic.getSubjects();
+          const subList = Array.isArray(subRes?.data) ? subRes.data : Array.isArray(subRes) ? subRes : [];
+          if (subList.length > 0) {
+            const names = subList.map((s: any) => s.name || s.subject_name).filter(Boolean);
+            if (names.length > 0) {
+              setAvailableSubjects(names);
+              setNewSubject(names[0]);
+            }
+          }
+        } catch {}
       } catch (err) {
         console.warn("Failed to load class registry", err);
       }
@@ -385,10 +398,13 @@ export default function TeacherAssignments() {
                     onChange={(e) => setNewSubject(e.target.value)}
                     className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2.5 outline-none focus:border-brand-violet font-bold"
                   >
-                    <option>Mathematics</option>
-                    <option>English Language</option>
-                    <option>Integrated Science</option>
-                    <option>Computing / ICT</option>
+                    {availableSubjects.length > 0 ? (
+                      availableSubjects.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))
+                    ) : (
+                      <option value="">No Subjects Found</option>
+                    )}
                   </select>
                 </div>
                 <div>
