@@ -67,7 +67,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <strong className="block text-brand-textMain font-bold">Physical Location</strong>
-                    <span className="text-xs text-brand-textMuted">Ga West Municipal District, Greater Accra, Ghana</span>
+                    <span className="text-xs text-brand-textMuted">PJ9H+FCX, Adjen Kotoku, Greater Accra, Ghana</span>
                   </div>
                 </div>
 

@@ -126,7 +126,7 @@ function LoginForm() {
                 {schoolName}
               </span>
               <span className="text-[10px] xl:text-[11px] font-semibold text-amber-400 tracking-wider uppercase block">
-                Ga West Municipal • GES Accredited
+                Adjen Kotoku • GES Accredited
               </span>
             </div>
           </Link>
@@ -186,7 +186,7 @@ function LoginForm() {
             </div>
           </div>
 
-          <span className="text-[11px] text-gray-400 italic">Pokuase ACP Estates, Accra</span>
+          <span className="text-[11px] text-gray-400 italic">PJ9H+FCX, Adjen Kotoku</span>
         </div>
       </div>
 
@@ -199,7 +199,7 @@ function LoginForm() {
             <div className="w-8 h-8 rounded-lg border border-gray-200 p-1 flex items-center justify-center">
               <img src="/logo.png" alt="Roseland" className="w-full h-full object-contain" />
             </div>
-            <span className="font-serif font-bold text-xs sm:text-sm text-gray-900">Roselyn</span>
+            <span className="font-serif font-bold text-xs sm:text-sm text-gray-900">Roseland</span>
           </Link>
           <Link href="/" className="text-[10px] uppercase tracking-widest text-gray-500 font-bold hover:text-gray-900 transition-colors">
             Return Home
@@ -220,7 +220,7 @@ function LoginForm() {
                 Welcome to
               </span>
               <h1 className="font-serif font-bold text-3xl text-gray-900">
-                Roselyn
+                Roseland
               </h1>
             </div>
 

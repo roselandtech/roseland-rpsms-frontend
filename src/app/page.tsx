@@ -9,7 +9,7 @@ export const revalidate = 60;
 export default async function Home() {
   let schoolName = "The Roseland Preparatory School";
   let rawMotto = "Knowledge & Humility";
-  let location = "Kotoku, Accra";
+  let location = "PJ9H+FCX, Adjen Kotoku";
   let email = "info@roselandprep.edu.gh";
   let phone = "+233243968988";
   let mottoStart = "Building a Foundation for";

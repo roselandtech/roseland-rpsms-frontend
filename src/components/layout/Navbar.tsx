@@ -156,7 +156,7 @@ export default function Navbar({ initialSchoolName, initialSchoolMotto }: Navbar
               <strong className="text-brand-yellow font-semibold uppercase tracking-wider text-[10px]">2026/2027 Admissions:</strong> Open for Crèche through JHS
             </span>
             <span className="text-white/40">|</span>
-            <span className="text-gray-300 text-xs hidden md:inline">Ga West Municipality, Accra, Ghana</span>
+            <span className="text-gray-300 text-xs hidden md:inline">PJ9H+FCX, Adjen Kotoku</span>
           </div>
           <div className="flex items-center gap-5 font-medium">
             <a href="tel:+233243968988" className="hover:text-brand-yellow transition-colors flex items-center gap-1">

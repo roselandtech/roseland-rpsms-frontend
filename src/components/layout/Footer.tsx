@@ -22,7 +22,7 @@ export default function Footer({
   const currentYear = new Date().getFullYear();
   const [schoolName, setSchoolName] = useState(initialSchoolName || "Roseland Preparatory School");
   const [motto, setMotto] = useState(initialMotto || "Knowledge & Humility");
-  const [location, setLocation] = useState(initialLocation || "Kotoku, Accra");
+  const [location, setLocation] = useState(initialLocation || "PJ9H+FCX, Adjen Kotoku");
   const [email, setEmail] = useState(initialEmail || "info@roselandprep.edu.gh");
   const [phone, setPhone] = useState(initialPhone || "+233243968988");
 
@@ -144,7 +144,7 @@ export default function Footer({
 
             <div className="pt-4 border-t border-gray-800/80 text-xs text-gray-400 space-y-2">
               <p className="flex items-center gap-2">
-                <i className="ph-fill ph-map-pin text-brand-violet"></i> Ga West Municipality, Accra
+                <i className="ph-fill ph-map-pin text-brand-violet"></i> PJ9H+FCX, Adjen Kotoku
               </p>
               <p className="flex items-center gap-2">
                 <i className="ph-fill ph-envelope text-brand-violet"></i> info@roselandprep.edu.gh
