@@ -112,7 +112,7 @@ export default function AdminFinancePage() {
   const fetchFinanceData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [summaryRes, invoicesRes, txRes, studentsRes] = await Promise.allSettled([
+      const [summaryRes, invoicesRes, txRes, studentsRes, calendarRes] = await Promise.allSettled([
         RoselandApi.finance.getSummary(),
         RoselandApi.finance.getInvoices(),
         RoselandApi.finance.getTransactions(),

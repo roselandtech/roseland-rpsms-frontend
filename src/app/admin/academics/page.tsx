@@ -40,6 +40,7 @@ interface AssessmentScore {
   classwork_10: number;
   homework_10: number;
   midterm_10: number;
+  attendance_10?: number;
   sba_30: number;
   terminal_exam_70: number;
   final_score_100: number;
@@ -666,7 +667,7 @@ function AdminAcademicsContent() {
           ? Math.round((scores.reduce((sum, s) => sum + s.final_score_100, 0) / scores.length) * 10) / 10
           : 0;
         const attendanceAvg = scores.length
-          ? Math.round((scores.reduce((sum, s) => sum + s.attendance_10, 0) / scores.length) * 10) / 10
+          ? Math.round((scores.reduce((sum, s) => sum + (s.attendance_10 ?? 0), 0) / scores.length) * 10) / 10
           : 0;
         return {
           indexNo,
