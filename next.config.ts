@@ -5,6 +5,11 @@ const backendUrl = rawBackendUrl.replace(/\/$/, "");
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    qualities: [75, 80],
+    minimumCacheTTL: 86400,
+  },
   async rewrites() {
     return [
       {

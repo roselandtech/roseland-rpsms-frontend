@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { AuthService, RoselandUser } from '@/lib/auth';
@@ -18,23 +19,59 @@ interface NavGroup {
   items: SubNavItem[];
 }
 
-export default function Navbar() {
+export interface NavbarProps {
+  initialSchoolName?: string;
+  initialSchoolMotto?: string;
+}
+
+export default function Navbar({ initialSchoolName, initialSchoolMotto }: NavbarProps = {}) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [openMobileAccordion, setOpenMobileAccordion] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<RoselandUser | null>(null);
+  const [schoolName, setSchoolName] = useState(initialSchoolName || "Roseland Preparatory School");
+  const [schoolMotto, setSchoolMotto] = useState(initialSchoolMotto || "Knowledge & Humility");
   const pathname = usePathname();
   const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isScrolledRef = useRef(false);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const nextScrolled = window.scrollY > 20;
+          if (isScrolledRef.current !== nextScrolled) {
+            isScrolledRef.current = nextScrolled;
+            setIsScrolled(nextScrolled);
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
-    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
     setCurrentUser(AuthService.getCurrentUser());
+
+    if (!initialSchoolName) {
+      // Fetch global branding dynamically
+      import('@/lib/api').then(({ RoselandApi }) => {
+        RoselandApi.cms.getLandingContent().then(data => {
+          if (data?.institution?.name) {
+            const name = data.institution.name;
+            setSchoolName(name);
+            if (data.institution.tagline) {
+              setSchoolMotto(data.institution.tagline);
+            }
+          }
+        }).catch(() => {});
+      });
+    }
+
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [initialSchoolName]);
 
   // Close menus on route change & refresh user session
   useEffect(() => {
@@ -122,8 +159,8 @@ export default function Navbar() {
             <span className="text-gray-300 text-xs hidden md:inline">Ga West Municipality, Accra, Ghana</span>
           </div>
           <div className="flex items-center gap-5 font-medium">
-            <a href="tel:+233200000000" className="hover:text-brand-yellow transition-colors flex items-center gap-1">
-              <i className="ph-fill ph-phone text-sm text-brand-yellow"></i> +233 20 000 0000
+            <a href="tel:+233243968988" className="hover:text-brand-yellow transition-colors flex items-center gap-1">
+              <i className="ph-fill ph-phone text-sm text-brand-yellow"></i> +233243968988
             </a>
           </div>
         </div>
@@ -139,29 +176,29 @@ export default function Navbar() {
           <div className="flex justify-between items-center h-16 sm:h-20">
             {/* School Logo & Brand */}
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center p-1 shadow-md shadow-brand-violet/10 border border-gray-100 group-hover:scale-105 transition-transform shrink-0 overflow-hidden">
-                <img src="/logo.png" alt="The Roseland Preparatory School Crest" className="w-full h-full object-contain" />
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center p-1 shadow-md shadow-brand-violet/10 border border-gray-100 group-hover:scale-105 transition-transform shrink-0 overflow-hidden relative">
+                <Image src="/logo.png" alt="School Crest" width={40} height={40} className="w-full h-full object-contain" priority />
               </div>
               <div>
                 <span className="font-serif font-bold text-lg sm:text-xl tracking-tight text-brand-textMain block leading-tight group-hover:text-brand-violet transition-colors">
-                  The Roseland Prep
+                  {schoolName}
                 </span>
-                <span className="text-[10px] uppercase tracking-widest text-brand-violet font-bold block">
-                  Excellence • Integrity
+                <span className="text-[10px] uppercase tracking-widest text-brand-violet font-bold block truncate max-w-[200px]">
+                  {schoolMotto}
                 </span>
               </div>
             </Link>
 
             {/* Desktop Navigation Links */}
             <div className="hidden lg:flex items-center space-x-1 xl:space-x-2">
-              <Link
+              {/* <Link
                 href="/"
                 className={`px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
                   pathname === '/' ? 'text-brand-violet bg-brand-violetLight/50' : 'text-brand-textMain hover:text-brand-violet hover:bg-gray-50'
                 }`}
               >
                 Home
-              </Link>
+              </Link> */}
 
               {navGroups.map((group) => {
                 const isActive = pathname.startsWith(group.href || '');
@@ -255,11 +292,7 @@ export default function Navbar() {
                     href={AuthService.getPortalUrlForUser(currentUser)}
                     className="px-4 py-2 text-xs font-bold text-brand-violet bg-brand-violetLight rounded-xl hover:bg-brand-violet hover:text-white transition-all flex items-center gap-2"
                   >
-                    {currentUser.avatar ? (
-                      <img src={currentUser.avatar} alt={currentUser.fullName} className="w-5 h-5 rounded-full object-cover" />
-                    ) : (
-                      <i className="ph ph-user-circle text-base"></i>
-                    )}
+                    <i className="ph ph-user-circle text-base"></i>
                     <span>{currentUser.fullName.split(' ')[0]} ({currentUser.role.substring(0, 5)})</span>
                   </Link>
                   <button

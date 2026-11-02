@@ -219,7 +219,9 @@ export default function TeacherRoster() {
               <div>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3.5">
-                    <img src={scholar.avatar} alt={scholar.name} className="w-12 h-12 rounded-2xl object-cover border border-gray-200" />
+                    <div className="w-12 h-12 bg-brand-violet/10 flex items-center justify-center rounded-2xl border border-gray-200">
+                      <i className="ph-bold ph-student text-brand-violet text-xl"></i>
+                    </div>
                     <div>
                       <h4 className="font-serif font-bold text-base text-brand-textMain leading-tight">{scholar.name}</h4>
                       <span className="text-[10px] font-mono text-gray-400 font-bold block">{scholar.id}</span>
@@ -401,7 +403,9 @@ export default function TeacherRoster() {
             </button>
 
             <div className="flex items-center gap-4 border-b border-gray-100 pb-5 mb-5">
-              <img src={selectedScholar.avatar} alt={selectedScholar.name} className="w-16 h-16 rounded-2xl object-cover border border-gray-200 shadow-sm" />
+              <div className="w-16 h-16 bg-brand-violet/10 flex items-center justify-center rounded-2xl border border-gray-200 shadow-sm">
+                <i className="ph-bold ph-student text-brand-violet text-3xl"></i>
+              </div>
               <div>
                 <span className="text-xs font-mono font-bold text-brand-violet bg-brand-violetLight px-2 py-0.5 rounded-md">
                   {selectedScholar.id}

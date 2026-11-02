@@ -98,7 +98,7 @@ export default function FAQPage() {
                 Send Us a Message
               </Link>
               <a
-                href="https://wa.me/233200000000"
+                href="https://wa.me/233243968988"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-6 py-3 bg-[#25D366] text-white font-bold rounded-xl hover:bg-[#1EBE5D] text-xs flex items-center gap-1.5"

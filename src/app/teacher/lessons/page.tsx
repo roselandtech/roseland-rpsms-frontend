@@ -23,7 +23,9 @@ interface LessonSchemeRecord {
   objectives?: string;
   starter?: string;
   main_activity?: string;
+  main_duration?: number;
   plenary?: string;
+  plenary_duration?: number;
   differentiation?: string;
   status: 'Pending' | 'Approved' | 'Revision Requested';
   headmaster_notes?: string;
@@ -33,7 +35,6 @@ interface LessonSchemeRecord {
 }
 
 export default function TeacherLessons() {
-  const { classes: classList, isLoading: classesLoading } = useClasses();
   const { subjects: subjectList, loading: subjectsLoading } = useSubjects();
 
   const [activeTab, setActiveTab] = useState<'create' | 'history'>('create');
@@ -41,7 +42,9 @@ export default function TeacherLessons() {
   const [submitting, setSubmitting] = useState(false);
   const [loadingSchemes, setLoadingSchemes] = useState(false);
   const [assignedClass, setAssignedClass] = useState('');
+  const [classList, setClassList] = useState<{ id: string; name: string }[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [allocatedSubjects, setAllocatedSubjects] = useState<string[]>([]);
   
   const [schemes, setSchemes] = useState<LessonSchemeRecord[]>([]);
   const [selectedScheme, setSelectedScheme] = useState<LessonSchemeRecord | null>(null);
@@ -55,27 +58,57 @@ export default function TeacherLessons() {
     objectives: "1. Learners will identify tenths and hundredths on a place value chart.\n2. Learners will convert fractional tenths into standard decimal notation with 100% accuracy.",
     starter: "Teacher displays a 10x10 square grid on the smart screen and shades 35 squares, prompting pupils to state the fractional representation.",
     mainActivity: "In collaborative pairs, pupils shade decimal grids on worksheets to represent 0.4, 0.75, and 0.08, followed by board presentations.",
+    mainDuration: 40,
     plenary: "Quick 3-question formative exit ticket. Peer evaluation of workbook exercises.",
+    plenaryDuration: 15,
     differentiation: "Struggling pupils receive physical base-10 blocks; advanced scholars solve multi-step decimal word problems."
   });
 
-  // Initialize teacher context
+  // Initialize teacher context and strictly allocated classes
   useEffect(() => {
-    const user = AuthService.getCurrentUser();
-    setCurrentUser(user);
-    if (user?.assignedClass) {
-      setAssignedClass(user.assignedClass);
-    } else if (classList.length > 0 && !assignedClass) {
-      setAssignedClass(classList[0].name);
-    }
-  }, [classList, assignedClass]);
+    const init = async () => {
+      const user = AuthService.getCurrentUser();
+      setCurrentUser(user);
+      let targetClass = user?.assignedClass || '';
+      let available: {id: string, name: string}[] = [];
+      
+      if (user) {
+        try {
+          const alloc = await RoselandApi.academic.getTeacherAllocation(user.email || user.username || user.id);
+          
+          if (alloc?.subjects && Array.isArray(alloc.subjects)) {
+              setAllocatedSubjects(alloc.subjects);
+          }
+          
+          const allowedClasses = new Set<string>();
+          if (alloc?.formClass) allowedClasses.add(alloc.formClass);
+          if (alloc?.assignedClasses && Array.isArray(alloc.assignedClasses)) {
+            alloc.assignedClasses.forEach((c: string) => allowedClasses.add(c));
+          }
+          available = Array.from(allowedClasses).map(c => ({ id: c, name: c }));
+        } catch (err) {}
+      }
+      
+      setClassList(available);
+      
+      if (!targetClass && available.length > 0) {
+        targetClass = available[0].name;
+      } else if (targetClass && !available.find(c => c.name === targetClass) && available.length > 0) {
+        targetClass = available[0].name;
+      }
+      
+      setAssignedClass(targetClass);
+    };
+    init();
+  }, []);
 
   // Adjust default subject once subjects load
   useEffect(() => {
-    if (subjectList.length > 0 && !subjectList.some(s => s.name === formData.subject)) {
-      setFormData(prev => ({ ...prev, subject: subjectList[0].name }));
+    const validSubjects = allocatedSubjects.length > 0 ? allocatedSubjects : subjectList.map(s => s.name);
+    if (validSubjects.length > 0 && !validSubjects.includes(formData.subject)) {
+      setFormData(prev => ({ ...prev, subject: validSubjects[0] }));
     }
-  }, [subjectList, formData.subject]);
+  }, [subjectList, allocatedSubjects, formData.subject]);
 
   const loadSchemes = useCallback(async () => {
     try {
@@ -101,70 +134,52 @@ export default function TeacherLessons() {
     loadSchemes();
   }, [loadSchemes]);
 
-  const handleGenerateWithAi = () => {
-    setGeneratingAi(true);
-    toast.loading("Teacher Copilot is drafting standard GES/NaCCA Lesson Scheme...", { id: "ai-gen" });
+  const handleGenerateWithAi = async () => {
+    if (!formData.strand || !formData.subStrand) {
+      toast.error("Please enter a Strand and Sub-Strand first.");
+      return;
+    }
 
-    setTimeout(() => {
-      const subLower = formData.subject.toLowerCase();
-      if (subLower.includes("math")) {
-        setFormData({
+    setGeneratingAi(true);
+    toast.loading("Teacher Copilot is consulting Llama 3 for NaCCA standards...", { id: "ai-gen" });
+
+    try {
+      const response = await fetch("http://localhost:7860/api/v1/ai/generate-lesson-scheme", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           subject: formData.subject,
-          week: formData.week || "Week 1 (Term 2)",
-          strand: "B4.1 Number & Number Sense",
-          subStrand: "B4.1.3 Decimals & Place Value to Hundredths",
-          tlr: "Decimals place value charts, 10x10 grids, base-10 unit cubes, interactive board",
-          objectives: "1. Learners will read, write, and compare decimals up to two decimal places (tenths and hundredths).\n2. Learners will connect concrete fractional representations (e.g. 75/100) to standard decimal notation (0.75).",
-          starter: "Mental Math warmup: Fast-paced call-and-response converting 1/10, 3/10, and 9/10 into decimals.",
-          mainActivity: "Interactive group discovery: Scholars shade 100-grid sheets to visually represent decimal values 0.25, 0.50, and 0.99. Pairs swap grids to verify shaded proportions against the number line.",
-          plenary: "3-Minute Exit Ticket: Scholars write down 3 key concepts learned, 2 questions, and 1 real-world use of decimals (Ghana Cedis & Pesewas).",
-          differentiation: "Remedial tier uses physical base-10 fraction rods. Advanced tier solves multi-step word problems involving currency conversion."
-        });
-      } else if (subLower.includes("science")) {
-        setFormData({
-          subject: formData.subject,
-          week: formData.week || "Week 1 (Term 2)",
-          strand: "B4.2 Cycles (Earth & Living Systems)",
-          subStrand: "B4.2.1 The Water Cycle & Atmospheric Processes",
-          tlr: "Beaker of water, heat plate, mirror/glass lid, ice cubes, illustrated water cycle poster",
-          objectives: "1. Learners will demonstrate the four stages of the water cycle (Evaporation, Condensation, Precipitation, Collection).\n2. Learners will formulate hypotheses explaining cloud formation.",
-          starter: "Observation probe: Teacher places ice cubes on a warm metal tray, prompting learners to describe what forms on the underside.",
-          mainActivity: "Classroom miniature rain-in-a-jar experiment: Small groups observe warm water evaporating inside sealed jars with ice caps, recording condensation droplets in science logbooks.",
-          plenary: "Whole-class synthesis: Choral recitation of water cycle vocabulary and labeling cycle diagrams on smart screen.",
-          differentiation: "Visual learners receive pre-labeled diagram flashcards; advanced scholars explain groundwater aquifer replenishment."
-        });
-      } else if (subLower.includes("english") || subLower.includes("language")) {
-        setFormData({
-          subject: formData.subject,
-          week: formData.week || "Week 1 (Term 2)",
-          strand: "B4.3 Oral Language & Grammar",
-          subStrand: "B4.3.2 Subject-Verb Agreement & Tense Usage",
-          tlr: "Sentence flashcards, audio clips, whiteboard markers, pocket chart",
-          objectives: "1. Learners will identify and correct subject-verb agreement errors in complex sentences.\n2. Learners will construct 5 grammatically sound past continuous sentences.",
-          starter: "Grammar Detective: Pupils spot incorrect verb forms in a humorous paragraph displayed on the board.",
-          mainActivity: "Differentiated pair editing: Scholars collaborate to rewrite short story excerpts applying correct agreement rules, sharing standout sentences.",
-          plenary: "Quickfire verbal challenge: Students conjugate irregular verbs prompted by the teacher.",
-          differentiation: "Peer tutoring for ESL scholars; enrichment tasks include writing dialogue with compound subjects."
-        });
-      } else {
-        setFormData({
-          subject: formData.subject,
-          week: formData.week || "Week 1 (Term 2)",
-          strand: "B4.1 General Foundations & Core Competencies",
-          subStrand: "B4.1.1 Core Inquiry & Discovery",
-          tlr: "Reference textbooks, illustrative charts, multimedia slides",
-          objectives: "1. Learners will articulate key concepts of the unit with 90% proficiency.\n2. Learners will demonstrate practical problem-solving in group activities.",
-          starter: "Engaging inquiry question to activate prior knowledge.",
-          mainActivity: "Structured collaborative investigation followed by whole-class presentation.",
-          plenary: "Formative exit reflection consolidating core learning points.",
-          differentiation: "Scaffolded worksheets for learners needing support; open-ended extension prompts for high achievers."
-        });
+          week: formData.week || "Week 1",
+          strand: formData.strand,
+          sub_strand: formData.subStrand
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate scheme.");
       }
 
+      const data = await response.json();
+      
+      setFormData(prev => ({
+        ...prev,
+        objectives: data.objectives,
+        tlr: data.tlr,
+        starter: data.starter,
+        mainActivity: data.main_activity,
+        plenary: data.plenary,
+        differentiation: data.differentiation
+      }));
+
       toast.dismiss("ai-gen");
-      toast.success("Teacher Copilot generated standard NaCCA Lesson Plan.");
+      toast.success("Teacher Copilot successfully drafted your lesson plan!");
+    } catch (err) {
+      console.error(err);
+      toast.dismiss("ai-gen");
+      toast.error("AI Generation failed. Check backend logs or HF_TOKEN.");
+    } finally {
       setGeneratingAi(false);
-    }, 1000);
+    }
   };
 
   const handleSubmitScheme = async (e: React.FormEvent) => {
@@ -190,7 +205,9 @@ export default function TeacherLessons() {
         objectives: formData.objectives,
         starter: formData.starter,
         main_activity: formData.mainActivity,
+        main_duration: formData.mainDuration,
         plenary: formData.plenary,
+        plenary_duration: formData.plenaryDuration,
         differentiation: formData.differentiation
       });
 
@@ -303,8 +320,8 @@ export default function TeacherLessons() {
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                     className="w-full bg-brand-bg border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-brand-violet cursor-pointer"
                   >
-                    {subjectList.map((sub) => (
-                      <option key={sub.id} value={sub.name}>{sub.name}</option>
+                    {(allocatedSubjects.length > 0 ? allocatedSubjects : subjectList.map(s => s.name)).map((subName) => (
+                      <option key={subName} value={subName}>{subName}</option>
                     ))}
                   </select>
                 </div>
@@ -372,7 +389,7 @@ export default function TeacherLessons() {
                 <h4 className="font-serif font-bold text-sm text-brand-textMain uppercase tracking-wider">3-Stage Pedagogical Delivery</h4>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-brand-violet uppercase mb-1">1. Starter Activity (10 Mins)</label>
+                  <label className="block text-[11px] font-bold text-brand-violet uppercase mb-1">1. Starter Activity (5 Mins)</label>
                   <textarea
                     rows={2}
                     value={formData.starter}
@@ -382,7 +399,23 @@ export default function TeacherLessons() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-brand-violet uppercase mb-1">2. Main Instructional Activity (25 Mins)</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-[11px] font-bold text-brand-violet uppercase">2. Main Instructional Activity</label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-gray-500 font-medium">Duration:</span>
+                      <input 
+                        type="number" 
+                        min="1" max="54" 
+                        value={formData.mainDuration}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 0;
+                          setFormData({ ...formData, mainDuration: val, plenaryDuration: 55 - val });
+                        }}
+                        className="w-16 bg-brand-bg border border-gray-200 rounded px-2 py-0.5 text-xs text-center outline-none focus:border-brand-violet"
+                      />
+                      <span className="text-[11px] text-gray-500 font-medium">Mins</span>
+                    </div>
+                  </div>
                   <textarea
                     rows={2}
                     value={formData.mainActivity}
@@ -392,7 +425,10 @@ export default function TeacherLessons() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-brand-violet uppercase mb-1">3. Plenary & Formative Assessment (10 Mins)</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-[11px] font-bold text-brand-violet uppercase">3. Plenary & Formative Assessment</label>
+                    <span className="text-[11px] font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded">{formData.plenaryDuration} Mins</span>
+                  </div>
                   <textarea
                     rows={2}
                     value={formData.plenary}
@@ -748,7 +784,7 @@ export default function TeacherLessons() {
                   {selectedScheme.starter && (
                     <div className="p-4 rounded-2xl bg-purple-50/50 border border-purple-100 space-y-1">
                       <span className="text-[11px] font-bold text-purple-900 uppercase flex items-center gap-1.5">
-                        <i className="ph-bold ph-clock"></i> 1. Starter Activity (10 Mins)
+                        <i className="ph-bold ph-clock"></i> 1. Starter Activity (5 Mins)
                       </span>
                       <p className="text-xs text-purple-950 leading-relaxed">
                         {selectedScheme.starter}
@@ -758,8 +794,9 @@ export default function TeacherLessons() {
 
                   {selectedScheme.main_activity && (
                     <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-1">
-                      <span className="text-[11px] font-bold text-blue-900 uppercase flex items-center gap-1.5">
-                        <i className="ph-bold ph-book-open"></i> 2. Main Instructional Activity (25 Mins)
+                      <span className="text-[11px] font-bold text-blue-900 uppercase flex items-center justify-between">
+                        <span className="flex items-center gap-1.5"><i className="ph-bold ph-book-open"></i> 2. Main Instructional Activity</span>
+                        <span className="bg-blue-100 px-2 py-0.5 rounded">{selectedScheme.main_duration || 40} Mins</span>
                       </span>
                       <p className="text-xs text-blue-950 leading-relaxed">
                         {selectedScheme.main_activity}
@@ -769,8 +806,9 @@ export default function TeacherLessons() {
 
                   {selectedScheme.plenary && (
                     <div className="p-4 rounded-2xl bg-teal-50/50 border border-teal-100 space-y-1">
-                      <span className="text-[11px] font-bold text-teal-900 uppercase flex items-center gap-1.5">
-                        <i className="ph-bold ph-check-circle"></i> 3. Plenary & Formative Assessment (10 Mins)
+                      <span className="text-[11px] font-bold text-teal-900 uppercase flex items-center justify-between">
+                        <span className="flex items-center gap-1.5"><i className="ph-bold ph-check-circle"></i> 3. Plenary & Formative Assessment</span>
+                        <span className="bg-teal-100 px-2 py-0.5 rounded">{selectedScheme.plenary_duration || 15} Mins</span>
                       </span>
                       <p className="text-xs text-teal-950 leading-relaxed">
                         {selectedScheme.plenary}

@@ -4,11 +4,28 @@ export const EXECUTIVE_PORTAL_NAME = "Executive Command";
 
 export const executiveNavGroups: NavGroup[] = [
   {
+    title: "My Teaching Desk",
+    items: [
+      { name: 'Teacher Cockpit', href: '/teacher', icon: 'ph ph-chalkboard-teacher' },
+      { name: 'My Gradebook', href: '/teacher/grading', icon: 'ph ph-exam' }
+    ]
+  },
+  {
     title: "Executive & Academics",
     items: [
       { name: 'Executive Cockpit', href: '/headmaster', icon: 'ph ph-gauge' },
-      { name: 'Timetable & Class Streams', href: '/admin/academics', icon: 'ph ph-chalkboard-teacher' },
-      { name: 'Curriculum & Subjects', href: '/admin/academics/curriculum', icon: 'ph ph-book-open' },
+      { 
+        name: 'Timetable & Class Streams', 
+        href: '/admin/academics', 
+        icon: 'ph ph-chalkboard-teacher',
+        subItems: [
+          { name: 'Class Streams (SIS)', href: '/admin/academics?tab=streams' },
+          { name: 'Subject Curriculum', href: '/admin/academics?tab=subjects' },
+          { name: 'Faculty Allocations', href: '/admin/academics?tab=mapping' },
+          { name: 'Timetable Studio', href: '/admin/academics?tab=timetable' },
+          { name: 'Terminal Reports', href: '/admin/academics?tab=reports' }
+        ]
+      },
       { name: 'Academic Calendar', href: '/admin/academics/calendar', icon: 'ph ph-calendar' },
       { name: 'Lesson Plans & Inspections', href: '/headmaster/inspections', icon: 'ph ph-clipboard-text' },
       { name: 'Report Card Sign-Offs', href: '/headmaster/approvals', icon: 'ph ph-seal-check' },
@@ -35,6 +52,7 @@ export const executiveNavGroups: NavGroup[] = [
     items: [
       { name: 'Faculty Directory & Allocations', href: '/admin/staff', icon: 'ph ph-users-three' },
       { name: 'Teacher Quality & Appraisals', href: '/headmaster/appraisals', icon: 'ph ph-certificate' },
+      { name: 'Payroll & Leave Management', href: '/admin/hr', icon: 'ph ph-money' },
     ]
   },
   {

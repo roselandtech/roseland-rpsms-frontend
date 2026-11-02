@@ -15,8 +15,8 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "The Roseland Preparatory School | Pokuase ACP Estates, Accra",
-  description: "Building a Foundation for Excellence. GES-accredited basic education from Crèche to JHS.",
+  title: "Roseland Preparatory School | Kotoku, Accra",
+  description: "Knowledge & Humility. GES-accredited basic education from Crèche to JHS.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -36,10 +36,10 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${playfair.variable} h-full antialiased`}
-      data-scroll-behavior="smooth"
     >
       <head>
-        <Script src="https://unpkg.com/@phosphor-icons/web" strategy="beforeInteractive" />
+        <link rel="preconnect" href="https://unpkg.com" crossOrigin="anonymous" />
+        <Script src="https://unpkg.com/@phosphor-icons/web" strategy="afterInteractive" />
       </head>
       <body suppressHydrationWarning className="min-h-full font-sans text-brand-textMain bg-brand-bg">
         <Toaster 

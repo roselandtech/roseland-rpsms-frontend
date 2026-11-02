@@ -10,7 +10,7 @@ const PROTECTED_PORTALS: Record<string, string[]> = {
   '/cbt': ['STUDENT', 'TEACHER', 'HEADMASTER', 'SUPER_ADMIN'],
 };
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Check if current path starts with any protected portal route

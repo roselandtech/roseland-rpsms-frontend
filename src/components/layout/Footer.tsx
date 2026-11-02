@@ -1,13 +1,53 @@
-import Link from 'next/link';
+"use client";
 
-export default function Footer() {
+import Link from 'next/link';
+import Image from 'next/image';
+import { useState, useEffect } from 'react';
+
+export interface FooterProps {
+  initialSchoolName?: string;
+  initialMotto?: string;
+  initialLocation?: string;
+  initialEmail?: string;
+  initialPhone?: string;
+}
+
+export default function Footer({
+  initialSchoolName,
+  initialMotto,
+  initialLocation,
+  initialEmail,
+  initialPhone,
+}: FooterProps = {}) {
   const currentYear = new Date().getFullYear();
-  
+  const [schoolName, setSchoolName] = useState(initialSchoolName || "Roseland Preparatory School");
+  const [motto, setMotto] = useState(initialMotto || "Knowledge & Humility");
+  const [location, setLocation] = useState(initialLocation || "Kotoku, Accra");
+  const [email, setEmail] = useState(initialEmail || "info@roselandprep.edu.gh");
+  const [phone, setPhone] = useState(initialPhone || "+233243968988");
+
+  useEffect(() => {
+    if (initialSchoolName) return;
+    import('@/lib/api').then(({ RoselandApi }) => {
+      RoselandApi.cms.getLandingContent().then((cmsData) => {
+        if (cmsData?.institution) {
+          const n = cmsData.institution.name;
+          setSchoolName(n === "Roseland Preparatory School" ? "Roseland Preparatory School" : n);
+          if (cmsData.institution.tagline) setMotto(cmsData.institution.tagline);
+          if (cmsData.institution.location) setLocation(cmsData.institution.location);
+          if (cmsData.institution.email) setEmail(cmsData.institution.email);
+          if (cmsData.institution.phone) setPhone(cmsData.institution.phone);
+        }
+      }).catch(() => {});
+    });
+  }, [initialSchoolName]);
+
+
   return (
     <footer className="bg-gray-950 text-gray-300 pt-20 pb-12 border-t border-gray-800 relative overflow-hidden">
       {/* Subtle Background Elements */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-brand-violet/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-brand-yellow/5 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute top-0 right-0 w-96 h-96 bg-brand-violet/10 rounded-full blur-3xl pointer-events-none transform-gpu"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-brand-yellow/5 rounded-full blur-3xl pointer-events-none transform-gpu"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8 mb-16">
@@ -15,20 +55,20 @@ export default function Footer() {
           {/* Brand & Vision (2 Columns on Large Screens) */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-3 text-white mb-6 group">
-              <div className="w-13 h-13 bg-white rounded-2xl flex items-center justify-center p-1.5 shadow-xl shadow-brand-violet/20 group-hover:scale-105 transition-transform shrink-0 overflow-hidden">
-                <img src="/logo.png" alt="The Roseland Preparatory School Crest" className="w-full h-full object-contain" />
+              <div className="w-13 h-13 bg-white rounded-2xl flex items-center justify-center p-1.5 shadow-xl shadow-brand-violet/20 group-hover:scale-105 transition-transform shrink-0 overflow-hidden relative">
+                <Image src="/logo.png" alt="School Crest" width={44} height={44} className="w-full h-full object-contain" />
               </div>
               <div>
                 <span className="font-serif font-bold text-2xl tracking-tight block leading-tight">
-                  The Roseland Prep
+                  {schoolName}
                 </span>
                 <span className="text-[10px] uppercase tracking-widest text-brand-yellow font-bold block">
-                  Building a Foundation for Excellence
+                  {motto}
                 </span>
               </div>
             </Link>
             <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-sm">
-              Founded under the vision of Mrs. Rose Boateng, The Roseland Preparatory School provides world-class, GES-accredited basic education from Crèche to Junior High School in the Ga West Municipality, Accra.
+              Founded under the vision of Mrs. Rose Boateng, {schoolName} provides world-class, GES-accredited basic education from Crèche to Junior High School in {location}.
             </p>
             <div className="flex items-center gap-3">
               <a
@@ -50,7 +90,7 @@ export default function Footer() {
                 <i className="ph-fill ph-facebook-logo"></i>
               </a>
               <a
-                href="https://wa.me/233200000000"
+                href="https://wa.me/233243968988"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center hover:bg-[#25D366] hover:border-[#25D366] transition-colors text-white text-lg shadow-sm"

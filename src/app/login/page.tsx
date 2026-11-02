@@ -21,6 +21,7 @@ function LoginForm() {
 
   // Active Editorial Carousel Slide
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [schoolName, setSchoolName] = useState("Roseland Preparatory School");
 
   const heroSlides = [
     {
@@ -48,6 +49,16 @@ function LoginForm() {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 8000);
+
+    // Fetch dynamic branding
+    import('@/lib/api').then(({ RoselandApi }) => {
+      RoselandApi.cms.getLandingContent().then(data => {
+        if (data?.institution?.name) {
+          setSchoolName(data.institution.name);
+        }
+      }).catch(() => {});
+    });
+
     return () => clearInterval(timer);
   }, [heroSlides.length]);
 
@@ -112,7 +123,7 @@ function LoginForm() {
             </div>
             <div>
               <span className="font-serif font-bold text-base xl:text-lg text-white block leading-tight">
-                Roseland Preparatory School
+                {schoolName}
               </span>
               <span className="text-[10px] xl:text-[11px] font-semibold text-amber-400 tracking-wider uppercase block">
                 Ga West Municipal • GES Accredited
@@ -179,163 +190,103 @@ function LoginForm() {
         </div>
       </div>
 
-      {/* 2. RIGHT AUTHENTICATION CARD: AUTHENTIC EXERCISE BOOK THEME */}
-      <div 
-        className="w-full lg:w-5/12 h-full bg-[#0b111e] relative flex flex-col justify-between p-6 sm:p-8 lg:p-7 xl:p-10 overflow-y-auto border-l border-slate-800 shadow-2xl"
-        style={{
-          // Authentic Feint Exercise Book Ruled Lines + Paper texture gradient
-          backgroundImage: `
-            repeating-linear-gradient(to bottom, transparent, transparent 25px, rgba(99, 102, 241, 0.08) 26px),
-            radial-gradient(ellipse at 85% 10%, rgba(245, 158, 11, 0.05) 0%, transparent 60%)
-          `
-        }}
-      >
-        {/* Authentic Exercise Book Red Margin Guide Lines (Left Vertical Rules) */}
-        <div className="absolute left-6 md:left-8 top-0 bottom-0 w-px bg-rose-500/25 pointer-events-none z-0"></div>
-        <div className="absolute left-[27px] md:left-[35px] top-0 bottom-0 w-px bg-rose-500/15 pointer-events-none z-0"></div>
-
-        {/* Notebook Spiral Spine Binder Holes (Along Left Boundary) */}
-        <div className="hidden lg:flex flex-col justify-between absolute left-1 top-6 bottom-6 w-3 pointer-events-none z-10">
-          {[...Array(14)].map((_, i) => (
-            <div
-              key={i}
-              className="w-2.5 h-2.5 rounded-full bg-slate-950 border border-slate-800 shadow-inner my-auto"
-            />
-          ))}
-        </div>
-
+      {/* 2. RIGHT AUTHENTICATION CARD: SIMPLE & PROFESSIONAL (WHITE) */}
+      <div className="w-full lg:w-5/12 h-full bg-white relative flex flex-col justify-between p-6 sm:p-8 lg:p-12 xl:p-16 overflow-y-auto shadow-2xl">
+        
         {/* Mobile Header with Crest */}
-        <div className="relative z-10 flex lg:hidden items-center justify-between pb-3 mb-2 border-b border-slate-800/80 shrink-0">
+        <div className="relative z-10 flex lg:hidden items-center justify-between pb-4 mb-4 border-b border-gray-100 shrink-0">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-white p-1 shadow-md flex items-center justify-center">
-              <img src="/logo.png" alt="The Roseland Preparatory School" className="w-full h-full object-contain" />
+            <div className="w-8 h-8 rounded-lg border border-gray-200 p-1 flex items-center justify-center">
+              <img src="/logo.png" alt="Roseland" className="w-full h-full object-contain" />
             </div>
-            <span className="font-serif font-bold text-xs sm:text-sm text-white">Roseland Preparatory</span>
+            <span className="font-serif font-bold text-xs sm:text-sm text-gray-900">Roselyn</span>
           </Link>
-          <Link href="/" className="text-xs text-amber-400 font-semibold hover:underline">
-            Home
+          <Link href="/" className="text-[10px] uppercase tracking-widest text-gray-500 font-bold hover:text-gray-900 transition-colors">
+            Return Home
           </Link>
         </div>
 
-        {/* Main Exercise Book Content Container */}
-        <div className="relative z-10 max-w-sm xl:max-w-md w-full mx-auto my-auto space-y-4">
+        {/* Main Content Container */}
+        <div className="w-full max-w-sm mx-auto my-auto space-y-8">
           
-          {/* Classic Exercise Book Header & Label Box */}
-          <div className="bg-slate-950/85 backdrop-blur-md rounded-2xl p-4 border-2 border-slate-800/90 shadow-xl relative overflow-hidden group">
-            {/* Corner Decorative Notches */}
-            <div className="absolute -top-1.5 -left-1.5 w-3 h-3 border-t-2 border-l-2 border-amber-400"></div>
-            <div className="absolute -top-1.5 -right-1.5 w-3 h-3 border-t-2 border-r-2 border-amber-400"></div>
-            <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 border-b-2 border-l-2 border-amber-400"></div>
-            <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 border-b-2 border-r-2 border-amber-400"></div>
-
-            {/* Header info */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-white p-1 shadow-md flex items-center justify-center shrink-0">
-                  <img src="/logo.png" alt="Crest" className="w-full h-full object-contain" />
-                </div>
-                <div>
-                  <h1 className="font-serif font-bold text-base text-white block leading-tight">
-                    Roseland Preparatory
-                  </h1>
-                  <span className="text-[10px] font-mono font-bold text-amber-400 tracking-wider uppercase block">
-                    Portal
-                  </span>
-                </div>
-              </div>
-
-              <span className="text-[10px] font-mono text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded">
+          {/* Professional Header */}
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="w-16 h-16 rounded-xl border border-gray-100 p-2 flex items-center justify-center shadow-sm">
+              <img src="/logo.png" alt="Crest" className="w-full h-full object-contain" />
+            </div>
+            
+            <div>
+              <span className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
+                Welcome to
               </span>
+              <h1 className="font-serif font-bold text-3xl text-gray-900">
+                Roselyn
+              </h1>
             </div>
 
-            {/* Notebook Fillable Meta */}
-            <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-400">
-              <div className="truncate">
-                <span className="text-slate-500"> </span>{' '}
-                <span className="text-amber-300 font-semibold">RPS</span>
-              </div>
-              <div className="text-right truncate">
-                <span className="text-slate-500">ACADEMIC:</span>{' '}
-                <span className="text-slate-300">2026/2027</span>
-              </div>
-            </div>
+            <p className="text-sm text-gray-500 leading-relaxed max-w-[260px]">
+              Please enter your credentials to access the academic portal.
+            </p>
           </div>
-
-          {/* Success Alert Banner */}
-          {successUser && (
-            <div className="p-3 rounded-xl bg-emerald-950/90 border border-emerald-500/50 text-emerald-200 flex items-center gap-2.5 animate-fade-in shadow-lg">
-              <i className="ph-fill ph-check-circle text-xl text-emerald-400 shrink-0"></i>
-              <div className="text-xs">
-                <p className="font-bold text-white leading-tight">Welcome back, {successUser.fullName}!</p>
-                <p className="text-emerald-300 text-[10px] mt-0.5">Redirecting to your dashboard...</p>
-              </div>
-            </div>
-          )}
 
           {/* Error Alert Banner */}
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-950/90 border border-rose-500/50 text-rose-200 flex items-center gap-2.5 animate-fade-in shadow-lg">
-              <i className="ph-fill ph-warning-circle text-lg text-rose-400 shrink-0"></i>
-              <p className="text-xs font-medium text-rose-200 leading-snug">{errorMsg}</p>
+            <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-red-600 flex items-center gap-2.5">
+              <i className="ph-fill ph-warning-circle text-lg shrink-0"></i>
+              <p className="text-sm font-medium">{errorMsg}</p>
+            </div>
+          )}
+
+          {/* Success Alert Banner */}
+          {successUser && (
+            <div className="p-3 rounded-lg bg-green-50 border border-green-100 text-green-700 flex items-center gap-2.5">
+              <i className="ph-fill ph-check-circle text-xl shrink-0"></i>
+              <div className="text-sm">
+                <p className="font-bold">Welcome back, {successUser.fullName}!</p>
+                <p className="text-green-600 text-xs mt-0.5">Redirecting to dashboard...</p>
+              </div>
             </div>
           )}
 
           {/* Main Login Form */}
-          <form onSubmit={handleLogin} className="space-y-3 bg-slate-950/75 backdrop-blur-md p-4 rounded-2xl border border-slate-800 shadow-xl">
+          <form onSubmit={handleLogin} className="space-y-5">
             
             {/* Identifier Input */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
-                <span>Account Identifier</span>
-                <span className="text-[10px] text-slate-500 font-mono">Email / Index No</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <i className="ph-bold ph-user text-sm"></i>
-                </div>
-                <input
-                  type="text"
-                  required
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="e.g. admin@roseland.edu.gh or RPS-2024-0012"
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-900/90 rounded-xl border border-slate-700 text-white placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all font-sans"
-                />
-              </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-700">Account Identifier</label>
+              <input 
+                type="text" 
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="e.g., ROS-2026-001"
+                className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:border-brand-violet focus:ring-1 focus:ring-brand-violet transition-shadow font-mono"
+                required
+              />
             </div>
 
             {/* Password Input */}
-            <div className="space-y-1">
+            <div className="space-y-1.5 pt-1">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-slate-300">
-                  Secret Passkey / PIN
-                </label>
-                <Link
-                  href="/contact"
-                  className="text-[11px] text-amber-400 hover:text-amber-300 transition-colors"
-                >
-                  Forgot Passkey?
+                <label className="text-xs font-bold text-gray-700">Password</label>
+                <Link href="/contact" className="text-xs font-semibold text-brand-violet hover:underline">
+                  Forgot Password?
                 </Link>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <i className="ph-bold ph-lock-key text-sm"></i>
-                </div>
                 <input
                   type={showPassword ? "text" : "password"}
-                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your confidential passkey"
-                  className="w-full pl-10 pr-10 py-2.5 bg-slate-900/90 rounded-xl border border-slate-700 text-white placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all font-sans"
+                  placeholder="••••••••"
+                  className="w-full bg-white border border-gray-300 rounded-lg pl-4 pr-10 py-3 text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:border-brand-violet focus:ring-1 focus:ring-brand-violet transition-shadow font-mono"
+                  required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors"
-                  aria-label="Toggle password visibility"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <i className={`ph-bold ${showPassword ? 'ph-eye-slash' : 'ph-eye'} text-base`}></i>
+                  <i className={`ph-bold ${showPassword ? 'ph-eye-slash' : 'ph-eye'} text-lg`}></i>
                 </button>
               </div>
             </div>
@@ -347,55 +298,50 @@ function LoginForm() {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-3.5 h-3.5 rounded bg-slate-900 border-slate-700 text-amber-400 focus:ring-amber-400/20"
+                  className="w-4 h-4 rounded border-gray-300 text-brand-violet focus:ring-brand-violet"
                 />
-                <span className="text-xs text-slate-400">Keep me signed in</span>
+                <span className="text-sm text-gray-600">Keep me signed in</span>
               </label>
-
-              <Link href="/portals" className="text-xs text-slate-400 hover:text-amber-400 transition-colors">
-                Portals Directory →
-              </Link>
             </div>
 
             {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 px-5 rounded-xl bg-amber-400 hover:bg-amber-300 disabled:bg-amber-400/50 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-black/20 border border-amber-300/40 transition-all flex items-center justify-center gap-2 cursor-pointer mt-1"
-            >
-              {isLoading ? (
-                <>
-                  <i className="ph-bold ph-spinner animate-spin text-base"></i>
-                  <span>Authenticating...</span>
-                </>
-              ) : (
-                <>
-                  <span>Sign In to Portal</span>
-                  <i className="ph-bold ph-arrow-right text-sm"></i>
-                </>
-              )}
-            </button>
+            <div className="pt-4">
+              <button 
+                type="submit" 
+                disabled={isLoading}
+                className="w-full bg-brand-violet hover:bg-brand-violetDark text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
+              >
+                {isLoading ? (
+                  <>
+                    <i className="ph-bold ph-spinner animate-spin text-lg"></i>
+                    <span>Authenticating...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sign In</span>
+                    <i className="ph-bold ph-sign-in text-lg"></i>
+                  </>
+                )}
+              </button>
+            </div>
           </form>
 
           {/* Admissions Link */}
-          <div className="text-center pt-1">
-            <p className="text-xs text-slate-400">
+          <div className="text-center pt-4 border-t border-gray-100">
+            <p className="text-sm text-gray-500">
               New prospective parent?{' '}
-              <Link href="/admissions/apply" className="text-amber-400 font-semibold hover:underline">
-                Apply for 2026/2027 Admission
+              <Link href="/admissions/apply" className="text-brand-violet font-semibold hover:underline">
+                Apply for Admission
               </Link>
             </p>
           </div>
-
         </div>
 
         {/* Bottom Legal / Security Info */}
-        <div className="relative z-10 pt-3 border-t border-slate-800/80 text-center text-[10px] text-slate-500 shrink-0 font-mono">
-          <p>© {new Date().getFullYear()} The Roseland Preparatory School • Ga West Municipal, Accra</p>
+        <div className="pt-8 text-center text-xs text-gray-400">
+          <p>© {new Date().getFullYear()} The Roseland Preparatory School</p>
         </div>
-
       </div>
-
     </div>
   );
 }

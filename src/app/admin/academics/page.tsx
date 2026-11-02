@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
@@ -37,11 +38,10 @@ interface AssessmentScore {
   class_grade: string;
   subject: string;
   classwork_10: number;
-  project_10: number;
+  homework_10: number;
   midterm_10: number;
-  attendance_10: number;
-  sba_40: number;
-  terminal_exam_60: number;
+  sba_30: number;
+  terminal_exam_70: number;
   final_score_100: number;
   stanine_grade: number;
   grade_descriptor: string;
@@ -95,10 +95,9 @@ interface ScoreEditorDraft {
   classGrade: string;
   subject: string;
   classwork10: number;
-  project10: number;
+  homework10: number;
   midterm10: number;
-  attendance10: number;
-  terminalExam60: number;
+  terminalExam70: number;
   teacherRemark: string;
 }
 
@@ -116,8 +115,8 @@ interface TerminalReportCardView {
   interests: string;
 }
 
-function calculateSbaAndFinal(cw: number, pr: number, mt: number, att: number, exam: number) {
-  const sba = Math.round((Number(cw || 0) + Number(pr || 0) + Number(mt || 0) + Number(att || 0)) * 10) / 10;
+function calculateSbaAndFinal(cw: number, hw: number, mt: number, exam: number) {
+  const sba = Math.round((Number(cw || 0) + Number(hw || 0) + Number(mt || 0)) * 10) / 10;
   const final = Math.round((sba + Number(exam || 0)) * 10) / 10;
   let stanine = 9;
   let descriptor = 'Fail';
@@ -143,23 +142,8 @@ const SLOT_TYPE_STYLES: Record<SlotType, string> = {
 
 const SLOT_TYPE_OPTIONS: SlotType[] = ['academic', 'break', 'assembly', 'activity', 'closing'];
 
-/** Standard GES / NaCCA curriculum subjects */
-const GES_STANDARD_SUBJECTS = [
-  'Mathematics',
-  'English Language',
-  'Integrated Science',
-  'Computing / ICT',
-  'Social Studies',
-  'Ghanaian Language (Twi)',
-  'Ghanaian Language (Ga)',
-  'Creative Arts & Design',
-  'French Language',
-  'Religious & Moral Education (RME)',
-  'Physical & Health Education (PHE)',
-  'Career Technology',
-  'Our World Our People (OWOP)',
-  'History of Ghana',
-] as const;
+/** Standard curriculum subjects are now pulled purely from the database registry */
+const GES_STANDARD_SUBJECTS: string[] = [];
 
 const NON_ACADEMIC_ACTIVITIES: Record<SlotType, string[]> = {
   academic: [...GES_STANDARD_SUBJECTS],
@@ -244,8 +228,19 @@ const EMPTY_SLOT_DRAFT = {
   slot_type: 'academic' as SlotType,
 };
 
-export default function AdminAcademicsPage() {
-  const [activeTab, setActiveTab] = useState<'streams' | 'subjects' | 'mapping' | 'timetable' | 'reports'>('streams');
+function AdminAcademicsContent() {
+  const searchParams = useSearchParams();
+  const tabQuery = searchParams.get('tab') as 'streams' | 'subjects' | 'mapping' | 'timetable' | 'reports';
+  const initialTab = ['streams', 'subjects', 'mapping', 'timetable', 'reports'].includes(tabQuery as string) ? tabQuery : 'streams';
+  
+  const [activeTab, setActiveTab] = useState<'streams' | 'subjects' | 'mapping' | 'timetable' | 'reports'>(initialTab);
+
+  // Sync state if URL changes (like when clicking sidebar sub-item)
+  useEffect(() => {
+    if (tabQuery && ['streams', 'subjects', 'mapping', 'timetable', 'reports'].includes(tabQuery)) {
+      setActiveTab(tabQuery);
+    }
+  }, [tabQuery]);
 
   // Historical Report Cards & Attendance Digitize Modal State
   const [isHistoricalImportOpen, setIsHistoricalImportOpen] = useState(false);
@@ -654,11 +649,8 @@ export default function AdminAcademicsPage() {
         const scoreClass = (s.class_grade || '').trim().toLowerCase();
         if (scoreClass === normClass) {
           if (!byPupil.has(s.student_index_no)) {
-            byPupil.set(s.student_index_no, {
-              name: s.student_name || s.student_index_no,
-              classGrade: s.class_grade || classGrade,
-              scores: [],
-            });
+            // Ghost student (deleted or inactive in SIS). Do not resurrect them in the roster.
+            return;
           }
           byPupil.get(s.student_index_no)!.scores.push(s);
         }
@@ -1412,10 +1404,9 @@ export default function AdminAcademicsPage() {
       classGrade: student.classGrade,
       subject: sub,
       classwork10: score?.classwork_10 ?? 8.0,
-      project10: score?.project_10 ?? 8.0,
+      homework10: score?.homework_10 ?? 8.0,
       midterm10: score?.midterm_10 ?? 7.5,
-      attendance10: score?.attendance_10 ?? 9.0,
-      terminalExam60: score?.terminal_exam_60 ?? 45.0,
+      terminalExam70: score?.terminal_exam_70 ?? 45.0,
       teacherRemark: score?.teacher_remark || 'Commendable effort and steady participation.',
     });
   };
@@ -1432,10 +1423,9 @@ export default function AdminAcademicsPage() {
         class_grade: editingScoreDraft.classGrade,
         subject: editingScoreDraft.subject,
         classwork_10: Number(editingScoreDraft.classwork10 || 0),
-        project_10: Number(editingScoreDraft.project10 || 0),
+        homework_10: Number(editingScoreDraft.homework10 || 0),
         midterm_10: Number(editingScoreDraft.midterm10 || 0),
-        attendance_10: Number(editingScoreDraft.attendance10 || 0),
-        terminal_exam_60: Number(editingScoreDraft.terminalExam60 || 0),
+        terminal_exam_70: Number(editingScoreDraft.terminalExam70 || 0),
         teacher_remark: editingScoreDraft.teacherRemark,
       });
 
@@ -3530,7 +3520,7 @@ export default function AdminAcademicsPage() {
                 </div>
 
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs text-brand-textMuted">
-                  <span>SBA continuous assessment: 10 + 10 + 10 + 10 (40%) plus terminal exam (60%). Click any subject score to edit.</span>
+                  <span>SBA continuous assessment: 10 + 10 + 10 (30%) plus terminal exam (70%). Click any subject score to edit.</span>
                   <Button variant="muted" className="text-xs" onClick={() => setActiveScoreReviewClass(null)}>
                     Close Studio
                   </Button>
@@ -3545,10 +3535,9 @@ export default function AdminAcademicsPage() {
       {editingScoreDraft && (() => {
         const liveCalc = calculateSbaAndFinal(
           editingScoreDraft.classwork10,
-          editingScoreDraft.project10,
+          editingScoreDraft.homework10,
           editingScoreDraft.midterm10,
-          editingScoreDraft.attendance10,
-          editingScoreDraft.terminalExam60
+          editingScoreDraft.terminalExam70
         );
         const editAllocatedSubs = getClassAllocatedSubjects(editingScoreDraft.classGrade);
         const canonicalSubjectNames = registeredSubjects.length > 0
@@ -3608,8 +3597,8 @@ export default function AdminAcademicsPage() {
                 )}
               </div>
 
-              {/* 4 Continuous Assessment Components */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-brand-bg p-3.5 rounded-2xl border border-gray-100">
+              {/* 3 Continuous Assessment Components */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-brand-bg p-3.5 rounded-2xl border border-gray-100">
                 <div>
                   <label className="font-bold text-gray-700 block mb-1 text-[11px]">Classwork (10)</label>
                   <input
@@ -3625,15 +3614,15 @@ export default function AdminAcademicsPage() {
                 </div>
 
                 <div>
-                  <label className="font-bold text-gray-700 block mb-1 text-[11px]">Project (10)</label>
+                  <label className="font-bold text-gray-700 block mb-1 text-[11px]">Homework (10)</label>
                   <input
                     type="number"
                     step="0.1"
                     min="0"
                     max="10"
                     required
-                    value={editingScoreDraft.project10}
-                    onChange={(e) => setEditingScoreDraft({ ...editingScoreDraft, project10: parseFloat(e.target.value) || 0 })}
+                    value={editingScoreDraft.homework10}
+                    onChange={(e) => setEditingScoreDraft({ ...editingScoreDraft, homework10: parseFloat(e.target.value) || 0 })}
                     className="w-full bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-brand-textMain focus:outline-none focus:ring-1 focus:ring-brand-violet"
                   />
                 </div>
@@ -3651,33 +3640,19 @@ export default function AdminAcademicsPage() {
                     className="w-full bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-brand-textMain focus:outline-none focus:ring-1 focus:ring-brand-violet"
                   />
                 </div>
-
-                <div>
-                  <label className="font-bold text-gray-700 block mb-1 text-[11px]">Attendance (10)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="10"
-                    required
-                    value={editingScoreDraft.attendance10}
-                    onChange={(e) => setEditingScoreDraft({ ...editingScoreDraft, attendance10: parseFloat(e.target.value) || 0 })}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-brand-textMain focus:outline-none focus:ring-1 focus:ring-brand-violet"
-                  />
-                </div>
               </div>
 
               {/* Terminal Exam */}
               <div>
-                <label className="font-bold text-gray-700 block mb-1">Terminal Examination (Max 60)</label>
+                <label className="font-bold text-gray-700 block mb-1">Terminal Examination (Max 70)</label>
                 <input
                   type="number"
                   step="0.5"
                   min="0"
-                  max="60"
+                  max="70"
                   required
-                  value={editingScoreDraft.terminalExam60}
-                  onChange={(e) => setEditingScoreDraft({ ...editingScoreDraft, terminalExam60: parseFloat(e.target.value) || 0 })}
+                  value={editingScoreDraft.terminalExam70}
+                  onChange={(e) => setEditingScoreDraft({ ...editingScoreDraft, terminalExam70: parseFloat(e.target.value) || 0 })}
                   className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-brand-textMain focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-violet"
                 />
               </div>
@@ -3687,9 +3662,9 @@ export default function AdminAcademicsPage() {
                 <div>
                   <span className="text-[10px] uppercase font-bold text-brand-violet tracking-wider block">Live SBA & Grade Computation</span>
                   <div className="flex items-center gap-3 mt-1 font-mono text-xs">
-                    <span>SBA Total: <strong>{liveCalc.sba} / 40</strong></span>
+                    <span>SBA Total: <strong>{liveCalc.sba} / 30</strong></span>
                     <span>•</span>
-                    <span>Exam: <strong>{editingScoreDraft.terminalExam60} / 60</strong></span>
+                    <span>Exam: <strong>{editingScoreDraft.terminalExam70} / 70</strong></span>
                     <span>•</span>
                     <span className="text-sm font-bold text-emerald-700">Total: {liveCalc.final} / 100</span>
                   </div>
@@ -3835,11 +3810,10 @@ export default function AdminAcademicsPage() {
                         <tr>
                           <th className="py-2.5 px-3">Subject</th>
                           <th className="py-2.5 px-2">CW (10)</th>
-                          <th className="py-2.5 px-2">Proj (10)</th>
+                          <th className="py-2.5 px-2">HW (10)</th>
                           <th className="py-2.5 px-2">Mid (10)</th>
-                          <th className="py-2.5 px-2">Attn (10)</th>
-                          <th className="py-2.5 px-2">SBA (40)</th>
-                          <th className="py-2.5 px-2">Exam (60)</th>
+                          <th className="py-2.5 px-2">SBA (30)</th>
+                          <th className="py-2.5 px-2">Exam (70)</th>
                           <th className="py-2.5 px-3">Total (100)</th>
                           <th className="py-2.5 px-2">Grade</th>
                           <th className="py-2.5 px-3">Descriptor</th>
@@ -3853,7 +3827,6 @@ export default function AdminAcademicsPage() {
                             <td className="py-2.5 px-2 font-mono">{sc.classwork10}</td>
                             <td className="py-2.5 px-2 font-mono">{sc.project10}</td>
                             <td className="py-2.5 px-2 font-mono">{sc.midterm10}</td>
-                            <td className="py-2.5 px-2 font-mono">{sc.attendance10}</td>
                             <td className="py-2.5 px-2 font-mono font-bold text-gray-700">{sc.sba40}</td>
                             <td className="py-2.5 px-2 font-mono font-bold text-brand-violet">{sc.exam60}</td>
                             <td className="py-2.5 px-3 font-mono font-bold text-emerald-700">{sc.final100}%</td>
@@ -4673,5 +4646,13 @@ export default function AdminAcademicsPage() {
       />
 
     </div>
+  );
+}
+
+export default function AdminAcademicsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading Academic Engine...</div>}>
+      <AdminAcademicsContent />
+    </Suspense>
   );
 }

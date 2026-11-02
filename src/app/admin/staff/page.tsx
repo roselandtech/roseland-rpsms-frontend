@@ -131,7 +131,7 @@ export default function AdminStaffPage() {
             assignedPeriods: periods,
             todayStatus: 'Present',
             phone: u.phone || '—',
-            avatar: u.avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150`
+            avatar: u.avatar || ''
           };
         });
 
@@ -215,7 +215,7 @@ export default function AdminStaffPage() {
         password: onboardForm.password,
         phone: onboardForm.phone,
         assignedClass: onboardForm.role === 'TEACHER' ? onboardForm.assignedClass : undefined,
-        avatar: onboardForm.avatar || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150`
+        avatar: onboardForm.avatar || ''
       });
 
       // 2. If Teacher, allocate subjects & class in Academic microservice
@@ -419,7 +419,9 @@ export default function AdminStaffPage() {
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
                         <div className="w-11 h-11 rounded-full overflow-hidden border border-gray-200 shrink-0 shadow-xs">
-                          <img src={st.avatar} alt={st.name} className="w-full h-full object-cover" />
+                          <div className="w-full h-full bg-brand-violet/10 flex items-center justify-center">
+                            <i className="ph-bold ph-user-circle text-brand-violet text-lg"></i>
+                          </div>
                         </div>
                         <div>
                           <strong className="text-sm font-bold text-brand-textMain block">{st.name}</strong>
@@ -762,7 +764,9 @@ export default function AdminStaffPage() {
             <div className="p-5 sm:p-6 pb-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-brand-violet shrink-0">
-                  <img src={allocatingStaff.avatar} alt={allocatingStaff.name} className="w-full h-full object-cover" />
+                  <div className="w-full h-full bg-brand-violet/10 flex items-center justify-center">
+                    <i className="ph-bold ph-user-circle text-brand-violet text-lg"></i>
+                  </div>
                 </div>
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-brand-violet block">Academic Allocation</span>
@@ -920,7 +924,9 @@ export default function AdminStaffPage() {
 
             <div className="text-center mb-6">
               <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-brand-violet mx-auto mb-3 shadow">
-                <img src={activeStaff.avatar} alt={activeStaff.name} className="w-full h-full object-cover" />
+                <div className="w-full h-full bg-brand-violet/10 flex items-center justify-center">
+                  <i className="ph-bold ph-user-circle text-brand-violet text-3xl"></i>
+                </div>
               </div>
               <h3 className="text-xl font-serif font-bold text-brand-textMain">{activeStaff.name}</h3>
               <p className="text-xs text-brand-violet font-semibold">{activeStaff.role}</p>

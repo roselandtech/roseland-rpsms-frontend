@@ -180,7 +180,9 @@ export default function TeacherRemedial() {
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3.5">
-                  <img src={c.avatar} alt={c.name} className="w-12 h-12 rounded-2xl object-cover border border-gray-200" />
+                  <div className="w-12 h-12 bg-brand-violet/10 flex items-center justify-center rounded-2xl border border-gray-200">
+                    <i className="ph-bold ph-student text-brand-violet text-xl"></i>
+                  </div>
                   <div>
                     <h3 className="font-serif font-bold text-base text-brand-textMain">{c.name}</h3>
                     <span className="text-[10px] font-mono text-gray-400 font-bold block">{c.id}</span>

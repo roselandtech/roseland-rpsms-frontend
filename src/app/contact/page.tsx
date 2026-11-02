@@ -77,7 +77,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <strong className="block text-brand-textMain font-bold">Phone Helplines</strong>
-                    <span className="text-xs text-brand-textMuted block">+233 (0) 20 000 0000 / +233 (0) 24 000 0000</span>
+                    <span className="text-xs text-brand-textMuted block">+233243968988</span>
                     <span className="text-[11px] text-gray-400">Available Mon–Fri, 7:30 AM – 4:30 PM</span>
                   </div>
                 </div>
@@ -100,7 +100,7 @@ export default function ContactPage() {
                   <p className="text-xs text-emerald-100 mt-0.5">Quick responses to admissions questions.</p>
                 </div>
                 <a
-                  href="https://wa.me/233200000000"
+                  href="https://wa.me/233243968988"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-white text-emerald-800 text-xs font-bold rounded-xl shadow hover:bg-emerald-50 transition-colors shrink-0 flex items-center gap-1.5"

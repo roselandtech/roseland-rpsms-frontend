@@ -265,7 +265,9 @@ export default function TeacherAttendance() {
                 className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50/60 transition-colors"
               >
                 <div className="flex items-center gap-3.5">
-                  <img src={student.avatar} alt={student.name} className="w-11 h-11 rounded-2xl object-cover border border-gray-200" />
+                  <div className="w-11 h-11 bg-brand-violet/10 flex items-center justify-center rounded-2xl border border-gray-200">
+                    <i className="ph-bold ph-student text-brand-violet text-lg"></i>
+                  </div>
                   <div>
                     <strong className="text-sm font-bold text-brand-textMain block">{student.name}</strong>
                     <span className="text-[10px] font-mono text-gray-400 font-bold">{student.id}</span>

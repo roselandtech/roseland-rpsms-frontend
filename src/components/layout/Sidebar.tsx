@@ -11,6 +11,7 @@ export interface NavItem {
   icon: string;
   badge?: string | number;
   badgeColor?: string;
+  subItems?: { name: string; href: string }[];
 }
 
 export interface NavGroup {
@@ -75,7 +76,7 @@ export default function Sidebar({
           {!isCollapsed && (
             <div className="overflow-hidden whitespace-nowrap">
               <h1 className="font-bold text-base leading-tight text-brand-textMain font-serif">Roseland Prep</h1>
-              <p className="text-[11px] text-brand-violet font-bold uppercase tracking-wider truncate">{portalName}</p>
+              <p className="text-[11px] text-brand-violet font-bold uppercase tracking-wider truncate">Roselyn {portalName}</p>
             </div>
           )}
         </Link>
@@ -145,10 +146,40 @@ export default function Sidebar({
                       )}
                     </Link>
 
-                    {/* Floating Tooltip in Collapsed Mode */}
-                    {isCollapsed && (
+                    {/* Accordion for Expanded Mode */}
+                    {item.subItems && !isCollapsed && (
+                      <div className="max-h-0 overflow-hidden opacity-0 group-hover:max-h-64 group-hover:opacity-100 transition-all duration-500 ease-in-out ml-11 mt-0.5 space-y-0.5">
+                        {item.subItems.map((sub) => (
+                          <Link 
+                            key={sub.href} 
+                            href={sub.href} 
+                            onClick={() => setIsOpen(false)}
+                            className="block px-3 py-2 text-xs font-semibold text-gray-500 hover:text-brand-violet hover:bg-brand-violetLight/40 rounded-lg transition-colors"
+                          >
+                            {sub.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Floating Tooltip / Flyout in Collapsed Mode */}
+                    {isCollapsed && !item.subItems && (
                       <div className="fixed left-20 ml-2 hidden group-hover:flex items-center gap-2 bg-gray-900 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none animate-fade-in">
                         <span>{item.name}</span>
+                      </div>
+                    )}
+                    {isCollapsed && item.subItems && (
+                      <div className="fixed left-20 ml-2 hidden group-hover:flex flex-col bg-gray-900 text-white text-xs font-semibold p-2 rounded-xl shadow-xl z-50 animate-fade-in gap-1">
+                        <div className="text-[10px] text-gray-400 uppercase tracking-widest px-2 pb-1 border-b border-gray-700 mb-1">{item.name}</div>
+                        {item.subItems.map((sub) => (
+                          <Link 
+                            key={sub.href} 
+                            href={sub.href}
+                            className="px-3 py-1.5 hover:bg-gray-800 rounded-lg whitespace-nowrap transition-colors"
+                          >
+                            {sub.name}
+                          </Link>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -189,10 +220,40 @@ export default function Sidebar({
                     )}
                   </Link>
 
-                  {/* Floating Tooltip in Collapsed Mode */}
-                  {isCollapsed && (
+                  {/* Accordion for Expanded Mode */}
+                  {item.subItems && !isCollapsed && (
+                    <div className="max-h-0 overflow-hidden opacity-0 group-hover:max-h-64 group-hover:opacity-100 transition-all duration-500 ease-in-out ml-11 mt-0.5 space-y-0.5">
+                      {item.subItems.map((sub) => (
+                        <Link 
+                          key={sub.href} 
+                          href={sub.href} 
+                          onClick={() => setIsOpen(false)}
+                          className="block px-3 py-2 text-xs font-semibold text-gray-500 hover:text-brand-violet hover:bg-brand-violetLight/40 rounded-lg transition-colors"
+                        >
+                          {sub.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Floating Tooltip / Flyout in Collapsed Mode */}
+                  {isCollapsed && !item.subItems && (
                     <div className="fixed left-20 ml-2 hidden group-hover:flex items-center gap-2 bg-gray-900 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none animate-fade-in">
                       <span>{item.name}</span>
+                    </div>
+                  )}
+                  {isCollapsed && item.subItems && (
+                    <div className="fixed left-20 ml-2 hidden group-hover:flex flex-col bg-gray-900 text-white text-xs font-semibold p-2 rounded-xl shadow-xl z-50 animate-fade-in gap-1">
+                      <div className="text-[10px] text-gray-400 uppercase tracking-widest px-2 pb-1 border-b border-gray-700 mb-1">{item.name}</div>
+                      {item.subItems.map((sub) => (
+                        <Link 
+                          key={sub.href} 
+                          href={sub.href}
+                          className="px-3 py-1.5 hover:bg-gray-800 rounded-lg whitespace-nowrap transition-colors"
+                        >
+                          {sub.name}
+                        </Link>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -219,7 +280,7 @@ export default function Sidebar({
 
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-2 py-1'}`}>
           <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden border border-gray-200 shadow-sm shrink-0">
-            <img src={displayAvatar} alt={displayName} className="w-full h-full object-cover" />
+            <i className="ph-bold ph-user-circle text-gray-400 text-2xl"></i>
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0 text-left">

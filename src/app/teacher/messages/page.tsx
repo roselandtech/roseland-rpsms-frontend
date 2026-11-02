@@ -251,7 +251,9 @@ export default function TeacherMessages() {
                       : 'hover:bg-gray-50'
                   }`}
                 >
-                  <img src={t.avatar} alt={t.parentName} className="w-10 h-10 rounded-2xl object-cover border border-gray-200" />
+                  <div className="w-10 h-10 bg-brand-violet/10 flex items-center justify-center rounded-2xl border border-gray-200">
+                    <i className="ph-bold ph-user-circle text-brand-violet text-lg"></i>
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <strong className="text-xs font-bold text-brand-textMain truncate">{t.parentName}</strong>
@@ -272,7 +274,9 @@ export default function TeacherMessages() {
               {/* Thread Header */}
               <div className="p-4 border-b border-gray-100 bg-white flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <img src={activeThread.avatar} alt={activeThread.parentName} className="w-10 h-10 rounded-2xl object-cover border border-gray-200" />
+                  <div className="w-10 h-10 bg-brand-violet/10 flex items-center justify-center rounded-2xl border border-gray-200">
+                    <i className="ph-bold ph-user-circle text-brand-violet text-lg"></i>
+                  </div>
                   <div>
                     <strong className="text-sm font-bold text-brand-textMain block">{activeThread.parentName}</strong>
                     <span className="text-xs text-brand-textMuted font-medium">Guardian of {activeThread.studentName} • {activeThread.phone}</span>

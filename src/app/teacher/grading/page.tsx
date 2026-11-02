@@ -9,10 +9,9 @@ import CbtAssessmentBuilderModal from '@/components/cbt/CbtAssessmentBuilderModa
 interface StudentGrade {
   id: string;
   name: string;
-  test1: number;
-  test2: number;
+  classwork: number;
   homework: number;
-  project: number;
+  midterm: number;
   exam: number;
 }
 
@@ -28,6 +27,8 @@ export default function TeacherGrading() {
   const [activeTerm, setActiveTerm] = useState('Active Term Not Found');
   const [activeYear, setActiveYear] = useState('N/A');
 
+  const [teacherAllocatedSubjects, setTeacherAllocatedSubjects] = useState<string[]>([]);
+
   // 1. Initial Class and Subject context resolution
   useEffect(() => {
     const initRegistry = async () => {
@@ -39,6 +40,12 @@ export default function TeacherGrading() {
         if (user) {
           try {
             const alloc = await RoselandApi.academic.getTeacherAllocation(user.email || user.username || user.id);
+            
+            // Save allocated subjects
+            if (alloc?.subjects && Array.isArray(alloc.subjects)) {
+              setTeacherAllocatedSubjects(alloc.subjects);
+            }
+
             // Combine assignedClasses and formClass to ensure they have access to all their classes
             const allowedClasses = new Set<string>();
             if (alloc?.formClass) allowedClasses.add(alloc.formClass);
@@ -111,11 +118,10 @@ export default function TeacherGrading() {
           return {
             id: sIndex,
             name: s.full_name || s.name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || sIndex,
-            test1: rec.classwork_10 ?? rec.test1 ?? 0,
-            test2: rec.midterm_10 ?? rec.test2 ?? 0,
-            homework: rec.attendance_10 ?? rec.homework ?? 0,
-            project: rec.project_10 ?? rec.project ?? 0,
-            exam: rec.terminal_exam_60 ?? rec.exam ?? 0,
+            classwork: rec.classwork_10 ?? 0,
+            homework: rec.homework_10 ?? 0,
+            midterm: rec.midterm_10 ?? 0,
+            exam: rec.terminal_exam_70 ?? 0,
           };
         });
         setGrades(mapped);
@@ -134,17 +140,31 @@ export default function TeacherGrading() {
     loadGradebook();
   }, [loadGradebook]);
 
-  // Dynamic Subject Population based on Curriculum Mapping
+  // Dynamic Subject Population based on Curriculum Mapping + Teacher Allocation
   useEffect(() => {
     const loadCurriculum = async () => {
       if (!assignedClass) return;
       try {
         const res = await RoselandApi.academic.curriculum.getForClass(assignedClass);
+        
+        // Start with the teacher's specifically allocated subjects
+        let allValidSubjects = [...teacherAllocatedSubjects];
+        
         if (res && Array.isArray(res) && res.length > 0) {
-          const names = res.map((s: any) => s.subject_name);
-          setAvailableSubjects(names);
-          if (!names.includes(subject)) {
-            setSubject(names[0]);
+          const curriculumNames = res.map((s: any) => s.subject_name);
+          // Add any curriculum subjects not already in the list
+          curriculumNames.forEach((n: string) => {
+            if (!allValidSubjects.includes(n)) {
+              allValidSubjects.push(n);
+            }
+          });
+        }
+
+        if (allValidSubjects.length > 0) {
+          setAvailableSubjects(allValidSubjects);
+          if (!allValidSubjects.includes(subject)) {
+            // Priority select an allocated subject if available, else first in list
+            setSubject(teacherAllocatedSubjects.length > 0 ? teacherAllocatedSubjects[0] : allValidSubjects[0]);
           }
         } else {
           setAvailableSubjects([]);
@@ -152,15 +172,26 @@ export default function TeacherGrading() {
         }
       } catch (err) {
         console.warn("Failed to load class curriculum", err);
-        setAvailableSubjects([]);
-        setSubject('');
+        // Fallback to just the teacher's allocated subjects if curriculum fails
+        if (teacherAllocatedSubjects.length > 0) {
+            setAvailableSubjects(teacherAllocatedSubjects);
+            if (!teacherAllocatedSubjects.includes(subject)) {
+                setSubject(teacherAllocatedSubjects[0]);
+            }
+        } else {
+            setAvailableSubjects([]);
+            setSubject('');
+        }
       }
     };
     loadCurriculum();
-  }, [assignedClass]);
+  }, [assignedClass, teacherAllocatedSubjects]);
 
   const updateScore = async (id: string, field: keyof Omit<StudentGrade, 'id' | 'name'>, value: number) => {
-    const val = Math.max(0, isNaN(value) ? 0 : value);
+    let val = Math.max(0, isNaN(value) ? 0 : value);
+    if (field === 'exam') val = Math.min(val, 70);
+    // ensure 1 decimal place to prevent floating point drift
+    val = Math.round(val * 10) / 10;
     const updated = grades.map(g => g.id === id ? { ...g, [field]: val } : g);
     setGrades(updated);
 
@@ -176,11 +207,10 @@ export default function TeacherGrading() {
         subject,
         academic_term: activeTerm,
         academic_year: activeYear,
-        classwork_10: studentRec.test1,
-        project_10: studentRec.project,
-        midterm_10: studentRec.test2,
-        attendance_10: studentRec.homework,
-        terminal_exam_60: studentRec.exam
+        classwork_10: studentRec.classwork,
+        midterm_10: studentRec.midterm,
+        homework_10: studentRec.homework,
+        terminal_exam_70: studentRec.exam
       });
     } catch (err) {
       // Background optimistic save
@@ -205,10 +235,20 @@ export default function TeacherGrading() {
         message: `${assignedClass} continuous assessment scores for ${subject} have been submitted by ${AuthService.getCurrentUser()?.fullName || 'the Class Teacher'} for terminal validation.`
       });
       toast.success(`${assignedClass} ${subject} SBA Gradebook submitted to Headmaster for terminal sign-off!`);
-    } catch (err) {
-      toast.success(`${assignedClass} ${subject} SBA Gradebook successfully submitted to Headmaster!`);
+    } catch (err: any) {
+      toast.error(`Failed to notify Headmaster: ${err.message || 'Network error'}`);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-8 max-w-7xl mx-auto p-4 sm:p-8 animate-pulse">
+        <div className="bg-white h-32 rounded-3xl border border-gray-100 shadow-sm"></div>
+        <div className="bg-white h-16 w-full max-w-md rounded-3xl border border-gray-100 shadow-sm"></div>
+        <div className="bg-white h-[50vh] rounded-3xl border border-gray-100 shadow-sm"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto animate-fade-in">
@@ -223,7 +263,7 @@ export default function TeacherGrading() {
             Continuous Assessment & Terminal Gradebook
           </h1>
           <p className="text-xs sm:text-sm text-brand-textMuted mt-1">
-            40% Continuous SBA (Test 1, Test 2, Homework, Project) + 60% Terminal Exam. Instant Stanine computation.
+            30% Continuous SBA (Classwork, Homework, Midterm) + 70% Terminal Exam. Instant Stanine computation.
           </p>
         </div>
 
@@ -284,12 +324,7 @@ export default function TeacherGrading() {
       </div>
 
       {/* Gradebook Table */}
-      {loading ? (
-        <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm">
-          <div className="animate-spin w-8 h-8 border-3 border-brand-violet border-t-transparent rounded-full mx-auto mb-3"></div>
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Loading gradebook...</p>
-        </div>
-      ) : grades.length === 0 ? (
+      {grades.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm">
           <h3 className="text-base font-serif font-bold text-brand-textMain mb-1">No Scholars Found in {assignedClass}</h3>
           <p className="text-xs text-brand-textMuted max-w-md mx-auto">
@@ -303,19 +338,18 @@ export default function TeacherGrading() {
               <thead className="bg-brand-bg text-gray-400 uppercase font-bold tracking-wider border-b border-gray-100 text-[10px]">
                 <tr>
                   <th className="py-4 px-6">Scholar Name</th>
-                  <th className="py-4 px-3 text-center">Test 1 (10)</th>
-                  <th className="py-4 px-3 text-center">Test 2 (10)</th>
-                  <th className="py-4 px-3 text-center">HW (10)</th>
-                  <th className="py-4 px-3 text-center">Project (10)</th>
-                  <th className="py-4 px-3 text-center text-brand-violet">SBA Total (40)</th>
-                  <th className="py-4 px-3 text-center">Exam (60)</th>
+                  <th className="py-4 px-3 text-center">Classwork (10)</th>
+                  <th className="py-4 px-3 text-center">Homework (10)</th>
+                  <th className="py-4 px-3 text-center">Midterm (10)</th>
+                  <th className="py-4 px-3 text-center text-brand-violet">SBA Total (30)</th>
+                  <th className="py-4 px-3 text-center">Exam (70)</th>
                   <th className="py-4 px-4 text-center font-bold text-brand-textMain">Total (100)</th>
                   <th className="py-4 px-6 text-right">Stanine Grade</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {grades.map((g) => {
-                  const sbaTotal = g.test1 + g.test2 + g.homework + g.project;
+                  const sbaTotal = g.classwork + g.homework + g.midterm;
                   const totalScore = sbaTotal + g.exam;
                   const stanine = getStanineGrade(totalScore);
                   const isSaving = savingId === g.id;
@@ -339,64 +373,51 @@ export default function TeacherGrading() {
                       <td className="py-3 px-3 text-center">
                         <input
                           type="number"
-                          min={0}
-                          max={10}
-                          value={g.test1}
-                          onChange={(e) => updateScore(g.id, 'test1', Number(e.target.value))}
-                          className="w-12 bg-brand-bg border border-gray-200 rounded-lg py-1.5 text-center font-bold text-xs outline-none focus:border-brand-violet"
+                          value={g.classwork}
+                          disabled
+                          title="Auto-calculated from CA Tracker"
+                          className="w-12 bg-gray-50 border border-gray-100 rounded-lg py-1.5 text-center font-bold text-xs outline-none opacity-60 cursor-not-allowed"
                         />
                       </td>
 
                       <td className="py-3 px-3 text-center">
                         <input
                           type="number"
-                          min={0}
-                          max={10}
-                          value={g.test2}
-                          onChange={(e) => updateScore(g.id, 'test2', Number(e.target.value))}
-                          className="w-12 bg-brand-bg border border-gray-200 rounded-lg py-1.5 text-center font-bold text-xs outline-none focus:border-brand-violet"
-                        />
-                      </td>
-
-                      <td className="py-3 px-3 text-center">
-                        <input
-                          type="number"
-                          min={0}
-                          max={10}
                           value={g.homework}
-                          onChange={(e) => updateScore(g.id, 'homework', Number(e.target.value))}
-                          className="w-12 bg-brand-bg border border-gray-200 rounded-lg py-1.5 text-center font-bold text-xs outline-none focus:border-brand-violet"
+                          disabled
+                          title="Auto-calculated from CA Tracker"
+                          className="w-12 bg-gray-50 border border-gray-100 rounded-lg py-1.5 text-center font-bold text-xs outline-none opacity-60 cursor-not-allowed"
                         />
                       </td>
 
                       <td className="py-3 px-3 text-center">
                         <input
                           type="number"
-                          min={0}
-                          max={10}
-                          value={g.project}
-                          onChange={(e) => updateScore(g.id, 'project', Number(e.target.value))}
-                          className="w-12 bg-brand-bg border border-gray-200 rounded-lg py-1.5 text-center font-bold text-xs outline-none focus:border-brand-violet"
+                          value={g.midterm}
+                          disabled
+                          title="Auto-calculated from CA Tracker"
+                          className="w-12 bg-gray-50 border border-gray-100 rounded-lg py-1.5 text-center font-bold text-xs outline-none opacity-60 cursor-not-allowed"
                         />
                       </td>
 
-                      <td className="py-3 px-3 text-center font-mono font-bold text-brand-violet bg-brand-violetLight/20 text-sm">
-                        {sbaTotal}
+                      <td className="py-3 px-3 text-center">
+                        <div className="w-12 mx-auto bg-brand-violet/5 border border-brand-violet/20 text-brand-violet rounded-lg py-1.5 text-center font-bold text-xs">
+                          {sbaTotal.toFixed(1)}
+                        </div>
                       </td>
 
                       <td className="py-3 px-3 text-center">
                         <input
                           type="number"
-                          min={0}
-                          max={60}
-                          value={g.exam}
-                          onChange={(e) => updateScore(g.id, 'exam', Number(e.target.value))}
-                          className="w-14 bg-brand-bg border border-gray-200 rounded-lg py-1.5 text-center font-bold text-xs outline-none focus:border-brand-violet"
+                          value={g.exam || 0}
+                          disabled
+                          title="Auto-calculated from CA Tracker"
+                          className="w-12 bg-gray-50 border border-gray-100 rounded-lg py-1.5 text-center font-bold text-xs outline-none opacity-60 cursor-not-allowed"
                         />
                       </td>
 
                       <td className="py-3 px-4 text-center font-mono font-bold text-base text-brand-textMain">
-                        {totalScore}%
+                        {totalScore === Math.round(totalScore) ? totalScore : totalScore.toFixed(1)}%
                       </td>
 
                       <td className="py-4 px-6 text-right">

@@ -51,6 +51,14 @@ export default function HeadmasterDashboard() {
   const [reportReadyCount, setReportReadyCount] = useState(0);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
 
+  // Calendar State
+  const [academicState, setAcademicState] = useState<{
+    yearName: string;
+    termName: string;
+    currentWeek: number;
+    totalWeeks: number;
+  } | null>(null);
+
   // Dynamic Weekly Agenda State (persisted locally with institutional defaults)
   const [agenda, setAgenda] = useState<AssemblyAgenda>({
     moralFocus: "Integrity & Academic Honesty",
@@ -122,7 +130,37 @@ export default function HeadmasterDashboard() {
         })
         .catch(() => {});
 
-      await Promise.allSettled([staffPromise, sisPromise, opsPromise, reportsPromise]);
+      // 5. Academic Calendar State
+      const calendarPromise = RoselandApi.academic.calendar.getCurrentState()
+        .then((calRes) => {
+          if (calRes && calRes.academic_year && calRes.academic_term) {
+            const termStart = new Date(calRes.academic_term.start_date);
+            const termEnd = new Date(calRes.academic_term.end_date);
+            const today = new Date();
+            
+            const effectiveToday = today < termStart ? termStart : (today > termEnd ? termEnd : today);
+            
+            const diffTime = Math.abs(effectiveToday.getTime() - termStart.getTime());
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+            const currentWeek = Math.floor(diffDays / 7) + 1;
+            
+            const totalDiffTime = Math.abs(termEnd.getTime() - termStart.getTime());
+            const totalDiffDays = Math.ceil(totalDiffTime / (1000 * 60 * 60 * 24));
+            const totalWeeks = Math.ceil(totalDiffDays / 7);
+
+            setAcademicState({
+              yearName: calRes.academic_year.name,
+              termName: calRes.academic_term.name,
+              currentWeek,
+              totalWeeks
+            });
+            setAgenda(prev => ({ ...prev, weekNumber: currentWeek }));
+            setEditAgendaForm(prev => ({ ...prev, weekNumber: currentWeek }));
+          }
+        })
+        .catch(() => {});
+
+      await Promise.allSettled([staffPromise, sisPromise, opsPromise, reportsPromise, calendarPromise]);
     } catch (err) {
       console.warn("Failed to load headmaster cockpit data:", err);
     } finally {
@@ -274,9 +312,11 @@ export default function HeadmasterDashboard() {
         <div className="relative z-10">
           <div className="flex items-center gap-2.5 mb-2">
             <span className="px-3 py-0.5 rounded-full bg-brand-yellow text-yellow-950 font-bold text-[10px] uppercase tracking-wider">
-              Academic Supervisory Desk • Term 2
+              Academic Supervisory Desk {academicState ? `• ${academicState.termName}` : '• Out of Session'}
             </span>
-            <span className="text-xs text-brand-violetLight font-medium">Week {agenda.weekNumber} of 13</span>
+            <span className="text-xs text-brand-violetLight font-medium">
+              {academicState ? `Week ${academicState.currentWeek} of ${academicState.totalWeeks}` : 'System Clock: Inactive'}
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white leading-tight">
             Academic Leadership Cockpit

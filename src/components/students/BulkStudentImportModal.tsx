@@ -19,8 +19,6 @@ export interface ParsedStudentRow {
   otherNames: string;
   gender: 'Male' | 'Female';
   dob: string;
-  enrollmentDate: string;
-  entryClass: string;
   className: string;
   house: 'Red' | 'Yellow' | 'Green' | 'Blue';
   parentName: string;
@@ -36,7 +34,7 @@ export interface ParsedStudentRow {
 /**
  * Normalizes multi-format dates (YYYY-MM-DD, DD/MM/YYYY, MM/DD/YYYY, DD-Mon-YYYY)
  */
-function normalizeDateString(raw: string, defaultDate: string = '2021-09-08'): string {
+function normalizeDateString(raw: string, defaultDate: string = ''): string {
   if (!raw || !raw.trim()) return defaultDate;
   const clean = raw.trim().replace(/^["']|["']$/g, '');
 
@@ -114,8 +112,8 @@ export default function BulkStudentImportModal({
   // 1. DYNAMIC HISTORICAL CSV TEMPLATE GENERATOR
   // ---------------------------------------------------------------------------
   const handleDownloadTemplate = () => {
-    const sampleClass1 = validClassesList.find(c => c.toLowerCase().includes('4')) || validClassesList[3] || 'Class 4';
-    const sampleClass2 = validClassesList.find(c => c.toLowerCase().includes('1')) || validClassesList[0] || 'Class 1';
+    const sampleClass1 = validClassesList.length > 0 ? validClassesList[0] : 'Basic 4';
+    const sampleClass2 = validClassesList.length > 1 ? validClassesList[1] : (validClassesList[0] || 'Basic 1');
     const headers = [
       'admission_number',
       'first_name',
@@ -123,8 +121,6 @@ export default function BulkStudentImportModal({
       'other_names',
       'gender',
       'date_of_birth',
-      'enrollment_date',
-      'entry_class',
       'current_class',
       'house',
       'parent_name',
@@ -142,8 +138,6 @@ export default function BulkStudentImportModal({
       'Kwame',
       'Male',
       '2015-05-14',
-      '2021-09-08',
-      'KG 2',
       `"${sampleClass1}"`,
       'Blue',
       'Grace Mensah',
@@ -161,8 +155,6 @@ export default function BulkStudentImportModal({
       'Akoto',
       'Female',
       '2012-11-20',
-      '2018-09-10',
-      'Class 1',
       `"${sampleClass2}"`,
       'Yellow',
       'Dr. Patrick Osei',
@@ -248,13 +240,9 @@ export default function BulkStudentImportModal({
       let gender: 'Male' | 'Female' = rawGender.startsWith('f') ? 'Female' : 'Male';
 
       const rawDob = getVal(dobIdx);
-      const dob = normalizeDateString(rawDob, '2015-05-14');
-
-      const rawEnr = getVal(enrIdx);
-      const enrollmentDate = normalizeDateString(rawEnr, '2021-09-08');
+      const dob = normalizeDateString(rawDob, '');
 
       let className = getVal(clsIdx);
-      let entryClass = getVal(entryClsIdx) || className || 'Primary 1';
 
       let rawHouse = getVal(houseIdx).toLowerCase();
       let house: 'Red' | 'Yellow' | 'Green' | 'Blue' = 'Blue';
@@ -288,7 +276,8 @@ export default function BulkStudentImportModal({
       if (!className) {
         errors.push("Current class is required");
       } else if (validClassesList.length > 0) {
-        const matched = validClassesList.find(c => c.toLowerCase() === className.toLowerCase());
+        const normalizeClass = (s: string) => s.toLowerCase().replace(/\s+/g, '');
+        const matched = validClassesList.find(c => normalizeClass(c) === normalizeClass(className));
         if (matched) {
           className = matched;
         } else {
@@ -304,8 +293,6 @@ export default function BulkStudentImportModal({
         otherNames,
         gender,
         dob,
-        enrollmentDate,
-        entryClass,
         className,
         house,
         parentName,
@@ -362,7 +349,8 @@ export default function BulkStudentImportModal({
       if (!updated.className.trim()) {
         errors.push("Current class is required");
       } else if (validClassesList.length > 0) {
-        const matched = validClassesList.find(c => c.toLowerCase() === updated.className.trim().toLowerCase());
+        const normalizeClass = (s: string) => s.toLowerCase().replace(/\s+/g, '');
+        const matched = validClassesList.find(c => normalizeClass(c) === normalizeClass(updated.className.trim()));
         if (!matched) {
           errors.push(`Class "${updated.className}" not in Registry`);
         }
@@ -412,10 +400,10 @@ export default function BulkStudentImportModal({
           dateOfBirth: r.dob,
           date_of_birth: r.dob,
           dob: r.dob,
-          enrollment_date: r.enrollmentDate,
-          enrollmentDate: r.enrollmentDate,
-          entry_class: r.entryClass.trim(),
-          entryClass: r.entryClass.trim(),
+          enrollment_date: undefined,
+          enrollmentDate: undefined,
+          entry_class: r.className.trim(),
+          entryClass: r.className.trim(),
           classGrade: r.className.trim(),
           class_grade: r.className.trim(),
           className: r.className.trim(),
@@ -625,16 +613,15 @@ export default function BulkStudentImportModal({
               </div>
 
               {/* Interactive Staging Table */}
-              <div className="border border-gray-200 rounded-2xl overflow-hidden max-h-[46vh] overflow-y-auto">
-                <table className="w-full text-left text-xs border-collapse">
+              <div className="border border-gray-200 rounded-2xl max-h-[46vh] overflow-auto">
+                <table className="w-full min-w-[1200px] text-left text-xs border-collapse">
                   <thead className="bg-gray-50 text-gray-600 sticky top-0 z-10 border-b border-gray-200 font-bold uppercase text-[10px] tracking-wider">
                     <tr>
                       <th className="p-3">Status</th>
                       <th className="p-3">Adm / Index No</th>
                       <th className="p-3">Full Name & Gender</th>
                       <th className="p-3">DOB</th>
-                      <th className="p-3">Historic Enrollment</th>
-                      <th className="p-3">Entry → Current Class</th>
+                      <th className="p-3">Class Grade</th>
                       <th className="p-3">House</th>
                       <th className="p-3">Parent & Contact</th>
                       <th className="p-3">Address & Allergies</th>
@@ -718,33 +705,22 @@ export default function BulkStudentImportModal({
                           />
                         </td>
 
-                        {/* Historic Enrollment Date */}
-                        <td className="p-3 align-top whitespace-nowrap">
-                          <input
-                            type="date"
-                            value={row.enrollmentDate}
-                            onChange={(e) => handleUpdateRow(row.id, 'enrollmentDate', e.target.value)}
-                            className="bg-white border border-purple-200 rounded-lg px-2 py-1 text-xs font-bold text-brand-violet outline-none focus:border-brand-violet"
-                          />
-                        </td>
-
-                        {/* Entry Class -> Current Class */}
+                        {/* Class Grade */}
                         <td className="p-3 align-top">
                           <div className="space-y-1">
-                            <input
-                              type="text"
-                              placeholder="Entry Class (e.g. KG 1)"
-                              value={row.entryClass}
-                              onChange={(e) => handleUpdateRow(row.id, 'entryClass', e.target.value)}
-                              className="w-28 bg-brand-bg border border-gray-200 rounded-lg px-2 py-0.5 text-[11px] text-gray-600 outline-none"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Current Class"
+                            <select
                               value={row.className}
                               onChange={(e) => handleUpdateRow(row.id, 'className', e.target.value)}
                               className="w-28 bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs font-bold text-brand-textMain outline-none focus:border-brand-violet"
-                            />
+                            >
+                              <option value="" disabled>Select Class</option>
+                              {validClassesList.map(c => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                              {!validClassesList.includes(row.className) && row.className && (
+                                <option value={row.className}>{row.className} (Invalid)</option>
+                              )}
+                            </select>
                           </div>
                         </td>
 
@@ -878,7 +854,7 @@ export default function BulkStudentImportModal({
                   Historical Onboarding Completed!
                 </h3>
                 <p className="text-xs text-brand-textMuted max-w-md mx-auto">
-                  Successfully enrolled <strong>{importSummary.total} scholars</strong> into Roseland Preparatory School OS with full historical continuity.
+                  Successfully enrolled <strong>{importSummary.total} scholars</strong> into Roselyn with full historical continuity.
                 </p>
               </div>
 

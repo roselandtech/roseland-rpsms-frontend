@@ -73,6 +73,9 @@ export default function HeadmasterAppraisalsPage() {
   const [scheduleFocus, setScheduleFocus] = useState('GES/NaCCA Standards & Practical Manipulatives');
   const [isScheduling, setIsScheduling] = useState(false);
 
+  // Commendations state
+  const [isIssuing, setIsIssuing] = useState(false);
+
   useEffect(() => {
     setCurrentUser(AuthService.getCurrentUser());
   }, []);
@@ -99,19 +102,22 @@ export default function HeadmasterAppraisalsPage() {
   // Open detailed evaluation / rubric editor
   const handleOpenRubric = (teacher: TeacherAppraisal) => {
     setSelectedTeacher(teacher);
-    setEditD1(teacher.rubric.domain1.score || 4.5);
+    setEditD1(teacher.rubric.domain1.score !== undefined ? teacher.rubric.domain1.score : 0.0);
     setEditD1Notes(teacher.rubric.domain1.notes || '');
-    setEditD2(teacher.rubric.domain2.score || 4.5);
+    setEditD2(teacher.rubric.domain2.score !== undefined ? teacher.rubric.domain2.score : 0.0);
     setEditD2Notes(teacher.rubric.domain2.notes || '');
-    setEditD3(teacher.rubric.domain3.score || 4.5);
+    setEditD3(teacher.rubric.domain3.score !== undefined ? teacher.rubric.domain3.score : 0.0);
     setEditD3Notes(teacher.rubric.domain3.notes || '');
-    setEditD4(teacher.rubric.domain4.score || 4.5);
+    setEditD4(teacher.rubric.domain4.score !== undefined ? teacher.rubric.domain4.score : 0.0);
     setEditD4Notes(teacher.rubric.domain4.notes || '');
-    setEditD5(teacher.rubric.domain5.score || 4.5);
+    setEditD5(teacher.rubric.domain5.score !== undefined ? teacher.rubric.domain5.score : 0.0);
     setEditD5Notes(teacher.rubric.domain5.notes || '');
     setEditStrengths(teacher.strengths.join(', '));
     setEditGrowthAreas(teacher.growthAreas || '');
-    setEditStatus((teacher.status as any) || 'Proficient');
+    
+    // When editing a pending evaluation, default the select to Proficient so they can score it.
+    const currentStatus = teacher.status as string;
+    setEditStatus((currentStatus === 'Pending Evaluation' ? 'Proficient' : currentStatus) as any);
     setIsEditingRubric(false);
   };
 
@@ -192,6 +198,23 @@ export default function HeadmasterAppraisalsPage() {
     }
   };
 
+  const handleIssueCommendations = async () => {
+    try {
+      setIsIssuing(true);
+      const res = await RoselandApi.academic.issueCommendations();
+      if (res.count === 0) {
+        toast.error(res.message || "No exemplary educators found yet.");
+      } else {
+        toast.success(res.message || `Certificates queued for: ${res.teachers.join(', ')}`);
+      }
+    } catch (err: any) {
+      console.error("Issue commendations error:", err);
+      toast.error(err?.message || "Failed to issue commendations.");
+    } finally {
+      setIsIssuing(false);
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto animate-fade-in">
       
@@ -211,10 +234,11 @@ export default function HeadmasterAppraisalsPage() {
 
         {teachers.length > 0 && (
           <button
-            onClick={() => toast.success("Commendation letters generated for all exemplary educators.")}
-            className="px-4 py-2.5 bg-brand-violet text-white font-bold rounded-xl text-xs hover:bg-brand-violetDark shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+            onClick={handleIssueCommendations}
+            disabled={isIssuing}
+            className="px-4 py-2.5 bg-brand-violet text-white font-bold rounded-xl text-xs hover:bg-brand-violetDark shadow-md flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
           >
-            <i className="ph-bold ph-certificate"></i> Issue Faculty Commendations
+            <i className="ph-bold ph-certificate"></i> {isIssuing ? 'Issuing...' : 'Issue Faculty Commendations'}
           </button>
         )}
       </div>
@@ -255,6 +279,8 @@ export default function HeadmasterAppraisalsPage() {
                       ? 'bg-green-100 text-green-800' 
                       : t.status === 'Proficient'
                       ? 'bg-blue-100 text-blue-800'
+                      : t.status === 'Pending Evaluation'
+                      ? 'bg-gray-100 text-gray-600'
                       : 'bg-amber-100 text-amber-800'
                   }`}>
                     {t.status}
@@ -330,7 +356,15 @@ export default function HeadmasterAppraisalsPage() {
                     <span className="text-xs font-mono font-bold text-brand-violet bg-white px-2 py-0.5 rounded border border-brand-violet/20">
                       {selectedTeacher.assigned}
                     </span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                      selectedTeacher.status === 'Exemplary'
+                        ? 'bg-green-100 text-green-800'
+                        : selectedTeacher.status === 'Proficient'
+                        ? 'bg-blue-100 text-blue-800'
+                        : selectedTeacher.status === 'Pending Evaluation'
+                        ? 'bg-gray-100 text-gray-600'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
                       {selectedTeacher.status}
                     </span>
                   </div>

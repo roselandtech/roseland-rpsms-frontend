@@ -80,8 +80,8 @@ export default function TourPage() {
                   Monday – Friday: 08:30 AM to 02:00 PM<br />
                   Saturday: 09:00 AM to 12:00 PM (By prior appointment)
                 </p>
-                <a href="tel:+233200000000" className="text-xs font-bold text-brand-yellow flex items-center gap-1.5 hover:underline">
-                  <i className="ph-fill ph-phone"></i> Call Direct: +233 20 000 0000
+                <a href="tel:+233243968988" className="text-xs font-bold text-brand-yellow flex items-center gap-1.5 hover:underline">
+                  <i className="ph-fill ph-phone"></i> Call Direct: +233243968988
                 </a>
               </div>
             </div>

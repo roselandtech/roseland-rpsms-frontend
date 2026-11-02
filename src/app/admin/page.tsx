@@ -75,6 +75,14 @@ export default function AdminDashboard() {
 
   const [attendanceCohorts, setAttendanceCohorts] = useState<AttendanceCohort[]>([]);
 
+  // Calendar State
+  const [academicState, setAcademicState] = useState<{
+    yearName: string;
+    termName: string;
+    currentWeek: number;
+    totalWeeks: number;
+  } | null>(null);
+
   // Load User & Live Telemetry
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -157,6 +165,38 @@ export default function AdminDashboard() {
         }));
       }
 
+      // 5. Academic Calendar State
+      const calendarPromise = RoselandApi.academic.calendar.getCurrentState()
+        .then((calRes) => {
+          if (calRes && calRes.academic_year && calRes.academic_term) {
+            const termStart = new Date(calRes.academic_term.start_date);
+            const termEnd = new Date(calRes.academic_term.end_date);
+            const today = new Date();
+            
+            const effectiveToday = today < termStart ? termStart : (today > termEnd ? termEnd : today);
+            
+            const diffTime = Math.abs(effectiveToday.getTime() - termStart.getTime());
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+            const currentWeek = Math.floor(diffDays / 7) + 1;
+            
+            const totalDiffTime = Math.abs(termEnd.getTime() - termStart.getTime());
+            const totalDiffDays = Math.ceil(totalDiffTime / (1000 * 60 * 60 * 24));
+            const totalWeeks = Math.ceil(totalDiffDays / 7);
+
+            setAcademicState({
+              yearName: calRes.academic_year.name,
+              termName: calRes.academic_term.name,
+              currentWeek,
+              totalWeeks
+            });
+          }
+        })
+        .catch(() => {});
+
+      await Promise.all([calendarPromise]); // other fetches are awaited implicitly because we wait for them sequentially in the original code, but actually let's just make sure it doesn't block. Wait, the original code had them sequentially awaited?
+      // Wait, let's look at the original code in fetchDashboardData:
+      // It had: `const studentsRes = await ...`, `const admissionsRes = await ...`
+      // So they are sequentially awaited. I will just let `calendarPromise` run without awaiting it sequentially to keep things fast, but `await calendarPromise` at the end is fine.
     } catch (err) {
       console.warn("Backend telemetry initialization failed", err);
     } finally {
@@ -261,9 +301,11 @@ export default function AdminDashboard() {
         <div className="relative z-10">
           <div className="flex items-center gap-2.5 mb-2">
             <span className="px-3 py-0.5 rounded-full bg-amber-400 text-slate-950 font-bold text-[10px] uppercase tracking-wider shadow-sm">
-              2025/2026 Academic Year • Term 2
+              {academicState ? `${academicState.yearName} • ${academicState.termName}` : 'No Active Academic Year'}
             </span>
-            <span className="text-xs text-brand-violetLight font-medium">Week 8 of 13</span>
+            <span className="text-xs text-brand-violetLight font-medium">
+              {academicState ? `Week ${academicState.currentWeek} of ${academicState.totalWeeks}` : 'System Clock: Inactive'}
+            </span>
             <span className="flex items-center gap-1 text-[10px] bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 px-2 py-0.5 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
               Live Gateway Connected

@@ -59,6 +59,8 @@ export default function AdminFinancePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
+  const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
 
   // Digital Receipt Modal State
   const [activeReceipt, setActiveReceipt] = useState<OfficialReceiptData | null>(null);
@@ -81,12 +83,13 @@ export default function AdminFinancePage() {
   const [currentAmountPaid, setCurrentAmountPaid] = useState<number | null>(null);
 
   // Form State for Batch Invoicing
-  const [batchTerm, setBatchTerm] = useState('Term 2');
+  const [batchTerm, setBatchTerm] = useState('Current Term');
   const [batchClass, setBatchClass] = useState('ALL');
-  const [batchTuition, setBatchTuition] = useState(1850);
-  const [batchFeeding, setBatchFeeding] = useState(600);
-  const [batchTransit, setBatchTransit] = useState(450);
-  const [batchPta, setBatchPta] = useState(100);
+  const [batchTuition, setBatchTuition] = useState(0);
+  const [batchFeeding, setBatchFeeding] = useState(0);
+  const [batchTransit, setBatchTransit] = useState(0);
+  const [batchPta, setBatchPta] = useState(0);
+  const [batchDueDate, setBatchDueDate] = useState('');
 
   // Financial KPIs
   const [kpis, setKpis] = useState({
@@ -113,7 +116,8 @@ export default function AdminFinancePage() {
         RoselandApi.finance.getSummary(),
         RoselandApi.finance.getInvoices(),
         RoselandApi.finance.getTransactions(),
-        RoselandApi.sis.getStudents()
+        RoselandApi.sis.getStudents(),
+        RoselandApi.academic.calendar.getCurrentState()
       ]);
 
       // 1. Process Students
@@ -199,6 +203,14 @@ export default function AdminFinancePage() {
           cashlessRate: sum.cashlessRate || "100.0%"
         });
       }
+
+      // 5. Academic Calendar
+      if (calendarRes.status === 'fulfilled' && calendarRes.value) {
+        const cal = calendarRes.value;
+        if (cal.term_name) {
+          setBatchTerm(cal.term_name);
+        }
+      }
     } catch (err) {
       console.warn("Failed to fetch finance records from backend", err);
     } finally {
@@ -240,10 +252,13 @@ export default function AdminFinancePage() {
           setPaymentAmount(bal.toString());
         }
       } else {
-        setCurrentBalanceDue(3000);
-        setCurrentTotalBilled(3000);
+        const studentClass = found.class_grade || found.classGrade || '';
+        const targetCls = classList.find((c: any) => c.name === studentClass);
+        const baseTuition = targetCls?.base_tuition_fee || 1850;
+        setCurrentBalanceDue(baseTuition);
+        setCurrentTotalBilled(baseTuition);
         setCurrentAmountPaid(0);
-        setPaymentAmount('1850');
+        setPaymentAmount(baseTuition.toString());
       }
     } else {
       setStudentIndex('');
@@ -371,6 +386,7 @@ export default function AdminFinancePage() {
         feedingFee: batchFeeding,
         busTransitFee: batchTransit,
         ptaDues: batchPta,
+        dueDate: batchDueDate || undefined,
         students: targetStudents.map(s => ({
           studentIndexNo: (s.index_no || s.index_number || s.indexNumber || '').trim(),
           studentName: s.full_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || s.name || 'Student',
@@ -483,7 +499,16 @@ export default function AdminFinancePage() {
           </button>
 
           <button
-            onClick={() => setIsReceiptModalOpen(true)}
+            onClick={() => {
+              setSelectedStudentId('');
+              setStudentIndex('');
+              setStudentName('');
+              setPayerName('');
+              setPayerPhone('');
+              setPaymentAmount('');
+              setStudentSearchQuery('');
+              setIsReceiptModalOpen(true);
+            }}
             className="px-4 py-2.5 bg-brand-violet text-white font-bold rounded-xl text-xs hover:bg-brand-violetDark shadow-md flex items-center gap-1.5 cursor-pointer"
           >
             <i className="ph-bold ph-receipt"></i> Record Fee Payment
@@ -799,24 +824,73 @@ export default function AdminFinancePage() {
             <form onSubmit={handleIssueReceipt} className="space-y-4 text-xs">
               
               {/* Smart Student Selector */}
-              <div>
+              <div className="relative">
                 <label className="block font-bold text-brand-textMain uppercase mb-1">Select Enrolled Student *</label>
-                <select
-                  value={selectedStudentId}
-                  onChange={handleStudentSelect}
-                  className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3.5 py-2.5 outline-none focus:border-brand-violet font-semibold"
+                <div 
+                  className="flex items-center w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 shadow-sm focus-within:border-brand-violet transition-colors"
                 >
-                  <option value="">-- Choose Pupil from SIS Roster --</option>
-                  {students.map((s) => {
-                    const idx = (s.index_no || s.index_number || s.indexNumber || '').trim();
-                    const name = s.full_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || s.name;
-                    return (
-                      <option key={s.id} value={s.id}>
-                        {name} ({idx} - {s.class_grade || s.classGrade})
-                      </option>
-                    );
-                  })}
-                </select>
+                  <i className="ph ph-magnifying-glass text-gray-400 mr-2 text-lg"></i>
+                  <input
+                    type="text"
+                    placeholder="Search by student name or ID..."
+                    value={studentSearchQuery}
+                    onChange={(e) => {
+                      setStudentSearchQuery(e.target.value);
+                      setIsStudentDropdownOpen(true);
+                      if (selectedStudentId) {
+                        setSelectedStudentId('');
+                        setStudentIndex('');
+                      }
+                    }}
+                    onFocus={() => setIsStudentDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setIsStudentDropdownOpen(false), 200)}
+                    className="flex-1 bg-transparent outline-none font-semibold text-sm placeholder-gray-400"
+                  />
+                  {selectedStudentId && (
+                    <i className="ph-fill ph-check-circle text-emerald-500 ml-2 text-lg"></i>
+                  )}
+                </div>
+                {isStudentDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-48 overflow-y-auto z-[60] py-2">
+                    {students.filter(s => {
+                       const name = s.full_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || s.name || '';
+                       const idx = (s.index_no || s.index_number || s.indexNumber || '').trim();
+                       const q = studentSearchQuery.toLowerCase();
+                       return name.toLowerCase().includes(q) || idx.toLowerCase().includes(q);
+                    }).map((s) => {
+                      const idx = (s.index_no || s.index_number || s.indexNumber || '').trim();
+                      const name = s.full_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || s.name;
+                      return (
+                        <div
+                          key={s.id}
+                          className="px-4 py-2 hover:bg-brand-violet/10 cursor-pointer flex items-center justify-between transition-colors"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setStudentSearchQuery(`${name} (${idx})`);
+                            setIsStudentDropdownOpen(false);
+                            // Pass mocked event to handleStudentSelect
+                            handleStudentSelect({ target: { value: s.id } } as any);
+                          }}
+                        >
+                          <div>
+                            <p className="text-sm font-bold text-brand-textMain">{name}</p>
+                            <p className="text-[10px] font-mono text-gray-400">{idx} • {s.class_grade || s.classGrade}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {students.filter(s => {
+                       const name = s.full_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || s.name || '';
+                       const idx = (s.index_no || s.index_number || s.indexNumber || '').trim();
+                       const q = studentSearchQuery.toLowerCase();
+                       return name.toLowerCase().includes(q) || idx.toLowerCase().includes(q);
+                    }).length === 0 && (
+                      <div className="px-4 py-3 text-center text-xs text-gray-400 font-bold">
+                        No pupils found.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Student Index Manual Input */}
@@ -1028,6 +1102,16 @@ export default function AdminFinancePage() {
                       className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-brand-violet font-mono font-bold"
                     />
                   </div>
+                </div>
+
+                <div className="pt-4 pb-2">
+                  <label className="block text-gray-500 font-semibold mb-1">Payment Deadline</label>
+                  <input
+                    type="date"
+                    value={batchDueDate}
+                    onChange={(e) => setBatchDueDate(e.target.value)}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-brand-violet text-brand-textMain font-medium shadow-sm transition-all"
+                  />
                 </div>
 
                 <div className="pt-2 border-t border-gray-200 flex justify-between items-center text-xs font-bold">

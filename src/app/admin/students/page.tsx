@@ -37,6 +37,7 @@ interface Student {
   avatar: string;
   conductRemark?: string;
   isActive?: boolean;
+  extendedProfile?: any;
 }
 
 type PromotionDecisionType = 'Promote' | 'Probation' | 'Repeat' | 'Graduated';
@@ -76,6 +77,10 @@ export default function AdminStudentsPage() {
   const [selectedClass, setSelectedClass] = useState('all');
   const [selectedHouse, setSelectedHouse] = useState('all');
   const [selectedFee, setSelectedFee] = useState('all');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Modals & Drawers
   const [activeStudent, setActiveStudent] = useState<Student | null>(null);
@@ -138,11 +143,34 @@ export default function AdminStudentsPage() {
     parentName: '',
     parentPhone: '',
     parentEmail: '',
-    feeStatus: 'Paid' as 'Paid' | 'Partial' | 'Overdue',
-    avgScore: 85.0,
-    attendancePct: 100.0,
+    feeStatus: 'Overdue' as 'Paid' | 'Partial' | 'Overdue',
+    avgScore: 0.0,
+    attendancePct: 0.0,
     allergyFlag: '',
-    conductRemark: 'Exemplary pupil conduct.'
+    conductRemark: '',
+    extendedProfile: {
+      placeOfBirth: '',
+      nationality: 'Ghanaian',
+      residentialAddress: '',
+      residentialPhone: '',
+      fatherOccupation: '',
+      fatherCompany: '',
+      fatherBusinessPhone: '',
+      motherName: '',
+      motherOccupation: '',
+      motherCompany: '',
+      motherBusinessPhone: '',
+      motherMobilePhone: '',
+      motherEmail: '',
+      parentsLiving: 'together',
+      hasSibling: false,
+      siblingDetails: '',
+      previousSchoolDetails: '',
+      expelledDetails: '',
+      bloodGroup: '',
+      medicalHistory: '',
+      specialNeedsDetails: ''
+    }
   });
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 
@@ -173,17 +201,17 @@ export default function AdminStudentsPage() {
             entryClass: s.entry_class,
             residentialAddress: s.residential_address,
             emergencyPhone: s.emergency_phone,
-            parentName: s.parent_name || 'Guardian',
-            parentPhone: s.parent_phone || '024 000 0000',
+            parentName: s.parent_name || '',
+            parentPhone: s.parent_phone || '',
             parentEmail: s.parent_email,
             feeStatus: s.fee_status === 'PAID' || s.fee_status === 'Paid' ? 'Paid' : s.fee_status === 'PARTIAL' || s.fee_status === 'Partial' ? 'Partial' : 'Overdue',
             avgScore: Number(s.avg_score) || 0,
-            attendancePct: Number(s.attendance_pct) || 100,
+            attendancePct: Number(s.attendance_pct) || 0,
             historicalAvgScore: s.historical_avg_score !== undefined && s.historical_avg_score !== null ? Number(s.historical_avg_score) : undefined,
             historicalAttendancePct: s.historical_attendance_pct !== undefined && s.historical_attendance_pct !== null ? Number(s.historical_attendance_pct) : undefined,
             allergyFlag: s.allergy_flag,
-            conductRemark: s.conduct_remark || 'Exemplary pupil conduct.',
-            avatar: s.avatar || 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=200',
+            conductRemark: s.conduct_remark || '',
+            avatar: s.avatar || '',
             isActive: s.is_active !== false
           };
         });
@@ -249,22 +277,30 @@ export default function AdminStudentsPage() {
   };
 
   // Open Edit Modal
-  const handleOpenEdit = (student: Student) => {
+  const handleOpenEdit = (st: Student) => {
     setFormData({
-      fullName: student.fullName,
-      gender: student.gender,
-      classGrade: student.classGrade,
-      house: student.house,
-      dateOfBirth: student.dateOfBirth || '',
-      parentName: student.parentName,
-      parentPhone: student.parentPhone,
-      parentEmail: student.parentEmail || '',
-      feeStatus: student.feeStatus,
-      avgScore: student.avgScore,
-      attendancePct: student.attendancePct,
-      allergyFlag: student.allergyFlag || '',
-      conductRemark: student.conductRemark || 'Exemplary pupil conduct.'
+      fullName: st.fullName,
+      gender: st.gender as 'Male' | 'Female',
+      classGrade: st.classGrade,
+      house: st.house as any,
+      dateOfBirth: st.dateOfBirth || '',
+      parentName: st.parentName || '',
+      parentPhone: st.parentPhone || '',
+      parentEmail: st.parentEmail || '',
+      feeStatus: st.feeStatus as any,
+      avgScore: st.avgScore || 0,
+      attendancePct: st.attendancePct || 0,
+      allergyFlag: st.allergyFlag || '',
+      conductRemark: st.conductRemark || '',
+      extendedProfile: st.extendedProfile || {
+        placeOfBirth: '', nationality: 'Ghanaian', residentialAddress: '', residentialPhone: '',
+        fatherOccupation: '', fatherCompany: '', fatherBusinessPhone: '', motherName: '',
+        motherOccupation: '', motherCompany: '', motherBusinessPhone: '', motherMobilePhone: '', motherEmail: '',
+        parentsLiving: 'together', hasSibling: false, siblingDetails: '', previousSchoolDetails: '',
+        expelledDetails: '', bloodGroup: '', medicalHistory: '', specialNeedsDetails: ''
+      }
     });
+    setActiveStudent(st);
     setIsEditModalOpen(true);
   };
 
@@ -311,30 +347,16 @@ export default function AdminStudentsPage() {
           avg_score: Number(formData.avgScore),
           attendance_pct: Number(formData.attendancePct),
           allergy_flag: formData.allergyFlag.trim() || null,
-          conduct_remark: formData.conductRemark.trim() || null
+          conduct_remark: formData.conductRemark.trim() || null,
+          extended_profile: formData.extendedProfile
         };
         const res = await RoselandApi.sis.updateStudent(activeStudent.id, payload);
         toast.success("Pupil profile updated successfully");
         setIsEditModalOpen(false);
         if (res && res.student) {
-          const updated: Student = {
-            ...activeStudent,
-            fullName: res.student.full_name,
-            gender: res.student.gender,
-            classGrade: res.student.class_grade,
-            house: res.student.house,
-            dateOfBirth: res.student.date_of_birth,
-            parentName: res.student.parent_name,
-            parentPhone: res.student.parent_phone,
-            parentEmail: res.student.parent_email,
-            feeStatus: res.student.fee_status,
-            avgScore: res.student.avg_score,
-            attendancePct: res.student.attendance_pct,
-            allergyFlag: res.student.allergy_flag,
-            conductRemark: res.student.conduct_remark
-          };
-          setActiveStudent(updated);
+          // Profile successfully updated
         }
+        setActiveStudent(null);
         await loadStudentsFromBackend();
       } else {
         // Enroll New Student
@@ -351,7 +373,8 @@ export default function AdminStudentsPage() {
           avg_score: Number(formData.avgScore),
           attendance_pct: Number(formData.attendancePct),
           allergy_flag: formData.allergyFlag.trim() || null,
-          conduct_remark: formData.conductRemark.trim() || "Exemplary pupil conduct."
+          conduct_remark: formData.conductRemark.trim() || null,
+          extended_profile: formData.extendedProfile
         };
         const created = await RoselandApi.sis.createStudent(payload);
         toast.success(`Successfully enrolled ${created.full_name} (${created.index_no})`);
@@ -416,10 +439,17 @@ export default function AdminStudentsPage() {
       parentPhone: '',
       parentEmail: '',
       feeStatus: 'Paid',
-      avgScore: 85.0,
-      attendancePct: 100.0,
+      avgScore: 0.0,
+      attendancePct: 0.0,
       allergyFlag: '',
-      conductRemark: 'Exemplary pupil conduct.'
+      conductRemark: '',
+      extendedProfile: {
+        placeOfBirth: '', nationality: 'Ghanaian', residentialAddress: '', residentialPhone: '',
+        fatherOccupation: '', fatherCompany: '', fatherBusinessPhone: '', motherName: '',
+        motherOccupation: '', motherCompany: '', motherBusinessPhone: '', motherMobilePhone: '', motherEmail: '',
+        parentsLiving: 'together', hasSibling: false, siblingDetails: '', previousSchoolDetails: '',
+        expelledDetails: '', bloodGroup: '', medicalHistory: '', specialNeedsDetails: ''
+      }
     });
     setIsEnrollModalOpen(true);
   };
@@ -436,6 +466,17 @@ export default function AdminStudentsPage() {
       return matchesClass && matchesHouse && matchesFee && matchesSearch;
     });
   }, [students, selectedClass, selectedHouse, selectedFee, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / itemsPerPage));
+  const paginatedStudents = useMemo(() => {
+    const startIdx = (currentPage - 1) * itemsPerPage;
+    return filteredStudents.slice(startIdx, startIdx + itemsPerPage);
+  }, [filteredStudents, currentPage]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedClass, selectedHouse, selectedFee, searchQuery]);
 
   // Candidates for Promotion Batch
   const promotionCandidates = useMemo(() => {
@@ -840,12 +881,14 @@ export default function AdminStudentsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredStudents.map((s) => (
+                {paginatedStudents.map((s) => (
                   <tr key={s.id} className="hover:bg-gray-50/80 transition-colors">
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 shrink-0">
-                          <img src={s.avatar} alt={s.fullName} className="w-full h-full object-cover" />
+                          <div className="w-full h-full bg-brand-violet/10 flex items-center justify-center">
+                            <i className="ph-bold ph-student text-brand-violet text-lg"></i>
+                          </div>
                         </div>
                         <div>
                           <strong className="text-sm font-bold text-brand-textMain block">{s.fullName}</strong>
@@ -904,6 +947,14 @@ export default function AdminStudentsPage() {
                       </button>
                       <button
                         type="button"
+                        onClick={() => handleOpenEdit(s)}
+                        className="p-1.5 text-gray-400 hover:text-brand-violet rounded-lg transition-colors"
+                        title="Edit Student Profile"
+                      >
+                        <i className="ph-bold ph-pencil-simple text-sm"></i>
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => {
                           setStudentToDelete(s);
                           setIsDeleteConfirmOpen(true);
@@ -918,6 +969,34 @@ export default function AdminStudentsPage() {
                 ))}
               </tbody>
             </table>
+            
+            {/* Pagination Controls */}
+            <div className="p-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <span className="text-xs text-gray-500 font-medium">
+                Showing <strong className="text-brand-textMain">{filteredStudents.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</strong> to <strong className="text-brand-textMain">{Math.min(currentPage * itemsPerPage, filteredStudents.length)}</strong> of <strong className="text-brand-textMain">{filteredStudents.length}</strong> students
+              </span>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <i className="ph-bold ph-caret-left"></i>
+                  </button>
+                  <span className="text-xs font-bold text-brand-textMain px-2">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-1.5 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <i className="ph-bold ph-caret-right"></i>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -931,6 +1010,7 @@ export default function AdminStudentsPage() {
           if (!isSubmittingForm) {
             setIsEnrollModalOpen(false);
             setIsEditModalOpen(false);
+            setActiveStudent(null);
           }
         }}
         hideHeader
@@ -944,6 +1024,7 @@ export default function AdminStudentsPage() {
             if (!isSubmittingForm) {
               setIsEnrollModalOpen(false);
               setIsEditModalOpen(false);
+              setActiveStudent(null);
             }
           }}
           className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center text-base z-10"
@@ -958,228 +1039,202 @@ export default function AdminStudentsPage() {
           {isEditModalOpen ? `Edit Profile: ${formData.fullName}` : "Enroll New Student"}
         </h3>
 
-        <form onSubmit={handleSubmitStudentForm} className="space-y-4 text-xs">
+        <form onSubmit={handleSubmitStudentForm} className="space-y-6 text-xs max-h-[75vh] overflow-y-auto pr-2 custom-scrollbar">
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-600 font-bold mb-1">Pupil Full Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    placeholder="e.g. Samuel Nana Kwabena"
-                    className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-600 font-bold mb-1">Gender *</label>
-                  <select
-                    value={formData.gender}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'Male' | 'Female' })}
-                    className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
-                  >
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-gray-600 font-bold mb-1">Assigned Class *</label>
-                  {isLoadingClasses ? (
-                    <div className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-400 font-semibold">
-                      Loading class registry...
-                    </div>
-                  ) : dynamicCohorts.length === 0 ? (
-                    <div className="space-y-1">
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Primary 6 Class 6A"
-                        value={formData.classGrade}
-                        onChange={(e) => setFormData({ ...formData, classGrade: e.target.value })}
-                        className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
-                      />
-                      <span className="text-[10px] text-amber-700 block">
-                        No class streams found in registry. Type class or configure in Academics.
-                      </span>
-                    </div>
-                  ) : (
+              {/* SECTION A: STUDENT INFORMATION */}
+              <div className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                <h4 className="font-bold text-brand-textMain text-sm mb-4 pb-2 border-b border-gray-200">Section A - Student Information</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Pupil Full Name *</label>
+                    <input
+                      type="text" required value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      placeholder="e.g. Samuel Nana Kwabena"
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Gender *</label>
                     <select
-                      value={formData.classGrade || dynamicCohorts[0]}
-                      onChange={(e) => setFormData({ ...formData, classGrade: e.target.value })}
-                      className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
-                      required
+                      value={formData.gender}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'Male' | 'Female' })}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
                     >
-                      {formData.classGrade && !dynamicCohorts.includes(formData.classGrade) && (
-                        <option value={formData.classGrade}>{formData.classGrade}</option>
-                      )}
-                      {dynamicCohorts.map(c => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-gray-600 font-bold mb-1">House Cohort *</label>
-                  <select
-                    value={formData.house}
-                    onChange={(e) => setFormData({ ...formData, house: e.target.value as any })}
-                    className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
-                  >
-                    {HOUSES.map(h => (
-                      <option key={h} value={h}>{h} House</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-gray-600 font-bold mb-1">Date of Birth</label>
-                  <input
-                    type="date"
-                    value={formData.dateOfBirth}
-                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                    className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
-                  />
-                </div>
-              </div>
-
-              <div className="border-t border-gray-100 pt-3">
-                <h4 className="font-bold text-brand-textMain text-xs mb-3">Parent & Emergency Contact Coordinates</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-gray-600 font-bold mb-1">Parent / Guardian Name *</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.parentName}
-                      onChange={(e) => setFormData({ ...formData, parentName: e.target.value })}
-                      placeholder="e.g. Mr. Patrick Osei"
-                      className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-600 font-bold mb-1">Emergency Phone *</label>
-                    <input
-                      type="tel"
-                      required
-                      value={formData.parentPhone}
-                      onChange={(e) => setFormData({ ...formData, parentPhone: e.target.value })}
-                      placeholder="024 111 2233"
-                      className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-600 font-bold mb-1">Parent Email</label>
-                    <input
-                      type="email"
-                      value={formData.parentEmail}
-                      onChange={(e) => setFormData({ ...formData, parentEmail: e.target.value })}
-                      placeholder="parent@gmail.com"
-                      className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-100 pt-3">
-                <h4 className="font-bold text-brand-textMain text-xs mb-3">Academic & Clinical Record Defaults</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-gray-600 font-bold mb-1">Initial Fee Status</label>
-                    <select
-                      value={formData.feeStatus}
-                      onChange={(e) => setFormData({ ...formData, feeStatus: e.target.value as any })}
-                      className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
-                    >
-                      <option value="Paid">Fully Paid</option>
-                      <option value="Partial">Partial Balance</option>
-                      <option value="Overdue">Overdue</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
                     </select>
                   </div>
+                </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                   <div>
-                    <label className="block text-gray-600 font-bold mb-1">Academic Weighted Avg (%)</label>
+                    <label className="block text-gray-600 font-bold mb-1">Date of Birth</label>
                     <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      value={formData.avgScore}
-                      onChange={(e) => setFormData({ ...formData, avgScore: Number(e.target.value) })}
-                      className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
+                      type="date" value={formData.dateOfBirth}
+                      onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
                     />
                   </div>
-
                   <div>
-                    <label className="block text-gray-600 font-bold mb-1">Attendance Rate (%)</label>
+                    <label className="block text-gray-600 font-bold mb-1">Place of Birth</label>
                     <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      value={formData.attendancePct}
-                      onChange={(e) => setFormData({ ...formData, attendancePct: Number(e.target.value) })}
-                      className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
+                      type="text" value={formData.extendedProfile.placeOfBirth}
+                      onChange={(e) => setFormData({ ...formData, extendedProfile: { ...formData.extendedProfile, placeOfBirth: e.target.value } })}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Nationality</label>
+                    <input
+                      type="text" value={formData.extendedProfile.nationality}
+                      onChange={(e) => setFormData({ ...formData, extendedProfile: { ...formData.extendedProfile, nationality: e.target.value } })}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Residential Address</label>
+                    <input
+                      type="text" value={formData.extendedProfile.residentialAddress}
+                      onChange={(e) => setFormData({ ...formData, extendedProfile: { ...formData.extendedProfile, residentialAddress: e.target.value } })}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Residential Phone</label>
+                    <input
+                      type="tel" value={formData.extendedProfile.residentialPhone}
+                      onChange={(e) => setFormData({ ...formData, extendedProfile: { ...formData.extendedProfile, residentialPhone: e.target.value } })}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Assigned Class *</label>
+                    {isLoadingClasses ? (
+                      <div className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-400 font-semibold">Loading...</div>
+                    ) : dynamicCohorts.length === 0 ? (
+                      <input type="text" required value={formData.classGrade} onChange={(e) => setFormData({ ...formData, classGrade: e.target.value })} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet" />
+                    ) : (
+                      <select required value={formData.classGrade || dynamicCohorts[0]} onChange={(e) => setFormData({ ...formData, classGrade: e.target.value })} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet">
+                        {formData.classGrade && !dynamicCohorts.includes(formData.classGrade) && <option value={formData.classGrade}>{formData.classGrade}</option>}
+                        {dynamicCohorts.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">House Cohort *</label>
+                    <select value={formData.house} onChange={(e) => setFormData({ ...formData, house: e.target.value as any })} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet">
+                      {HOUSES.map(h => <option key={h} value={h}>{h} House</option>)}
+                    </select>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-gray-600 font-bold mb-1">Infirmary / Medical & Allergy Flags</label>
-                <input
-                  type="text"
-                  value={formData.allergyFlag}
-                  onChange={(e) => setFormData({ ...formData, allergyFlag: e.target.value })}
-                  placeholder="e.g. Asthmatic (inhaler in backpack), Peanut allergy"
-                  className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet"
-                />
+              {/* SECTION B: PARENTS / GUARDIAN */}
+              <div className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                <h4 className="font-bold text-brand-textMain text-sm mb-4 pb-2 border-b border-gray-200">Section B - Parents/Guardian Information</h4>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Father's Full Name *</label>
+                    <input type="text" required value={formData.parentName} onChange={(e) => setFormData({ ...formData, parentName: e.target.value })} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Father's Mobile *</label>
+                    <input type="tel" required value={formData.parentPhone} onChange={(e) => setFormData({ ...formData, parentPhone: e.target.value })} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Father's Email</label>
+                    <input type="email" value={formData.parentEmail} onChange={(e) => setFormData({ ...formData, parentEmail: e.target.value })} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Mother's Full Name</label>
+                    <input type="text" value={formData.extendedProfile.motherName} onChange={(e) => setFormData({ ...formData, extendedProfile: { ...formData.extendedProfile, motherName: e.target.value } })} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Mother's Mobile</label>
+                    <input type="tel" value={formData.extendedProfile.motherMobilePhone} onChange={(e) => setFormData({ ...formData, extendedProfile: { ...formData.extendedProfile, motherMobilePhone: e.target.value } })} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Mother's Email</label>
+                    <input type="email" value={formData.extendedProfile.motherEmail} onChange={(e) => setFormData({ ...formData, extendedProfile: { ...formData.extendedProfile, motherEmail: e.target.value } })} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Parents Living Status</label>
+                    <select value={formData.extendedProfile.parentsLiving} onChange={(e) => setFormData({ ...formData, extendedProfile: { ...formData.extendedProfile, parentsLiving: e.target.value } })} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet">
+                      <option value="together">Living Together</option>
+                      <option value="separated">Separated</option>
+                      <option value="divorced">Divorced</option>
+                      <option value="single">Single Parent</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Sibling details (if attending)</label>
+                    <input type="text" value={formData.extendedProfile.siblingDetails} onChange={(e) => setFormData({ ...formData, extendedProfile: { ...formData.extendedProfile, siblingDetails: e.target.value } })} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet" placeholder="Names and classes..." />
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-gray-600 font-bold mb-1">Conduct & Pedagogical Remarks</label>
-                <textarea
-                  rows={2}
-                  value={formData.conductRemark}
-                  onChange={(e) => setFormData({ ...formData, conductRemark: e.target.value })}
-                  placeholder="Official conduct appraisal remarks..."
-                  className="w-full bg-brand-bg border border-gray-200 rounded-xl p-3 text-xs outline-none focus:border-brand-violet"
-                />
+              {/* SECTION C & D: SCHOOL & MEDICAL */}
+              <div className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                <h4 className="font-bold text-brand-textMain text-sm mb-4 pb-2 border-b border-gray-200">Section C & D - Academic & Medical</h4>
+                
+                <div className="grid grid-cols-1 gap-4 mb-4">
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Previous Schools Attended</label>
+                    <input type="text" value={formData.extendedProfile.previousSchoolDetails} onChange={(e) => setFormData({ ...formData, extendedProfile: { ...formData.extendedProfile, previousSchoolDetails: e.target.value } })} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet" placeholder="Name, Address, Dates..." />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Blood Group</label>
+                    <input type="text" value={formData.extendedProfile.bloodGroup} onChange={(e) => setFormData({ ...formData, extendedProfile: { ...formData.extendedProfile, bloodGroup: e.target.value } })} className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Infirmary / Primary Allergy Flags</label>
+                    <input type="text" value={formData.allergyFlag} onChange={(e) => setFormData({ ...formData, allergyFlag: e.target.value })} placeholder="e.g. Asthmatic, Peanut allergy" className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-brand-violet" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 mb-4">
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Extensive Medical History (Immunizations, Hearing, Dental)</label>
+                    <textarea rows={2} value={formData.extendedProfile.medicalHistory} onChange={(e) => setFormData({ ...formData, extendedProfile: { ...formData.extendedProfile, medicalHistory: e.target.value } })} className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs outline-none focus:border-brand-violet" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-600 font-bold mb-1">Special Needs / IEP Details</label>
+                    <textarea rows={2} value={formData.extendedProfile.specialNeedsDetails} onChange={(e) => setFormData({ ...formData, extendedProfile: { ...formData.extendedProfile, specialNeedsDetails: e.target.value } })} className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs outline-none focus:border-brand-violet" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-600 font-bold mb-1">Conduct & Pedagogical Remarks</label>
+                  <textarea rows={2} value={formData.conductRemark} onChange={(e) => setFormData({ ...formData, conductRemark: e.target.value })} placeholder="Official conduct appraisal remarks..." className="w-full bg-white border border-gray-200 rounded-xl p-3 text-xs outline-none focus:border-brand-violet" />
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEnrollModalOpen(false);
-                    setIsEditModalOpen(false);
-                  }}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition-colors"
-                >
+                <button type="button" onClick={() => { setIsEnrollModalOpen(false); setIsEditModalOpen(false); setActiveStudent(null); }} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition-colors">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingForm}
-                  className="px-6 py-2 bg-brand-violet hover:bg-brand-violetDark text-white font-bold rounded-xl text-xs shadow-md transition-colors disabled:opacity-50 flex items-center gap-2"
-                >
+                <button type="submit" disabled={isSubmittingForm} className="px-6 py-2 bg-brand-violet hover:bg-brand-violetDark text-white font-bold rounded-xl text-xs shadow-md transition-colors disabled:opacity-50 flex items-center gap-2">
                   {isSubmittingForm ? (
-                    <>
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Saving to SIS...
-                    </>
+                    <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Saving to SIS...</>
                   ) : (
-                    <>
-                      <i className="ph-bold ph-check"></i>
-                      {isEditModalOpen ? "Update Profile" : "Complete Enrollment"}
-                    </>
+                    <><i className="ph-bold ph-check"></i> {isEditModalOpen ? "Update Profile" : "Complete Enrollment"}</>
                   )}
                 </button>
               </div>
@@ -1419,7 +1474,9 @@ export default function AdminStudentsPage() {
                       <tr key={s.id} className="hover:bg-purple-50/40 transition-colors">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2.5">
-                            <img src={s.avatar} alt={s.fullName} className="w-8 h-8 rounded-full object-cover border border-gray-200 shrink-0" />
+                            <div className="w-8 h-8 rounded-full bg-brand-violet/10 flex items-center justify-center border border-brand-violet/20 shrink-0">
+                              <i className="ph-bold ph-student text-brand-violet text-sm"></i>
+                            </div>
                             <div>
                               <strong className="font-bold text-brand-textMain block text-xs">{s.fullName}</strong>
                               <span className="font-mono text-[10px] text-gray-400">{s.indexNo}</span>
@@ -1700,13 +1757,23 @@ export default function AdminStudentsPage() {
 
             <div className="flex items-center gap-4 mb-6">
               <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-brand-violet shadow-md shrink-0">
-                <img src={activeStudent.avatar} alt={activeStudent.fullName} className="w-full h-full object-cover" />
+                <div className="w-full h-full bg-brand-violet/10 flex items-center justify-center">
+                  <i className="ph-bold ph-student text-brand-violet text-3xl"></i>
+                </div>
               </div>
-              <div>
+              <div className="flex-1">
                 <span className="font-mono text-xs text-brand-violet font-bold">{activeStudent.indexNo}</span>
                 <h3 className="text-2xl font-serif font-bold text-brand-textMain">{activeStudent.fullName}</h3>
                 <p className="text-xs text-brand-textMuted">{activeStudent.classGrade} • {activeStudent.house} House</p>
               </div>
+              <button
+                type="button"
+                onClick={() => handleOpenEdit(activeStudent)}
+                className="px-4 py-2 bg-brand-violet hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition-colors shadow-sm flex items-center gap-2 mr-10"
+              >
+                <i className="ph-bold ph-pencil-simple"></i>
+                Edit Profile
+              </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
@@ -1944,21 +2011,14 @@ export default function AdminStudentsPage() {
             <div className="bg-brand-bg p-5 rounded-2xl border border-gray-100 space-y-3 text-xs mb-6">
               <div className="flex items-center justify-between">
                 <h4 className="font-bold text-brand-textMain uppercase text-[11px]">Parent & Guardian Coordinates</h4>
-                <button
-                  type="button"
-                  onClick={() => handleOpenEdit(activeStudent)}
-                  className="text-xs text-brand-violet font-bold hover:underline"
-                >
-                  Edit Profile
-                </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <p><strong>Primary Contact:</strong> {activeStudent.parentName}</p>
-                <p><strong>Phone:</strong> {activeStudent.parentPhone}</p>
-                <p><strong>Emergency Contact:</strong> {activeStudent.emergencyPhone || activeStudent.parentPhone}</p>
+                <p><strong>Primary Contact:</strong> {activeStudent.parentName || 'Not recorded'}</p>
+                <p><strong>Phone:</strong> {activeStudent.parentPhone || 'Not recorded'}</p>
+                <p><strong>Emergency Contact:</strong> {activeStudent.emergencyPhone || activeStudent.parentPhone || 'Not recorded'}</p>
                 <p><strong>Email:</strong> {activeStudent.parentEmail || 'Not recorded'}</p>
                 <p><strong>Date of Birth:</strong> {activeStudent.dateOfBirth || 'Not recorded'}</p>
-                <p><strong>Residence:</strong> {activeStudent.residentialAddress || 'Pokuase ACP, Accra'}</p>
+                <p><strong>Residence:</strong> {activeStudent.residentialAddress || 'Not recorded'}</p>
               </div>
             </div>
 
@@ -1974,7 +2034,7 @@ export default function AdminStudentsPage() {
             <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 text-xs mb-6">
               <span className="font-bold text-gray-700 uppercase text-[10px] block mb-1">Pedagogical & Conduct Remarks</span>
               <p className="text-gray-800 italic">
-                "{activeStudent.conductRemark}"
+                {activeStudent.conductRemark ? `"${activeStudent.conductRemark}"` : "No remarks recorded."}
               </p>
             </div>
 
@@ -2012,22 +2072,21 @@ export default function AdminStudentsPage() {
                       allergyFlag: activeStudent.allergyFlag,
                       conductRemark: activeStudent.conductRemark,
                       avatar: activeStudent.avatar,
-                      academicHistory: [
+                      academicHistory: cumulativeHistory.length > 0 ? cumulativeHistory.map(r => ({
+                        session: r.academic_year,
+                        term: r.academic_term,
+                        classGrade: r.class_grade,
+                        avgScore: r.composite_average !== null ? r.composite_average : activeStudent.avgScore,
+                        attendancePct: (r.attendance_present_days && r.attendance_total_days) ? Math.round((Number(r.attendance_present_days) / Number(r.attendance_total_days)) * 100) : activeStudent.attendancePct,
+                        remark: r.form_master_remarks || 'Endorsed Terminal Record'
+                      })) : [
                         {
-                          session: '2024/2025',
-                          term: 'Term 3 (Promoted)',
-                          classGrade: activeStudent.entryClass || activeStudent.classGrade,
-                          avgScore: activeStudent.historicalAvgScore || activeStudent.avgScore,
-                          attendancePct: activeStudent.historicalAttendancePct || activeStudent.attendancePct,
-                          remark: 'Promoted in good academic standing.',
-                        },
-                        {
-                          session: '2025/2026',
-                          term: 'Term 2 (Current)',
+                          session: 'Current Academic Session',
+                          term: 'Live Registry',
                           classGrade: activeStudent.classGrade,
                           avgScore: activeStudent.avgScore,
                           attendancePct: activeStudent.attendancePct,
-                          remark: activeStudent.conductRemark || 'Consistent and disciplined performance.',
+                          remark: activeStudent.conductRemark || 'No historical terms digitized yet.',
                         }
                       ]
                     });
@@ -2100,7 +2159,9 @@ export default function AdminStudentsPage() {
 
               <div className="flex items-center gap-4">
                 <div className="w-16 h-20 bg-white rounded-xl overflow-hidden border-2 border-white shadow shrink-0">
-                  <img src={activeStudent.avatar} alt={activeStudent.fullName} className="w-full h-full object-cover" />
+                  <div className="w-full h-full bg-brand-violet/20 flex items-center justify-center">
+                    <i className="ph-bold ph-student text-brand-violetLight text-2xl"></i>
+                  </div>
                 </div>
                 <div className="space-y-1 text-xs">
                   <h5 className="font-bold text-sm leading-tight text-white">{activeStudent.fullName}</h5>

@@ -3,7 +3,14 @@
  * Proxies all requests to the Nginx Path-Based Gateway on Port 8000
  */
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
+const API_BASE = (
+  typeof window === 'undefined'
+    ? process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+    : process.env.NEXT_PUBLIC_API_URL || ''
+).replace(/\/$/, '');
+
+let cmsLandingCache: { data: any; expiresAt: number } | null = null;
+let cmsLandingInFlight: Promise<any> | null = null;
 
 export interface ApiResponse<T = any> {
   data?: T;
@@ -38,7 +45,9 @@ export async function apiRequest<T = any>(
     ...(options.headers || {}),
   };
 
+  const hasNextRevalidate = Boolean((options as any)?.next?.revalidate);
   const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...(hasNextRevalidate ? {} : { cache: 'no-store' }),
     ...options,
     headers,
   });
@@ -95,6 +104,12 @@ export const RoselandApi = {
     deleteAllTeachers: () =>
       apiRequest('/api/v1/auth/teachers', {
         method: 'DELETE',
+      }),
+    getSystemSettings: () => apiRequest('/api/v1/auth/settings/profile'),
+    updateSystemSettings: (settingsData: any) =>
+      apiRequest('/api/v1/auth/settings/profile', {
+        method: 'PUT',
+        body: JSON.stringify(settingsData),
       }),
   },
 
@@ -410,7 +425,9 @@ export const RoselandApi = {
       objectives?: string;
       starter?: string;
       main_activity?: string;
+      main_duration?: number;
       plenary?: string;
+      plenary_duration?: number;
       differentiation?: string;
     }) =>
       apiRequest('/api/v1/academic/schemes', {
@@ -443,6 +460,10 @@ export const RoselandApi = {
       apiRequest('/api/v1/academic/appraisals/schedule-walkthrough', {
         method: 'POST',
         body: JSON.stringify(data),
+      }),
+    issueCommendations: () =>
+      apiRequest('/api/v1/academic/appraisals/commendations', {
+        method: 'POST',
       }),
     calendar: {
       getCurrentState: () => apiRequest('/api/v1/academic/calendar/current'),
@@ -812,7 +833,34 @@ export const RoselandApi = {
 
   // 8. Public CMS & Admissions Engine (Port 8088 via Gateway)
   cms: {
-    getLandingContent: () => apiRequest('/api/v1/cms/landing'),
+    getLandingContent: async () => {
+      const now = Date.now();
+      if (cmsLandingCache && cmsLandingCache.expiresAt > now) {
+        return cmsLandingCache.data;
+      }
+      if (cmsLandingInFlight) {
+        return cmsLandingInFlight;
+      }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 500);
+      cmsLandingInFlight = apiRequest('/api/v1/cms/landing', {
+        signal: controller.signal,
+        next: { revalidate: 60 },
+      } as RequestInit)
+        .then((res) => {
+          cmsLandingCache = { data: res, expiresAt: Date.now() + 60000 };
+          return res;
+        })
+        .catch((err) => {
+          cmsLandingCache = { data: null, expiresAt: Date.now() + 30000 };
+          throw err;
+        })
+        .finally(() => {
+          clearTimeout(timeout);
+          cmsLandingInFlight = null;
+        });
+      return cmsLandingInFlight;
+    },
     getCalendar: () => apiRequest('/api/v1/cms/calendar'),
     getNews: () => apiRequest('/api/v1/cms/news'),
     getGallery: () => apiRequest('/api/v1/cms/gallery'),
@@ -845,6 +893,18 @@ export const RoselandApi = {
       }),
     getBatchJobStatus: (jobId: string) =>
       apiRequest(`/api/v1/pdf/batch/jobs/${jobId}`),
+  },
+
+  // 10. HR & Payroll Engine (Port 8090 via Gateway)
+  hr: {
+    getStaff: () => apiRequest('/api/v1/hr/staff'),
+    createStaff: (data: any) => apiRequest('/api/v1/hr/staff', { method: 'POST', body: JSON.stringify(data) }),
+    updateStaff: (id: string, data: any) => apiRequest(`/api/v1/hr/staff/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    generatePayroll: (monthYear: string) => apiRequest('/api/v1/hr/payroll/generate', { method: 'POST', body: JSON.stringify({ month_year: monthYear }) }),
+    getPayroll: (monthYear?: string) => apiRequest(`/api/v1/hr/payroll${monthYear ? `?month_year=${monthYear}` : ''}`),
+    createLeave: (data: any) => apiRequest('/api/v1/hr/leave', { method: 'POST', body: JSON.stringify(data) }),
+    getLeave: (status?: string) => apiRequest(`/api/v1/hr/leave${status ? `?status=${status}` : ''}`),
+    updateLeaveStatus: (id: string, status: string) => apiRequest(`/api/v1/hr/leave/${id}/status?status=${status}`, { method: 'PUT' }),
   },
 };
 

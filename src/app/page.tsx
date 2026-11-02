@@ -1,30 +1,66 @@
-"use client";
-
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { RoselandApi } from '@/lib/api';
 
-export default function Home() {
+export const revalidate = 60;
+
+export default async function Home() {
+  let schoolName = "The Roseland Preparatory School";
+  let rawMotto = "Knowledge & Humility";
+  let location = "Kotoku, Accra";
+  let email = "info@roselandprep.edu.gh";
+  let phone = "+233243968988";
+  let mottoStart = "Building a Foundation for";
+  let mottoHighlight = "Excellence.";
+  
+  try {
+    const cmsData = await RoselandApi.cms.getLandingContent();
+    if (cmsData?.institution) {
+      if (cmsData.institution.name) schoolName = cmsData.institution.name;
+      if (cmsData.institution.location) location = cmsData.institution.location;
+      if (cmsData.institution.email) email = cmsData.institution.email;
+      if (cmsData.institution.phone) phone = cmsData.institution.phone;
+      if (cmsData.institution.tagline) {
+        rawMotto = cmsData.institution.tagline;
+        // Split the motto to highlight the last word
+        const words = cmsData.institution.tagline.split(' ');
+        if (words.length > 1) {
+          mottoHighlight = words.pop() + ".";
+          mottoStart = words.join(' ');
+        } else {
+          mottoStart = cmsData.institution.tagline;
+          mottoHighlight = "";
+        }
+      }
+    }
+  } catch (err) {}
+
   return (
     <div className="font-sans text-brand-textMain bg-brand-bg overflow-x-hidden min-h-screen flex flex-col">
-      <Navbar />
+      <Navbar initialSchoolName={schoolName} initialSchoolMotto={rawMotto} />
 
       {/* 1. HERO SECTION */}
       <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden pt-28 sm:pt-32 pb-20">
         {/* Background Image with Rich Editorial Gradient */}
         <div className="absolute inset-0 z-0">
-          <img
+          <Image
             src="/IMG_3023.JPG.jpeg"
-            alt="The Roseland Preparatory School Students"
-            className="w-full h-full object-cover object-center scale-105 animate-fade-in"
+            alt="Students"
+            fill
+            priority
+            sizes="100vw"
+            quality={80}
+            className="object-cover object-center scale-105 transform-gpu"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-gray-950/95 via-gray-900/80 to-brand-violetDark/60"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent"></div>
         </div>
 
         {/* Decorative Ambient Glow */}
-        <div className="absolute top-1/4 right-10 w-96 h-96 bg-brand-violet/25 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-10 left-10 w-80 h-80 bg-brand-violetDark/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute top-1/4 right-10 w-96 h-96 bg-brand-violet/25 rounded-full blur-3xl pointer-events-none transform-gpu"></div>
+        <div className="absolute bottom-10 left-10 w-80 h-80 bg-brand-violetDark/20 rounded-full blur-3xl pointer-events-none transform-gpu"></div>
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-start pt-8">
           {/* Admissions Badge (Static, Refined, No Logo, No Blinking) */}
@@ -34,11 +70,11 @@ export default function Home() {
 
           {/* Main Headline */}
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-serif font-bold text-white leading-[1.1] mb-6 max-w-4xl animate-fade-in">
-            Building a Foundation for <span className="text-amber-400 italic underline decoration-amber-400/40">Excellence.</span>
+            {mottoStart} {mottoHighlight && <span className="text-amber-400 italic underline decoration-amber-400/40">{mottoHighlight}</span>}
           </h1>
 
           <p className="text-lg sm:text-xl text-gray-200 mb-10 max-w-2xl font-light leading-relaxed animate-fade-in">
-            Welcome to <strong className="text-white font-semibold">The Roseland Preparatory School</strong>. From Crèche to JHS, we nurture brilliant minds with rigorous GES academics, STEAM innovation, and grounded character in Ga West, Accra.
+            Welcome to <strong className="text-white font-semibold">{schoolName}</strong>. From Crèche to JHS, we nurture brilliant minds with rigorous GES academics, STEAM innovation, and grounded character in Ga West, Accra.
           </p>
 
           {/* Call to Actions */}
@@ -178,14 +214,17 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Division 1: Early Years */}
-            <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all flex flex-col">
+            <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all flex flex-col group">
               <div className="relative h-56 overflow-hidden">
-                <img
+                <Image
                   src="/IMG_2210.jpg"
                   alt="Early Years Crèche & Nursery"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  quality={75}
+                  className="object-cover group-hover:scale-105 transition-transform duration-500 transform-gpu"
                 />
-                <span className="absolute top-4 left-4 bg-brand-yellow text-yellow-950 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                <span className="absolute top-4 left-4 bg-brand-yellow text-yellow-950 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider z-10">
                   Crèche & Nursery
                 </span>
               </div>
@@ -213,14 +252,17 @@ export default function Home() {
             </div>
 
             {/* Division 2: Primary School */}
-            <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all flex flex-col">
+            <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all flex flex-col group">
               <div className="relative h-56 overflow-hidden">
-                <img
+                <Image
                   src="/IMG_9400.jpg"
                   alt="Primary School Class"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  quality={75}
+                  className="object-cover group-hover:scale-105 transition-transform duration-500 transform-gpu"
                 />
-                <span className="absolute top-4 left-4 bg-brand-violet text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                <span className="absolute top-4 left-4 bg-brand-violet text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider z-10">
                   Primary 1 to 6
                 </span>
               </div>
@@ -248,14 +290,17 @@ export default function Home() {
             </div>
 
             {/* Division 3: Junior High */}
-            <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all flex flex-col">
+            <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all flex flex-col group">
               <div className="relative h-56 overflow-hidden">
-                <img
+                <Image
                   src="/IMG_3098.JPG.jpeg"
                   alt="Junior High Students"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  quality={75}
+                  className="object-cover group-hover:scale-105 transition-transform duration-500 transform-gpu"
                 />
-                <span className="absolute top-4 left-4 bg-gray-900 text-brand-yellow text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                <span className="absolute top-4 left-4 bg-gray-900 text-brand-yellow text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider z-10">
                   JHS 1 to 3
                 </span>
               </div>
@@ -292,26 +337,32 @@ export default function Home() {
             {/* Visual Collage */}
             <div className="lg:col-span-6 relative">
               <div className="grid grid-cols-2 gap-4 sm:gap-6">
-                <div className="relative mt-8 sm:mt-12 rounded-3xl overflow-hidden shadow-2xl border-4 border-white group">
-                  <img
+                <div className="relative mt-8 sm:mt-12 h-[350px] sm:h-[420px] rounded-3xl overflow-hidden shadow-2xl border-4 border-white group">
+                  <Image
                     src="/Rose-Boateng.jpg"
                     alt="Proprietress Mrs. Rose Boateng"
-                    className="w-full h-[350px] sm:h-[420px] object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    quality={75}
+                    className="object-cover object-top group-hover:scale-105 transition-transform duration-500 transform-gpu"
                   />
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-5">
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-5 z-10">
                     <p className="text-white font-serif font-bold text-lg leading-tight">Mrs. Rose Boateng</p>
                     <p className="text-brand-yellow text-xs font-bold uppercase tracking-wider mt-1">Proprietress & Founder</p>
                   </div>
                 </div>
                 
-                <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white mb-8 sm:mb-12 group">
-                  <img
-                    src="/Mrs.%20Grace.jpg"
+                <div className="relative h-[350px] sm:h-[420px] rounded-3xl overflow-hidden shadow-2xl border-4 border-white mb-8 sm:mb-12 group">
+                  <Image
+                    src="/Mrs. Grace.jpg"
                     alt="Headmistress Mrs. Grace"
-                    className="w-full h-[350px] sm:h-[420px] object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    quality={75}
+                    className="object-cover object-top group-hover:scale-105 transition-transform duration-500 transform-gpu"
                   />
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-5">
-                    <p className="text-white font-serif font-bold text-lg leading-tight">Mrs. Grace</p>
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-5 z-10">
+                    <p className="text-white font-serif font-bold text-lg leading-tight">Mrs. Grace Nyanko Boateng</p>
                     <p className="text-brand-yellow text-xs font-bold uppercase tracking-wider mt-1">Headmistress</p>
                   </div>
                 </div>
@@ -374,11 +425,16 @@ export default function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-gray-800/80 rounded-2xl overflow-hidden border border-gray-700 hover:border-brand-yellow/60 transition-all group">
-              <img
-                src="/IMG_2537.jpg"
-                alt="Modern Computer Lab"
-                className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
-              />
+              <div className="relative w-full h-44 overflow-hidden">
+                <Image
+                  src="/IMG_2537.jpg"
+                  alt="Modern Computer Lab"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  quality={75}
+                  className="object-cover group-hover:scale-105 transition-transform duration-300 transform-gpu"
+                />
+              </div>
               <div className="p-5">
                 <h3 className="font-bold text-lg text-white mb-1">ICT Computer Lab</h3>
                 <p className="text-xs text-gray-400 leading-relaxed">High-speed networked PCs for coding classes and CBT testing sessions.</p>
@@ -386,11 +442,16 @@ export default function Home() {
             </div>
 
             <div className="bg-gray-800/80 rounded-2xl overflow-hidden border border-gray-700 hover:border-brand-yellow/60 transition-all group">
-              <img
-                src="/IMG_9165.jpg"
-                alt="Integrated Science Lab"
-                className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
-              />
+              <div className="relative w-full h-44 overflow-hidden">
+                <Image
+                  src="/IMG_9165.jpg"
+                  alt="Integrated Science Lab"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  quality={75}
+                  className="object-cover group-hover:scale-105 transition-transform duration-300 transform-gpu"
+                />
+              </div>
               <div className="p-5">
                 <h3 className="font-bold text-lg text-white mb-1">Science Laboratory</h3>
                 <p className="text-xs text-gray-400 leading-relaxed">Fully equipped apparatus for practical biology, physics, and chemistry experiments.</p>
@@ -398,11 +459,16 @@ export default function Home() {
             </div>
 
             <div className="bg-gray-800/80 rounded-2xl overflow-hidden border border-gray-700 hover:border-brand-yellow/60 transition-all group">
-              <img
-                src="/IMG_9458.jpg"
-                alt="Well-Stocked Library"
-                className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
-              />
+              <div className="relative w-full h-44 overflow-hidden">
+                <Image
+                  src="/IMG_9458.jpg"
+                  alt="Well-Stocked Library"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  quality={75}
+                  className="object-cover group-hover:scale-105 transition-transform duration-300 transform-gpu"
+                />
+              </div>
               <div className="p-5">
                 <h3 className="font-bold text-lg text-white mb-1">Library & Resource Hub</h3>
                 <p className="text-xs text-gray-400 leading-relaxed">Over 3,000 literature, reference books, and quiet reading study spaces.</p>
@@ -410,11 +476,16 @@ export default function Home() {
             </div>
 
             <div className="bg-gray-800/80 rounded-2xl overflow-hidden border border-gray-700 hover:border-brand-yellow/60 transition-all group">
-              <img
-                src="/IMG_9373.jpg"
-                alt="Early Years Play Area"
-                className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
-              />
+              <div className="relative w-full h-44 overflow-hidden">
+                <Image
+                  src="/IMG_9373.jpg"
+                  alt="Early Years Play Area"
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  quality={75}
+                  className="object-cover group-hover:scale-105 transition-transform duration-300 transform-gpu"
+                />
+              </div>
               <div className="p-5">
                 <h3 className="font-bold text-lg text-white mb-1">Playground & Recreation</h3>
                 <p className="text-xs text-gray-400 leading-relaxed">Safe outdoor synthetic play turf, swing sets, and athletic sports field.</p>
@@ -467,7 +538,7 @@ export default function Home() {
               <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
                 <div className="w-10 h-10 rounded-full bg-brand-yellow text-yellow-950 flex items-center justify-center font-bold text-sm">GO</div>
                 <div>
-                  <h4 className="font-bold text-sm text-brand-textMain">Mrs. Grace Osei</h4>
+                  <h4 className="font-bold text-sm text-brand-textMain">Mrs. Grace Nyanko Boateng</h4>
                   <p className="text-xs text-brand-textMuted">Parent of Nursery 1 Pupil</p>
                 </div>
               </div>
@@ -497,8 +568,8 @@ export default function Home() {
       {/* 7. UNIFIED ADMISSIONS CALL-TO-ACTION */}
       <section className="py-20 bg-gradient-to-r from-brand-violetDark via-brand-violet to-brand-violetDark text-white text-center relative overflow-hidden">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-6 bg-white rounded-3xl p-2 shadow-2xl flex items-center justify-center border-2 border-brand-yellow/50">
-            <img src="/logo.png" alt="The Roseland Preparatory School Crest" className="w-full h-full object-contain" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-6 bg-white rounded-3xl p-2 shadow-2xl flex items-center justify-center border-2 border-brand-yellow/50 relative overflow-hidden">
+            <Image src="/logo.png" alt="The Roseland Preparatory School Crest" width={64} height={64} className="w-full h-full object-contain" />
           </div>
           <span className="py-1.5 px-4 rounded-full bg-amber-400 text-slate-950 text-xs font-semibold uppercase tracking-wider mb-6 inline-block shadow-md border border-amber-300/30">
             Take the Next Step
@@ -526,7 +597,13 @@ export default function Home() {
         </div>
       </section>
 
-      <Footer />
+      <Footer
+        initialSchoolName={schoolName}
+        initialMotto={rawMotto}
+        initialLocation={location}
+        initialEmail={email}
+        initialPhone={phone}
+      />
     </div>
   );
 }
