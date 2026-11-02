@@ -116,12 +116,18 @@ export default function TeacherLessons() {
       const user = AuthService.getCurrentUser();
       const teacherName = user?.fullName || (user as any)?.name || '';
       
-      const res = await RoselandApi.academic.getLessonSchemes({
+      let res = await RoselandApi.academic.getLessonSchemes({
         class_grade: assignedClass || undefined,
         teacher_name: teacherName || undefined,
       });
 
-      const data = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+      let data = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+      if (data.length === 0 && teacherName) {
+        const fallbackRes = await RoselandApi.academic.getLessonSchemes({
+          teacher_name: teacherName,
+        });
+        data = Array.isArray(fallbackRes?.data) ? fallbackRes.data : Array.isArray(fallbackRes) ? fallbackRes : [];
+      }
       setSchemes(data);
     } catch (e) {
       console.error("Failed to load lesson schemes", e);
@@ -141,42 +147,32 @@ export default function TeacherLessons() {
     }
 
     setGeneratingAi(true);
-    toast.loading("Teacher Copilot is consulting Llama 3 for NaCCA standards...", { id: "ai-gen" });
+    toast.loading("Teacher Copilot is drafting your NaCCA lesson scheme...", { id: "ai-gen" });
 
     try {
-      const response = await fetch("http://localhost:7860/api/v1/ai/generate-lesson-scheme", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject: formData.subject,
-          week: formData.week || "Week 1",
-          strand: formData.strand,
-          sub_strand: formData.subStrand
-        })
+      const data = await RoselandApi.ai.generateLessonScheme({
+        subject: formData.subject,
+        week: formData.week || "Week 1",
+        strand: formData.strand,
+        sub_strand: formData.subStrand,
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate scheme.");
-      }
-
-      const data = await response.json();
       
       setFormData(prev => ({
         ...prev,
-        objectives: data.objectives,
-        tlr: data.tlr,
-        starter: data.starter,
-        mainActivity: data.main_activity,
-        plenary: data.plenary,
-        differentiation: data.differentiation
+        objectives: data.objectives || prev.objectives,
+        tlr: data.tlr || prev.tlr,
+        starter: data.starter || prev.starter,
+        mainActivity: data.main_activity || prev.mainActivity,
+        plenary: data.plenary || prev.plenary,
+        differentiation: data.differentiation || prev.differentiation
       }));
 
       toast.dismiss("ai-gen");
       toast.success("Teacher Copilot successfully drafted your lesson plan!");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       toast.dismiss("ai-gen");
-      toast.error("AI Generation failed. Check backend logs or HF_TOKEN.");
+      toast.error(err?.message || "AI Generation failed. Please retry.");
     } finally {
       setGeneratingAi(false);
     }

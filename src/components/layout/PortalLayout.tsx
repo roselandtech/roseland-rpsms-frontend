@@ -35,31 +35,6 @@ export default function PortalLayout({
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<RoselandUser | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
-  const [isBackendWaking, setIsBackendWaking] = useState(false);
-  const [workspaceRefreshKey, setWorkspaceRefreshKey] = useState(0);
-
-  // Listen for Free-Tier Backend Cold-Start Wake-Up & Idle Session Resume
-  useEffect(() => {
-    const onBackendWaking = (e: Event) => {
-      const detail = (e as CustomEvent)?.detail;
-      if (!detail) return;
-      setIsBackendWaking(Boolean(detail.waking));
-      if (detail.recovered) {
-        setWorkspaceRefreshKey((k) => k + 1);
-      }
-    };
-
-    const onSessionResumed = () => {
-      setWorkspaceRefreshKey((k) => k + 1);
-    };
-
-    window.addEventListener('roseland:backend-waking', onBackendWaking);
-    window.addEventListener('roseland:session-resumed', onSessionResumed);
-    return () => {
-      window.removeEventListener('roseland:backend-waking', onBackendWaking);
-      window.removeEventListener('roseland:session-resumed', onSessionResumed);
-    };
-  }, []);
 
   // Authentication barrier
   useEffect(() => {
@@ -156,16 +131,9 @@ export default function PortalLayout({
           headerContent={headerContent}
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         />
-
-        {isBackendWaking && (
-          <div className="bg-brand-violet/10 border-b border-brand-violet/20 px-4 py-2 flex items-center justify-center gap-2.5 text-xs font-semibold text-brand-violet animate-fade-in">
-            <div className="w-3.5 h-3.5 border-2 border-brand-violet border-t-transparent rounded-full animate-spin shrink-0" />
-            <span>Waking up cloud server from standby — loading your portal data, please wait a moment...</span>
-          </div>
-        )}
         
         {/* Scrollable Content */}
-        <div key={workspaceRefreshKey} className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20">
           {children}
         </div>
       </main>

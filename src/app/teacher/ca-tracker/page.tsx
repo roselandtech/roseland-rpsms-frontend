@@ -99,20 +99,16 @@ export default function CATrackerPage() {
       setStudents(studentList);
 
       // Load Assessments
-      const token = AuthService.getToken();
-      const headers = { 'Authorization': `Bearer ${token}` };
-      
-      const assRes = await fetch(`${process.env.NEXT_PUBLIC_ACADEMIC_URL || 'http://localhost:8082'}/api/v1/academic/ca-tracker/assessments?class_grade=${assignedClass}&subject=${subject}`, { headers });
-      const assData = await assRes.json();
-      setAssessments(assData || []);
+      const assData = await RoselandApi.academic.caTracker.getAssessments(assignedClass, subject);
+      const assessmentList = Array.isArray(assData) ? assData : [];
+      setAssessments(assessmentList);
 
       // Load Scores
       const newScoresMap: Record<string, Record<string, number>> = {};
-      for (const ass of (assData || [])) {
-        const scoreRes = await fetch(`${process.env.NEXT_PUBLIC_ACADEMIC_URL || 'http://localhost:8082'}/api/v1/academic/ca-tracker/assessments/${ass.id}/scores`, { headers });
-        const scores = await scoreRes.json();
+      for (const ass of assessmentList) {
+        const scores = await RoselandApi.academic.caTracker.getAssessmentScores(ass.id);
         newScoresMap[ass.id] = {};
-        for (const s of (scores || [])) {
+        for (const s of (Array.isArray(scores) ? scores : [])) {
            newScoresMap[ass.id][s.student_index_no] = s.score;
         }
       }
@@ -134,22 +130,16 @@ export default function CATrackerPage() {
 
   const handleCreateAssessment = async () => {
     if (!newAss.title) return toast.error("Title required");
-    const token = AuthService.getToken();
-    const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
     
     setIsCreating(true);
     const toastId = toast.loading("Creating assessment...");
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_ACADEMIC_URL || 'http://localhost:8082'}/api/v1/academic/ca-tracker/assessments`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          title: newAss.title,
-          class_grade: assignedClass,
-          subject: subject,
-          category: newAss.category,
-          max_score: newAss.max_score
-        })
+      await RoselandApi.academic.caTracker.createAssessment({
+        title: newAss.title,
+        class_grade: assignedClass,
+        subject: subject,
+        category: newAss.category,
+        max_score: newAss.max_score
       });
       toast.success("Assessment created!", { id: toastId });
       setIsModalOpen(false);
@@ -163,9 +153,6 @@ export default function CATrackerPage() {
   };
 
   const handleSaveScore = async (assessmentId: string) => {
-    const token = AuthService.getToken();
-    const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-    
     const scoresToSubmit = Object.keys(scoresMap[assessmentId] || {}).map(studentId => ({
         student_index_no: studentId,
         score: scoresMap[assessmentId][studentId]
@@ -175,11 +162,7 @@ export default function CATrackerPage() {
     const toastId = toast.loading("Saving and syncing to Gradebook...");
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_ACADEMIC_URL || 'http://localhost:8082'}/api/v1/academic/ca-tracker/assessments/${assessmentId}/scores`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ scores: scoresToSubmit })
-      });
+      await RoselandApi.academic.caTracker.saveAssessmentScores(assessmentId, scoresToSubmit);
       toast.success("Scores saved and auto-normalized to Gradebook!", { id: toastId });
     } catch (err) {
       toast.error("Failed to save scores", { id: toastId });

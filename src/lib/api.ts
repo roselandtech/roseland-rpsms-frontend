@@ -16,24 +16,15 @@ let cmsLandingInFlight: Promise<any> | null = null;
 let wakeUpInFlight: Promise<boolean> | null = null;
 let lastWakeUpSuccessAt = 0;
 
-function notifyBackendWaking(waking: boolean, recovered: boolean = false) {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(
-      new CustomEvent('roseland:backend-waking', { detail: { waking, recovered } })
-    );
-  }
-}
-
 /**
- * Proactively pings the backend gateway & Render container so a cold-started
+ * Silently pings the backend gateway & Render container so a cold-started
  * Free Tier instance begins spinning up immediately when any visitor arrives.
  */
 export async function wakeUpBackend(force: boolean = false): Promise<boolean> {
   if (typeof window === 'undefined') return true;
 
   const now = Date.now();
-  // Skip if we confirmed the backend was awake within the last 45 seconds
-  if (!force && now - lastWakeUpSuccessAt < 45_000) {
+  if (!force && now - lastWakeUpSuccessAt < 60_000) {
     return true;
   }
 
@@ -43,41 +34,23 @@ export async function wakeUpBackend(force: boolean = false): Promise<boolean> {
 
   wakeUpInFlight = (async () => {
     try {
-      // 1. Direct no-cors ping to Render URL to immediately trigger container wake-up
-      // without waiting for or timing out on serverless proxy limits
-      fetch(`${RENDER_FALLBACK_URL}/healthz`, {
+      // 1. Direct no-cors ping to Render /health to immediately trigger container wake-up
+      fetch(`${RENDER_FALLBACK_URL}/health`, {
         method: 'GET',
         mode: 'no-cors',
         cache: 'no-store',
       }).catch(() => {});
 
-      // 2. Poll the gateway health endpoint until it responds 200 OK
-      for (let attempt = 0; attempt < 8; attempt++) {
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 12_000);
-          const res = await fetch(`${API_BASE}/healthz`, {
-            method: 'GET',
-            cache: 'no-store',
-            signal: controller.signal,
-          });
-          clearTimeout(timer);
+      // 2. Check same-origin /health rewrite
+      const res = await fetch('/health', {
+        method: 'GET',
+        cache: 'no-store',
+      }).catch(() => null);
 
-          if (res.ok) {
-            lastWakeUpSuccessAt = Date.now();
-            notifyBackendWaking(false, attempt > 0);
-            return true;
-          }
-        } catch {
-          // Cold start still in progress
-        }
-
-        if (attempt === 0) {
-          notifyBackendWaking(true, false);
-        }
-        await new Promise((r) => setTimeout(r, 3500));
+      if (res && res.ok) {
+        lastWakeUpSuccessAt = Date.now();
+        return true;
       }
-      notifyBackendWaking(false, false);
       return false;
     } finally {
       wakeUpInFlight = null;
@@ -114,107 +87,91 @@ export async function apiRequest<T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('roseland_token') : null;
+  const isBrowser = typeof window !== 'undefined';
+  const token = isBrowser ? localStorage.getItem('roseland_token') : null;
 
+  const hasBody = options.body !== undefined && options.body !== null;
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
 
   const hasNextRevalidate = Boolean((options as any)?.next?.revalidate);
-  const isBrowser = typeof window !== 'undefined';
-  // Allow up to 8 retries (~65s total) in the browser to ride out Render Free Tier cold starts
-  const maxAttempts = isBrowser ? 8 : 2;
-  let markedWaking = false;
+  const maxAttempts = isBrowser ? 5 : 2;
+  let lastError: Error | null = null;
 
-  // If a browser request takes > 4s, let the portal UI know the cloud server is waking up
-  const slowNoticeTimer = isBrowser
-    ? setTimeout(() => {
-        markedWaking = true;
-        notifyBackendWaking(true, false);
-      }, 4000)
-    : null;
+  // In the browser, prefer same-origin proxy ('') first to avoid CORS preflight overhead
+  // and ISP blocks, then alternate with API_BASE / RENDER_FALLBACK_URL on retry if needed.
+  const isLocalhost =
+    isBrowser &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-  try {
-    let lastError: Error | null = null;
+  const getBaseForAttempt = (attempt: number): string => {
+    if (!isBrowser) return API_BASE;
+    if (isLocalhost) return API_BASE;
+    // Attempt 0, 2, 4 -> same-origin Vercel rewrite ('')
+    // Attempt 1, 3 -> direct Render URL (bypasses Vercel proxy timeout during cold start)
+    return attempt % 2 === 0 ? '' : API_BASE || RENDER_FALLBACK_URL;
+  };
 
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      try {
-        const controller = new AbortController();
-        // Give each individual attempt up to 22s before retrying
-        const attemptTimeout = setTimeout(() => controller.abort(), 22_000);
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const baseUrl = getBaseForAttempt(attempt);
+    try {
+      const controller = new AbortController();
+      const attemptTimeout = setTimeout(() => controller.abort(), 35_000);
 
-        const response = await fetch(`${API_BASE}${endpoint}`, {
-          ...(hasNextRevalidate ? {} : { cache: 'no-store' }),
-          ...options,
-          headers,
-          signal: options.signal || controller.signal,
-        });
+      const response = await fetch(`${baseUrl}${endpoint}`, {
+        ...(hasNextRevalidate ? {} : { cache: 'no-store' }),
+        ...options,
+        headers,
+        signal: options.signal || controller.signal,
+      });
 
-        clearTimeout(attemptTimeout);
+      clearTimeout(attemptTimeout);
 
-        if (response.ok) {
-          lastWakeUpSuccessAt = Date.now();
-          if (markedWaking || attempt > 0) {
-            notifyBackendWaking(false, attempt > 0);
-          }
-          return response.json();
-        }
-
-        // If gateway returned 502/503/504 while Render container or supervisor services are waking up
-        if (COLD_START_STATUS_CODES.has(response.status) && attempt < maxAttempts - 1) {
-          if (!markedWaking) {
-            markedWaking = true;
-            notifyBackendWaking(true, false);
-          }
-          // Fire direct no-cors wake-up ping to Render just in case
-          if (isBrowser) {
-            fetch(`${RENDER_FALLBACK_URL}/healthz`, { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
-          }
-          await new Promise((r) => setTimeout(r, 3500));
-          continue;
-        }
-
-        const errBody = await response.json().catch(() => ({}));
-        const message =
-          typeof errBody.detail === 'string'
-            ? errBody.detail
-            : errBody.message ||
-              (Array.isArray(errBody.detail)
-                ? errBody.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ')
-                : `API Error ${response.status}: ${response.statusText}`);
-        throw new Error(message);
-      } catch (err: any) {
-        lastError = err instanceof Error ? err : new Error(String(err));
-        const isNetworkOrAbort =
-          err?.name === 'AbortError' ||
-          err instanceof TypeError ||
-          /fetch|network|aborted|timeout/i.test(String(err?.message || ''));
-
-        if (isNetworkOrAbort && attempt < maxAttempts - 1) {
-          if (!markedWaking) {
-            markedWaking = true;
-            notifyBackendWaking(true, false);
-          }
-          if (isBrowser) {
-            fetch(`${RENDER_FALLBACK_URL}/healthz`, { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
-          }
-          await new Promise((r) => setTimeout(r, 3500));
-          continue;
-        }
-
-        throw lastError;
+      if (response.ok) {
+        lastWakeUpSuccessAt = Date.now();
+        return response.json();
       }
-    }
 
-    throw lastError || new Error('Unable to reach server after multiple retries.');
-  } finally {
-    if (slowNoticeTimer) clearTimeout(slowNoticeTimer);
-    if (markedWaking) {
-      notifyBackendWaking(false, false);
+      if (COLD_START_STATUS_CODES.has(response.status) && attempt < maxAttempts - 1) {
+        if (isBrowser) {
+          fetch(`${RENDER_FALLBACK_URL}/health`, { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
+        }
+        await new Promise((r) => setTimeout(r, 2500));
+        continue;
+      }
+
+      const errBody = await response.json().catch(() => ({}));
+      const message =
+        typeof errBody.detail === 'string'
+          ? errBody.detail
+          : errBody.message ||
+            (Array.isArray(errBody.detail)
+              ? errBody.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ')
+              : `API Error ${response.status}: ${response.statusText}`);
+      throw new Error(message);
+    } catch (err: any) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      const isNetworkOrAbort =
+        err?.name === 'AbortError' ||
+        err instanceof TypeError ||
+        /fetch|network|aborted|timeout/i.test(String(err?.message || ''));
+
+      if (isNetworkOrAbort && attempt < maxAttempts - 1) {
+        if (isBrowser) {
+          fetch(`${RENDER_FALLBACK_URL}/health`, { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
+        }
+        await new Promise((r) => setTimeout(r, 2000));
+        continue;
+      }
+
+      throw lastError;
     }
   }
+
+  throw lastError || new Error('Unable to reach server after multiple retries.');
 }
 
 export const RoselandApi = {
@@ -632,6 +589,19 @@ export const RoselandApi = {
         apiRequest(`/api/v1/academic/calendar/events${termId ? `?term_id=${termId}` : ''}`),
       createEvent: (data: { academic_term_id?: string; title: string; start_date: string; end_date: string; event_type: string; description?: string }) => 
         apiRequest('/api/v1/academic/calendar/events', { method: 'POST', body: JSON.stringify(data) }),
+    },
+    caTracker: {
+      getAssessments: (classGrade: string, subject: string) =>
+        apiRequest(`/api/v1/academic/ca-tracker/assessments?class_grade=${encodeURIComponent(classGrade)}&subject=${encodeURIComponent(subject)}`),
+      getAssessmentScores: (assessmentId: string) =>
+        apiRequest(`/api/v1/academic/ca-tracker/assessments/${encodeURIComponent(assessmentId)}/scores`),
+      createAssessment: (data: { title: string; class_grade: string; subject: string; category: string; max_score: number }) =>
+        apiRequest('/api/v1/academic/ca-tracker/assessments', { method: 'POST', body: JSON.stringify(data) }),
+      saveAssessmentScores: (assessmentId: string, scores: Array<{ student_index_no: string; score: number }>) =>
+        apiRequest(`/api/v1/academic/ca-tracker/assessments/${encodeURIComponent(assessmentId)}/scores`, {
+          method: 'POST',
+          body: JSON.stringify({ scores }),
+        }),
     },
   },
 
@@ -1059,6 +1029,15 @@ export const RoselandApi = {
     createLeave: (data: any) => apiRequest('/api/v1/hr/leave', { method: 'POST', body: JSON.stringify(data) }),
     getLeave: (status?: string) => apiRequest(`/api/v1/hr/leave${status ? `?status=${status}` : ''}`),
     updateLeaveStatus: (id: string, status: string) => apiRequest(`/api/v1/hr/leave/${id}/status?status=${status}`, { method: 'PUT' }),
+  },
+
+  // 11. Teacher Copilot AI Service (Port 8082 via Gateway)
+  ai: {
+    generateLessonScheme: (data: { subject: string; week: string; strand: string; sub_strand: string }) =>
+      apiRequest('/api/v1/ai/generate-lesson-scheme', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
 };
 
