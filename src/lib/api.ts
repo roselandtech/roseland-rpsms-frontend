@@ -3,6 +3,8 @@
  * Proxies all requests to the Nginx Path-Based Gateway on Port 8000
  */
 
+const RENDER_FALLBACK_URL = 'https://roseland-rpsms-backend.onrender.com';
+
 const API_BASE = (
   typeof window === 'undefined'
     ? process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
@@ -11,6 +13,79 @@ const API_BASE = (
 
 let cmsLandingCache: { data: any; expiresAt: number } | null = null;
 let cmsLandingInFlight: Promise<any> | null = null;
+let wakeUpInFlight: Promise<boolean> | null = null;
+let lastWakeUpSuccessAt = 0;
+
+function notifyBackendWaking(waking: boolean, recovered: boolean = false) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('roseland:backend-waking', { detail: { waking, recovered } })
+    );
+  }
+}
+
+/**
+ * Proactively pings the backend gateway & Render container so a cold-started
+ * Free Tier instance begins spinning up immediately when any visitor arrives.
+ */
+export async function wakeUpBackend(force: boolean = false): Promise<boolean> {
+  if (typeof window === 'undefined') return true;
+
+  const now = Date.now();
+  // Skip if we confirmed the backend was awake within the last 45 seconds
+  if (!force && now - lastWakeUpSuccessAt < 45_000) {
+    return true;
+  }
+
+  if (wakeUpInFlight) {
+    return wakeUpInFlight;
+  }
+
+  wakeUpInFlight = (async () => {
+    try {
+      // 1. Direct no-cors ping to Render URL to immediately trigger container wake-up
+      // without waiting for or timing out on serverless proxy limits
+      fetch(`${RENDER_FALLBACK_URL}/healthz`, {
+        method: 'GET',
+        mode: 'no-cors',
+        cache: 'no-store',
+      }).catch(() => {});
+
+      // 2. Poll the gateway health endpoint until it responds 200 OK
+      for (let attempt = 0; attempt < 8; attempt++) {
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 12_000);
+          const res = await fetch(`${API_BASE}/healthz`, {
+            method: 'GET',
+            cache: 'no-store',
+            signal: controller.signal,
+          });
+          clearTimeout(timer);
+
+          if (res.ok) {
+            lastWakeUpSuccessAt = Date.now();
+            notifyBackendWaking(false, attempt > 0);
+            return true;
+          }
+        } catch {
+          // Cold start still in progress
+        }
+
+        if (attempt === 0) {
+          notifyBackendWaking(true, false);
+        }
+        await new Promise((r) => setTimeout(r, 3500));
+      }
+      notifyBackendWaking(false, false);
+      return false;
+    } finally {
+      wakeUpInFlight = null;
+    }
+  })();
+
+  return wakeUpInFlight;
+}
 
 export interface ApiResponse<T = any> {
   data?: T;
@@ -33,6 +108,8 @@ export interface SubjectRecord {
   updated_at?: string;
 }
 
+const COLD_START_STATUS_CODES = new Set([408, 429, 502, 503, 504, 520, 521, 522, 523, 524]);
+
 export async function apiRequest<T = any>(
   endpoint: string,
   options: RequestInit = {}
@@ -46,21 +123,98 @@ export async function apiRequest<T = any>(
   };
 
   const hasNextRevalidate = Boolean((options as any)?.next?.revalidate);
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...(hasNextRevalidate ? {} : { cache: 'no-store' }),
-    ...options,
-    headers,
-  });
+  const isBrowser = typeof window !== 'undefined';
+  // Allow up to 8 retries (~65s total) in the browser to ride out Render Free Tier cold starts
+  const maxAttempts = isBrowser ? 8 : 2;
+  let markedWaking = false;
 
-  if (!response.ok) {
-    const errBody = await response.json().catch(() => ({}));
-    const message = typeof errBody.detail === 'string' 
-      ? errBody.detail 
-      : errBody.message || (Array.isArray(errBody.detail) ? errBody.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ') : `API Error ${response.status}: ${response.statusText}`);
-    throw new Error(message);
+  // If a browser request takes > 4s, let the portal UI know the cloud server is waking up
+  const slowNoticeTimer = isBrowser
+    ? setTimeout(() => {
+        markedWaking = true;
+        notifyBackendWaking(true, false);
+      }, 4000)
+    : null;
+
+  try {
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const controller = new AbortController();
+        // Give each individual attempt up to 22s before retrying
+        const attemptTimeout = setTimeout(() => controller.abort(), 22_000);
+
+        const response = await fetch(`${API_BASE}${endpoint}`, {
+          ...(hasNextRevalidate ? {} : { cache: 'no-store' }),
+          ...options,
+          headers,
+          signal: options.signal || controller.signal,
+        });
+
+        clearTimeout(attemptTimeout);
+
+        if (response.ok) {
+          lastWakeUpSuccessAt = Date.now();
+          if (markedWaking || attempt > 0) {
+            notifyBackendWaking(false, attempt > 0);
+          }
+          return response.json();
+        }
+
+        // If gateway returned 502/503/504 while Render container or supervisor services are waking up
+        if (COLD_START_STATUS_CODES.has(response.status) && attempt < maxAttempts - 1) {
+          if (!markedWaking) {
+            markedWaking = true;
+            notifyBackendWaking(true, false);
+          }
+          // Fire direct no-cors wake-up ping to Render just in case
+          if (isBrowser) {
+            fetch(`${RENDER_FALLBACK_URL}/healthz`, { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
+          }
+          await new Promise((r) => setTimeout(r, 3500));
+          continue;
+        }
+
+        const errBody = await response.json().catch(() => ({}));
+        const message =
+          typeof errBody.detail === 'string'
+            ? errBody.detail
+            : errBody.message ||
+              (Array.isArray(errBody.detail)
+                ? errBody.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ')
+                : `API Error ${response.status}: ${response.statusText}`);
+        throw new Error(message);
+      } catch (err: any) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        const isNetworkOrAbort =
+          err?.name === 'AbortError' ||
+          err instanceof TypeError ||
+          /fetch|network|aborted|timeout/i.test(String(err?.message || ''));
+
+        if (isNetworkOrAbort && attempt < maxAttempts - 1) {
+          if (!markedWaking) {
+            markedWaking = true;
+            notifyBackendWaking(true, false);
+          }
+          if (isBrowser) {
+            fetch(`${RENDER_FALLBACK_URL}/healthz`, { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
+          }
+          await new Promise((r) => setTimeout(r, 3500));
+          continue;
+        }
+
+        throw lastError;
+      }
+    }
+
+    throw lastError || new Error('Unable to reach server after multiple retries.');
+  } finally {
+    if (slowNoticeTimer) clearTimeout(slowNoticeTimer);
+    if (markedWaking) {
+      notifyBackendWaking(false, false);
+    }
   }
-
-  return response.json();
 }
 
 export const RoselandApi = {

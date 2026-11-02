@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { wakeUpBackend } from "@/lib/api";
 
 const ROUTE_TITLES: Record<string, string> = {
   "/": "The Roseland Preparatory School | Adjen Kotoku, Accra",
@@ -86,12 +87,56 @@ function formatFallbackTitle(pathname: string): string {
 
 export default function DynamicTitleSync() {
   const pathname = usePathname();
+  const lastActiveRef = useRef<number>(Date.now());
 
   useEffect(() => {
     if (!pathname) return;
     const cleanPath = pathname.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
     document.title = ROUTE_TITLES[cleanPath] || formatFallbackTitle(cleanPath);
   }, [pathname]);
+
+  // Global Backend Wake-Up & Keep-Alive Engine (for Render Free Tier standby)
+  useEffect(() => {
+    // 1. Immediately wake up the backend when anyone visits any page on the website
+    wakeUpBackend();
+
+    // 2. Keep-alive ping every 10 minutes while the website/portal is open
+    const keepAliveInterval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        wakeUpBackend(true);
+      }
+    }, 10 * 60 * 1000);
+
+    // 3. When returning to an idle tab ("continue from where you left off"),
+    // wake the backend and notify active portal views to refresh once awake.
+    const handleResume = async () => {
+      if (document.visibilityState !== "visible") {
+        lastActiveRef.current = Date.now();
+        return;
+      }
+      const idleMs = Date.now() - lastActiveRef.current;
+      lastActiveRef.current = Date.now();
+
+      // If the tab was idle/backgrounded for more than 3 minutes, ensure backend is awake
+      if (idleMs > 3 * 60 * 1000) {
+        const ok = await wakeUpBackend(true);
+        if (ok) {
+          window.dispatchEvent(new CustomEvent("roseland:session-resumed"));
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleResume);
+    window.addEventListener("focus", handleResume);
+    window.addEventListener("online", handleResume);
+
+    return () => {
+      clearInterval(keepAliveInterval);
+      document.removeEventListener("visibilitychange", handleResume);
+      window.removeEventListener("focus", handleResume);
+      window.removeEventListener("online", handleResume);
+    };
+  }, []);
 
   return null;
 }
