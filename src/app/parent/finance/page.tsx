@@ -439,7 +439,7 @@ export default function ParentFinance() {
                 RPS
               </div>
               <h3 className="font-serif font-bold text-lg text-brand-textMain">The Roseland Preparatory School</h3>
-              <p className="text-[11px] text-brand-textMuted">Pokuase ACP Estates, Ga West Municipal</p>
+              <p className="text-[11px] text-brand-textMuted">PJ9H+FCX, Adjen Kotoku, Ga West Municipal</p>
               <div className="mt-2 inline-block px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full text-emerald-800 font-mono font-bold text-[10px] uppercase tracking-wider">
                 Official Tuition Payment Receipt
               </div>

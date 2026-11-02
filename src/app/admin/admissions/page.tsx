@@ -658,7 +658,7 @@ export default function AdminAdmissionsPage() {
                     <label className="block text-gray-700 font-bold mb-1">Residential Address / Area</label>
                     <input
                       type="text"
-                      placeholder="e.g. Pokuase ACP Estates, Accra"
+                      placeholder="e.g. Adjen Kotoku, Accra"
                       value={walkinData.homeAddress}
                       onChange={(e) => setWalkinData({ ...walkinData, homeAddress: e.target.value })}
                       className="w-full bg-brand-bg border border-gray-200 rounded-xl p-2.5 outline-none focus:border-brand-violet"

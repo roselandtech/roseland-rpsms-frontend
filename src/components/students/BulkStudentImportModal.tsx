@@ -144,7 +144,7 @@ export default function BulkStudentImportModal({
       '0241234567',
       'grace.mensah@gmail.com',
       '0509876543',
-      '"Pokuase ACP Estates, Block C"',
+      '"Adjen Kotoku, Block C"',
       'None'
     ].join(',');
 
@@ -254,7 +254,7 @@ export default function BulkStudentImportModal({
       const parentName = getVal(pnIdx);
       let parentPhone = getVal(ppIdx);
       const parentEmail = getVal(peIdx);
-      const address = getVal(addrIdx) || 'Pokuase ACP, Accra';
+      const address = getVal(addrIdx) || 'Adjen Kotoku, Accra';
       const emergencyPhone = getVal(epIdx) || parentPhone;
       const allergies = getVal(allergyIdx) || 'None';
 

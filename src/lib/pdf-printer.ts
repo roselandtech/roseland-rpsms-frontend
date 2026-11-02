@@ -145,7 +145,7 @@ export function printReceipt(receipt: ReceiptPrintData): void {
           <td style="vertical-align: middle; padding-left: 10px;">
             <h1 class="font-serif" style="font-size: 18px; font-weight: 800; color: #1e1b4b; text-transform: uppercase; letter-spacing: 0.5px;">The Roseland Preparatory School</h1>
             <p style="font-size: 10px; font-weight: 700; color: #5B42F3; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;">Office of the Chief Bursar & Accounts Directorate</p>
-            <p style="font-size: 9px; color: #64748b; margin-top: 2px;">Pokuase ACP Estates, Accra, Ghana • Tel: +233 (0) 24 412 3456 • accounts@roseland.edu.gh</p>
+            <p style="font-size: 9px; color: #64748b; margin-top: 2px;">PJ9H+FCX, Adjen Kotoku, Accra, Ghana • Tel: +233243968988 • accounts@roseland.edu.gh</p>
           </td>
           <td style="text-align: right; vertical-align: top;">
             <span class="badge-paid">${receipt.status || 'PAID OFFICIAL'}</span>
@@ -443,7 +443,7 @@ export function printStudentDossier(data: StudentDossierPrintData): void {
           <td style="vertical-align: middle; padding-left: 10px;">
             <h1 class="font-serif" style="font-size: 17px; font-weight: 800; color: #1e1b4b; text-transform: uppercase;">The Roseland Preparatory School</h1>
             <p style="font-size: 9.5px; font-weight: 700; color: #5B42F3; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;">Office of the Academic Registrar • Official Student 360° Cumulative Dossier</p>
-            <p style="font-size: 8.5px; color: #64748b; margin-top: 2px;">GES Registration: RPS-GES-4029 • Pokuase ACP Estates, Ga West Municipal, Accra</p>
+            <p style="font-size: 8.5px; color: #64748b; margin-top: 2px;">GES Registration: RPS-GES-4029 • PJ9H+FCX, Adjen Kotoku, Ga West Municipal, Accra</p>
           </td>
           <td style="text-align: right; vertical-align: top;">
             <span style="font-size: 8.5px; font-family: monospace; color: #64748b; display: block;">PRINT DATE</span>
@@ -530,7 +530,7 @@ export function printStudentDossier(data: StudentDossierPrintData): void {
           </tr>
           <tr>
             <td colspan="2" style="padding: 6px 10px;">
-              <span style="color: #64748b;">Residential Address:</span> <strong>${data.residentialAddress || 'Pokuase ACP Estates, Ga West Municipal, Accra'}</strong>
+              <span style="color: #64748b;">Residential Address:</span> <strong>${data.residentialAddress || 'PJ9H+FCX, Adjen Kotoku, Ga West Municipal, Accra'}</strong>
             </td>
           </tr>
         </tbody>
@@ -607,7 +607,7 @@ export interface StudentIdCardPrintData {
 export function printStudentIdCard(data: StudentIdCardPrintData): void {
   const avatarSrc = data.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(data.indexNo || 'roseland')}`;
   const expiry = data.expiryDate || 'JUL 2027';
-  const emergencyPhone = data.emergencyPhone || '+233 (0) 24 412 3456';
+  const emergencyPhone = data.emergencyPhone || '+233243968988';
 
   const html = `
     <div style="max-width: 680px; margin: 0 auto; padding: 20px; background: #fff; text-align: center;">
@@ -677,7 +677,7 @@ export function printStudentIdCard(data: StudentIdCardPrintData): void {
                 <tr>
                   <td style="vertical-align: top; font-size: 7.5px; line-height: 1.4; color: #475569; padding-right: 8px;">
                     <strong style="color: #0f172a; font-size: 8px; display: block; margin-bottom: 2px;">TERMS & CONDITIONS</strong>
-                    <span>This card is the property of The Roseland Preparatory School. If found, please return to Pokuase ACP Estates or call below.</span>
+                    <span>This card is the property of The Roseland Preparatory School. If found, please return to PJ9H+FCX, Adjen Kotoku or call below.</span>
                     <div style="margin-top: 4px;">
                       <strong style="color: #0f172a;">Emergency Helpline:</strong><br/>
                       <span class="font-mono" style="color: #5B42F3; font-weight: 700;">${emergencyPhone}</span>
