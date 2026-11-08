@@ -84,7 +84,7 @@ export default function AdminSettingsPage() {
       email: formData.get('email'),
       phone: formData.get('phone'),
       motto: formData.get('motto') || 'Knowledge & Humility',
-      website: formData.get('website') || 'https://roselandprep.edu.gh'
+      website: formData.get('website') || process.env.NEXT_PUBLIC_SITE_URL || 'https://roselandprep.edu.gh'
     };
 
     try {

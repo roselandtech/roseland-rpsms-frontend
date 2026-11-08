@@ -15,8 +15,10 @@ const playfair = Playfair_Display({
   subsets: ["latin"],
 });
 
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://roselandprep.edu.gh").replace(/\/$/, "");
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://roselandprep.edu.gh"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "The Roseland Preparatory School | Adjen Kotoku, Accra",
     template: "%s | Roseland Preparatory School",
@@ -36,7 +38,7 @@ export const metadata: Metadata = {
     title: "The Roseland Preparatory School | Adjen Kotoku, Accra",
     description:
       "GES-accredited basic education from Crèche to JHS in PJ9H+FCX, Adjen Kotoku, Greater Accra. Knowledge & Humility.",
-    url: "https://roselandprep.edu.gh",
+    url: SITE_URL,
     siteName: "The Roseland Preparatory School",
     locale: "en_GH",
     type: "website",
@@ -72,8 +74,8 @@ const schoolJsonLd = {
   name: "The Roseland Preparatory School",
   alternateName: "Roseland Preparatory School",
   slogan: "Knowledge & Humility",
-  url: "https://roselandprep.edu.gh",
-  logo: "https://roselandprep.edu.gh/logo.png",
+  url: SITE_URL,
+  logo: `${SITE_URL}/logo.png`,
   telephone: "+233243968988",
   email: "info@roselandprep.edu.gh",
   address: {

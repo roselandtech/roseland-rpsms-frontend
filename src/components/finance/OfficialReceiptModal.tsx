@@ -152,7 +152,7 @@ export const OfficialReceiptModal: React.FC<OfficialReceiptModalProps> = ({
               Office of the Chief Bursar & Accounts Directorate
             </p>
             <p className="text-[9px] text-gray-500 mt-0.5">
-              P.O. Box AC 490, Achimota - Accra, Ghana • Tel: +233 (0) 24 412 3456 • accounts@roseland.edu.gh
+              PJ9H+FCX, Adjen Kotoku, Accra, Ghana • Tel: +233243968988 • accounts@roselandprep.edu.gh
             </p>
           </div>
 

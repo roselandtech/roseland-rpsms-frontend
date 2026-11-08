@@ -594,6 +594,9 @@ export default async function Home() {
               Contact Admissions Office
             </Link>
           </div>
+          <p className="mt-6 text-xs text-brand-violetLight/80">
+            All applications are delivered directly to <a href="mailto:info@roselandprep.edu.gh" className="text-amber-300 underline font-medium">info@roselandprep.edu.gh</a> and processed within 24–48 hours.
+          </p>
         </div>
       </section>
 

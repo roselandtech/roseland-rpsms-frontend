@@ -3,12 +3,16 @@
  * Proxies all requests to the Nginx Path-Based Gateway on Port 8000
  */
 
-const RENDER_FALLBACK_URL = 'https://roseland-rpsms-backend.onrender.com';
+const BACKEND_DIRECT_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.BACKEND_URL ||
+  'https://roseland-rpsms-backend.onrender.com'
+).replace(/\/$/, '');
 
 const API_BASE = (
   typeof window === 'undefined'
-    ? process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
-    : process.env.NEXT_PUBLIC_API_URL || ''
+    ? process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'https://roseland-rpsms-backend.onrender.com'
+    : process.env.NEXT_PUBLIC_API_URL || 'https://roseland-rpsms-backend.onrender.com'
 ).replace(/\/$/, '');
 
 let cmsLandingCache: { data: any; expiresAt: number } | null = null;
@@ -17,7 +21,7 @@ let wakeUpInFlight: Promise<boolean> | null = null;
 let lastWakeUpSuccessAt = 0;
 
 /**
- * Silently pings the backend gateway & Render container so a cold-started
+ * Silently pings the backend gateway so a cold-started
  * Free Tier instance begins spinning up immediately when any visitor arrives.
  */
 export async function wakeUpBackend(force: boolean = false): Promise<boolean> {
@@ -34,12 +38,14 @@ export async function wakeUpBackend(force: boolean = false): Promise<boolean> {
 
   wakeUpInFlight = (async () => {
     try {
-      // 1. Direct no-cors ping to Render /health to immediately trigger container wake-up
-      fetch(`${RENDER_FALLBACK_URL}/health`, {
-        method: 'GET',
-        mode: 'no-cors',
-        cache: 'no-store',
-      }).catch(() => {});
+      // 1. Direct no-cors ping to configured backend URL to immediately trigger container wake-up
+      if (API_BASE) {
+        fetch(`${API_BASE}/health`, {
+          method: 'GET',
+          mode: 'no-cors',
+          cache: 'no-store',
+        }).catch(() => {});
+      }
 
       // 2. Check same-origin /health rewrite
       const res = await fetch('/health', {
@@ -101,18 +107,13 @@ export async function apiRequest<T = any>(
   const maxAttempts = isBrowser ? 5 : 2;
   let lastError: Error | null = null;
 
-  // In the browser, prefer same-origin proxy ('') first to avoid CORS preflight overhead
-  // and ISP blocks, then alternate with API_BASE / RENDER_FALLBACK_URL on retry if needed.
-  const isLocalhost =
-    isBrowser &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
+  // In the browser, prefer same-origin proxy ('') first to execute Next.js Route Handlers
+  // directly and avoid CORS preflight overhead, then alternate with API_BASE on retry.
   const getBaseForAttempt = (attempt: number): string => {
     if (!isBrowser) return API_BASE;
-    if (isLocalhost) return API_BASE;
-    // Attempt 0, 2, 4 -> same-origin Vercel rewrite ('')
-    // Attempt 1, 3 -> direct Render URL (bypasses Vercel proxy timeout during cold start)
-    return attempt % 2 === 0 ? '' : API_BASE || RENDER_FALLBACK_URL;
+    // Attempt 0, 2, 4 -> same-origin Next.js Route Handlers / rewrites ('')
+    // Attempt 1, 3 -> direct configured API_BASE (bypasses proxy timeout during cold start)
+    return attempt % 2 === 0 ? '' : API_BASE || BACKEND_DIRECT_URL || '';
   };
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -136,8 +137,8 @@ export async function apiRequest<T = any>(
       }
 
       if (COLD_START_STATUS_CODES.has(response.status) && attempt < maxAttempts - 1) {
-        if (isBrowser) {
-          fetch(`${RENDER_FALLBACK_URL}/health`, { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
+        if (isBrowser && API_BASE) {
+          fetch(`${API_BASE}/health`, { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
         }
         await new Promise((r) => setTimeout(r, 2500));
         continue;
@@ -160,8 +161,8 @@ export async function apiRequest<T = any>(
         /fetch|network|aborted|timeout/i.test(String(err?.message || ''));
 
       if (isNetworkOrAbort && attempt < maxAttempts - 1) {
-        if (isBrowser) {
-          fetch(`${RENDER_FALLBACK_URL}/health`, { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
+        if (isBrowser && API_BASE) {
+          fetch(`${API_BASE}/health`, { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
         }
         await new Promise((r) => setTimeout(r, 2000));
         continue;

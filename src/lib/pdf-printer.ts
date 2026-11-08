@@ -145,7 +145,7 @@ export function printReceipt(receipt: ReceiptPrintData): void {
           <td style="vertical-align: middle; padding-left: 10px;">
             <h1 class="font-serif" style="font-size: 18px; font-weight: 800; color: #1e1b4b; text-transform: uppercase; letter-spacing: 0.5px;">The Roseland Preparatory School</h1>
             <p style="font-size: 10px; font-weight: 700; color: #5B42F3; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;">Office of the Chief Bursar & Accounts Directorate</p>
-            <p style="font-size: 9px; color: #64748b; margin-top: 2px;">PJ9H+FCX, Adjen Kotoku, Accra, Ghana • Tel: +233243968988 • accounts@roseland.edu.gh</p>
+            <p style="font-size: 9px; color: #64748b; margin-top: 2px;">PJ9H+FCX, Adjen Kotoku, Accra, Ghana • Tel: +233243968988 • accounts@roselandprep.edu.gh</p>
           </td>
           <td style="text-align: right; vertical-align: top;">
             <span class="badge-paid">${receipt.status || 'PAID OFFICIAL'}</span>

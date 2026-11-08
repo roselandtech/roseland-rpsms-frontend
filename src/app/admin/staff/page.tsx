@@ -602,7 +602,7 @@ export default function AdminStaffPage() {
                         ...onboardForm,
                         fullName: name,
                         username: onboardForm.username ? onboardForm.username : autoUsername,
-                        email: onboardForm.email ? onboardForm.email : (autoUsername ? `${autoUsername}@roseland.edu.gh` : '')
+                        email: onboardForm.email ? onboardForm.email : (autoUsername ? `${autoUsername}@roselandprep.edu.gh` : '')
                       });
                     }}
                     className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-brand-violet focus:bg-white"
@@ -614,7 +614,7 @@ export default function AdminStaffPage() {
                   <input
                     type="email"
                     required
-                    placeholder="e.g. sappiah@roseland.edu.gh"
+                    placeholder="e.g. sappiah@roselandprep.edu.gh"
                     value={onboardForm.email}
                     onChange={(e) => setOnboardForm({ ...onboardForm, email: e.target.value })}
                     className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3.5 py-2 text-xs outline-none focus:border-brand-violet focus:bg-white"
