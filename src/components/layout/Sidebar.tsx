@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { AuthService, RoselandUser } from '@/lib/auth';
 import { RoselandApi } from '@/lib/api';
+import Modal from '@/components/ui/Modal';
 
 export interface NavItem {
   name: string;
@@ -364,76 +365,65 @@ export default function Sidebar({
       </div>
 
       {/* Self-Service Change Password Modal */}
-      {isPwdModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-brand-bg/50">
-              <div>
-                <h3 className="text-lg font-serif font-bold text-brand-textMain">Change My Password</h3>
-                <p className="text-xs text-brand-textMuted mt-0.5">{displayName} ({currentUser?.email || currentUser?.username})</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsPwdModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 cursor-pointer"
-              >
-                <i className="ph-bold ph-x text-sm"></i>
-              </button>
-            </div>
-            <form onSubmit={handleChangeOwnPassword} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">Current Password</label>
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
-                  placeholder="Enter current password"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">New Password (min. 6 characters)</label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
-                  placeholder="Enter new password"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">Confirm New Password</label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
-                  placeholder="Re-enter new password"
-                  required
-                />
-              </div>
-              <div className="pt-3 flex justify-end gap-2 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setIsPwdModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isChangingPwd}
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-brand-violet hover:bg-brand-violetDark text-white shadow-sm disabled:opacity-50 cursor-pointer"
-                >
-                  {isChangingPwd ? 'Updating...' : 'Update Password'}
-                </button>
-              </div>
-            </form>
+      <Modal
+        isOpen={isPwdModalOpen}
+        onClose={() => setIsPwdModalOpen(false)}
+        title="Change My Password"
+        subtitle={`${displayName} (${currentUser?.email || currentUser?.username || ''})`}
+        size="md"
+      >
+        <form onSubmit={handleChangeOwnPassword} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1">Current Password</label>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
+              placeholder="Enter current password"
+              required
+            />
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1">New Password (min. 6 characters)</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
+              placeholder="Enter new password"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1">Confirm New Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
+              placeholder="Re-enter new password"
+              required
+            />
+          </div>
+          <div className="pt-3 flex justify-end gap-2 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => setIsPwdModalOpen(false)}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isChangingPwd}
+              className="px-5 py-2 rounded-xl text-xs font-bold bg-brand-violet hover:bg-brand-violetDark text-white shadow-sm disabled:opacity-50 cursor-pointer"
+            >
+              {isChangingPwd ? 'Updating...' : 'Update Password'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </aside>
   );
 }

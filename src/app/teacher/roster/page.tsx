@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { RoselandApi } from '@/lib/api';
 import { AuthService } from '@/lib/auth';
+import Modal from '@/components/ui/Modal';
 
 interface Scholar {
   id: string;
@@ -23,6 +24,7 @@ interface Scholar {
 export default function TeacherRoster() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedHouse, setSelectedHouse] = useState<string>('All');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [selectedScholar, setSelectedScholar] = useState<Scholar | null>(null);
   const [behaviorModalScholar, setBehaviorModalScholar] = useState<Scholar | null>(null);
   const [meritType, setMeritType] = useState<'Merit' | 'Demerit'>('Merit');
@@ -107,18 +109,22 @@ export default function TeacherRoster() {
         else if (rawHouse.includes('GREEN') || rawHouse.includes('EMERALD')) house = 'Green';
         else if (rawHouse.includes('RED') || rawHouse.includes('RUBY')) house = 'Red';
 
+        const rawGender = String(s.gender || '').toUpperCase();
+        const rawAvg = s.avg_score ?? s.academic_average;
+        const rawAtt = s.attendance_pct ?? s.attendance_rate;
+
         return {
           id: sIndex,
           name: fullName,
           avatar: s.avatar || s.photo_url || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200`,
-          gender: s.gender === 'FEMALE' ? 'Female' : 'Male',
+          gender: rawGender.startsWith('F') ? 'Female' : 'Male',
           house,
           parentName: s.parent_name || s.guardian_name || "Parent/Guardian",
           parentPhone: s.parent_phone || s.emergency_contact || "+233 24 000 0000",
           parentRelation: s.parent_relationship || "Guardian",
-          average: s.academic_average ? `${s.academic_average}%` : "Pending",
-          attendance: s.attendance_rate ? `${s.attendance_rate}%` : "100%",
-          medicalNote: s.medical_conditions || s.medical_note || undefined,
+          average: rawAvg !== undefined && rawAvg !== null && Number(rawAvg) > 0 ? `${Math.round(Number(rawAvg))}%` : "Pending",
+          attendance: rawAtt !== undefined && rawAtt !== null ? `${Math.round(Number(rawAtt))}%` : "100%",
+          medicalNote: s.allergy_flag || s.medical_conditions || s.medical_note || undefined,
           housePoints: s.merit_points || 25,
         };
       });
@@ -164,8 +170,12 @@ export default function TeacherRoster() {
     return matchesSearch && matchesHouse;
   });
 
+  const femaleCount = scholars.filter(s => s.gender === 'Female').length;
+  const maleCount = scholars.filter(s => s.gender === 'Male').length;
+  const medicalAlertCount = scholars.filter(s => Boolean(s.medicalNote)).length;
+
   return (
-    <div className="space-y-8 max-w-7xl mx-auto animate-fade-in">
+    <div className="space-y-6 max-w-7xl mx-auto animate-fade-in">
       
       {/* Header */}
       <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -181,7 +191,7 @@ export default function TeacherRoster() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-4">
           {classList.length > 0 && (
             <select
               value={assignedClass}
@@ -194,16 +204,30 @@ export default function TeacherRoster() {
             </select>
           )}
 
-          <div className="text-right pl-3 border-l border-gray-100">
-            <span className="text-[10px] text-gray-400 font-bold uppercase block">Class Strength</span>
-            <strong className="text-xl font-serif font-bold text-brand-violet">{scholars.length} Pupils</strong>
+          <div className="flex items-center gap-4 pl-3 border-l border-gray-100">
+            <div className="text-right">
+              <span className="text-[10px] text-gray-400 font-bold uppercase block">Class Strength</span>
+              <strong className="text-xl font-serif font-bold text-brand-violet">{scholars.length} Pupils</strong>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 text-[11px] font-bold bg-gray-50 px-3 py-2 rounded-2xl border border-gray-100">
+              <span className="text-indigo-700">{maleCount} Boys</span>
+              <span className="text-gray-300">•</span>
+              <span className="text-rose-700">{femaleCount} Girls</span>
+              {medicalAlertCount > 0 && (
+                <>
+                  <span className="text-gray-300">•</span>
+                  <span className="text-red-600">{medicalAlertCount} Medical</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center bg-brand-bg rounded-2xl px-4 py-2.5 border border-gray-200/60 w-full sm:max-w-md">
+      {/* Filter & View Switcher Bar */}
+      <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center bg-brand-bg rounded-2xl px-4 py-2.5 border border-gray-200/60 w-full md:max-w-md">
+          <i className="ph-bold ph-magnifying-glass text-gray-400 text-sm"></i>
           <input
             type="text"
             placeholder="Search by scholar name or RPS index..."
@@ -213,23 +237,53 @@ export default function TeacherRoster() {
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <span className="text-xs font-bold text-gray-400 uppercase hidden sm:inline">House:</span>
-          <select
-            value={selectedHouse}
-            onChange={(e) => setSelectedHouse(e.target.value)}
-            className="bg-brand-bg border border-gray-200 rounded-2xl px-3.5 py-2 text-xs font-bold outline-none focus:border-brand-violet"
-          >
-            <option value="All">All Houses</option>
-            <option value="Red">Red House</option>
-            <option value="Yellow">Yellow House</option>
-            <option value="Green">Green House</option>
-            <option value="Blue">Blue House</option>
-          </select>
+        <div className="flex flex-wrap items-center justify-between md:justify-end gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-gray-400 uppercase hidden sm:inline">House:</span>
+            <select
+              value={selectedHouse}
+              onChange={(e) => setSelectedHouse(e.target.value)}
+              className="bg-brand-bg border border-gray-200 rounded-2xl px-3.5 py-2 text-xs font-bold outline-none focus:border-brand-violet"
+            >
+              <option value="All">All Houses ({scholars.length})</option>
+              <option value="Red">Red House</option>
+              <option value="Yellow">Yellow House</option>
+              <option value="Green">Green House</option>
+              <option value="Blue">Blue House</option>
+            </select>
+          </div>
+
+          {/* View Switcher: Table Register vs Card Grid */}
+          <div className="flex items-center bg-gray-100 p-1 rounded-2xl border border-gray-200/60">
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                viewMode === 'table'
+                  ? 'bg-white text-brand-violet shadow-xs'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              <i className="ph-bold ph-table text-sm"></i>
+              Register Table
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                viewMode === 'grid'
+                  ? 'bg-white text-brand-violet shadow-xs'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              <i className="ph-bold ph-squares-four text-sm"></i>
+              Cards
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Scholar Grid */}
+      {/* Scholar Roster Content */}
       {loading ? (
         <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm">
           <div className="animate-spin w-8 h-8 border-3 border-brand-violet border-t-transparent rounded-full mx-auto mb-3"></div>
@@ -237,12 +291,175 @@ export default function TeacherRoster() {
         </div>
       ) : filteredScholars.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm">
-          <h3 className="text-base font-serif font-bold text-brand-textMain mb-1">No Scholars Enrolled Yet</h3>
+          <h3 className="text-base font-serif font-bold text-brand-textMain mb-1">No Scholars Found</h3>
           <p className="text-xs text-brand-textMuted max-w-md mx-auto">
-            There are currently no admitted pupils enrolled in {assignedClass || 'this class'}. Newly admitted pupils enrolled from Admissions will automatically appear in this roster.
+            {scholars.length === 0
+              ? `There are currently no admitted pupils enrolled in ${assignedClass || 'this class'}. Newly admitted pupils enrolled from Admissions will automatically appear in this roster.`
+              : `No scholars in ${assignedClass} match your current search or house filter.`}
           </p>
         </div>
+      ) : viewMode === 'table' ? (
+        /* Professional High-Density Class Register Table */
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50/80 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  <th className="py-3.5 pl-6 pr-3 w-12">#</th>
+                  <th className="py-3.5 px-4">Scholar & Index No.</th>
+                  <th className="py-3.5 px-4">Gender & House</th>
+                  <th className="py-3.5 px-4 text-center">CA Avg</th>
+                  <th className="py-3.5 px-4 text-center">Attendance</th>
+                  <th className="py-3.5 px-4 text-center">Merit Pts</th>
+                  <th className="py-3.5 px-4">Parent / Emergency Contact</th>
+                  <th className="py-3.5 pl-4 pr-6 text-right">Quick Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-xs">
+                {filteredScholars.map((scholar, index) => {
+                  const initials = scholar.name
+                    .split(' ')
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map(part => part[0]?.toUpperCase())
+                    .join('');
+
+                  return (
+                    <tr
+                      key={scholar.id}
+                      className="hover:bg-brand-violet/[0.02] transition-colors group"
+                    >
+                      <td className="py-3.5 pl-6 pr-3 font-mono text-[11px] font-bold text-gray-400">
+                        {String(index + 1).padStart(2, '0')}
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-brand-violet/10 text-brand-violet font-serif font-bold text-xs flex items-center justify-center border border-brand-violet/15 shrink-0">
+                            {initials || 'RP'}
+                          </div>
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedScholar(scholar)}
+                              className="font-serif font-bold text-sm text-brand-textMain hover:text-brand-violet transition-colors text-left block leading-snug"
+                            >
+                              {scholar.name}
+                            </button>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] font-mono font-bold text-gray-400">{scholar.id}</span>
+                              {scholar.medicalNote && (
+                                <span
+                                  className="px-1.5 py-0.5 rounded-md bg-red-50 text-red-700 text-[9px] font-bold border border-red-200"
+                                  title={`Medical Note: ${scholar.medicalNote}`}
+                                >
+                                  ⚕ {scholar.medicalNote}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                            scholar.gender === 'Female'
+                              ? 'bg-rose-50 text-rose-700'
+                              : 'bg-indigo-50 text-indigo-700'
+                          }`}>
+                            {scholar.gender}
+                          </span>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                            scholar.house === 'Blue' ? 'bg-blue-100 text-blue-800' :
+                            scholar.house === 'Yellow' ? 'bg-amber-100 text-amber-800' :
+                            scholar.house === 'Green' ? 'bg-emerald-100 text-emerald-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {scholar.house}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-center">
+                        <span className={`font-mono font-bold text-xs px-2.5 py-1 rounded-lg ${
+                          scholar.average === 'Pending'
+                            ? 'bg-gray-100 text-gray-500 text-[10px]'
+                            : 'bg-brand-bg text-brand-textMain'
+                        }`}>
+                          {scholar.average}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="font-mono font-bold text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                          {scholar.attendance}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="font-mono font-bold text-xs text-brand-violet bg-brand-violet/10 px-2.5 py-1 rounded-lg">
+                          ★ {scholar.housePoints}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <div className="leading-tight">
+                          <p className="font-bold text-gray-800 text-xs">{scholar.parentName}</p>
+                          <p className="text-[11px] font-mono text-gray-500 mt-0.5">{scholar.parentPhone}</p>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 pl-4 pr-6 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const rawDigits = scholar.parentPhone.replace(/[^0-9]/g, '');
+                              const teacherTitle = AuthService.getCurrentUser()?.fullName || 'Class Teacher';
+                              const msg = encodeURIComponent(`Good day, this is ${teacherTitle} from The Roseland Preparatory School regarding your ward, ${scholar.name}.`);
+                              window.open(`https://wa.me/${rawDigits}?text=${msg}`, '_blank');
+                            }}
+                            className="px-2.5 py-1.5 bg-emerald-50 text-emerald-800 font-bold text-[11px] rounded-xl hover:bg-emerald-100 transition-colors"
+                            title="Message Parent on WhatsApp"
+                          >
+                            WhatsApp
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBehaviorModalScholar(scholar);
+                              setMeritType('Merit');
+                              setPoints(5);
+                            }}
+                            className="px-2.5 py-1.5 bg-amber-50 text-amber-800 rounded-xl hover:bg-amber-100 transition-colors text-[11px] font-bold"
+                            title="Award or Deduct House Points"
+                          >
+                            ★ Points
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedScholar(scholar)}
+                            className="px-3 py-1.5 bg-brand-violetLight text-brand-violet rounded-xl hover:bg-brand-violet hover:text-white transition-colors text-[11px] font-bold"
+                            title="Open 360° Scholar Dossier"
+                          >
+                            360° Profile
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-6 py-3 bg-gray-50/60 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500 font-semibold">
+            <span>Showing {filteredScholars.length} of {scholars.length} enrolled scholars in {assignedClass}</span>
+            <span>Click any scholar name or &ldquo;360° Profile&rdquo; to inspect full dossier</span>
+          </div>
+        </div>
       ) : (
+        /* Card Grid View */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredScholars.map((scholar) => (
             <div
@@ -257,7 +474,7 @@ export default function TeacherRoster() {
                     </div>
                     <div>
                       <h4 className="font-serif font-bold text-base text-brand-textMain leading-tight">{scholar.name}</h4>
-                      <span className="text-[10px] font-mono text-gray-400 font-bold block">{scholar.id}</span>
+                      <span className="text-[10px] font-mono text-gray-400 font-bold block">{scholar.id} • {scholar.gender}</span>
                     </div>
                   </div>
 
@@ -274,7 +491,7 @@ export default function TeacherRoster() {
                 {/* Medical Notice */}
                 {scholar.medicalNote && (
                   <div className="p-2.5 rounded-xl bg-red-50 text-red-700 text-[10px] font-bold flex items-center gap-1.5 mb-3">
-                    <span>{scholar.medicalNote}</span>
+                    <span>⚕ {scholar.medicalNote}</span>
                   </div>
                 )}
 
@@ -329,7 +546,7 @@ export default function TeacherRoster() {
                   className="p-2 bg-brand-violetLight text-brand-violet rounded-xl hover:bg-brand-violet hover:text-white transition-colors text-xs font-bold"
                   title="View 360 Profile"
                 >
-                  Profile
+                  360° Profile
                 </button>
               </div>
             </div>
@@ -337,10 +554,16 @@ export default function TeacherRoster() {
         </div>
       )}
 
-      {/* House Points Modal */}
-      {behaviorModalScholar && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-100 animate-modal-pop relative">
+      {/* House Points Modal (Full-Viewport Portal) */}
+      <Modal
+        isOpen={Boolean(behaviorModalScholar)}
+        onClose={() => setBehaviorModalScholar(null)}
+        size="md"
+        hideHeader
+        bodyClassName="p-0"
+      >
+        {behaviorModalScholar && (
+          <div className="bg-white rounded-3xl w-full p-6 sm:p-8 relative">
             <button
               onClick={() => setBehaviorModalScholar(null)}
               className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center text-base"
@@ -421,13 +644,19 @@ export default function TeacherRoster() {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
-      {/* Scholar 360 Dossier Modal */}
-      {selectedScholar && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-gray-100 animate-modal-pop relative max-h-[90vh] overflow-y-auto">
+      {/* Scholar 360 Dossier Modal (Full-Viewport Portal) */}
+      <Modal
+        isOpen={Boolean(selectedScholar)}
+        onClose={() => setSelectedScholar(null)}
+        size="lg"
+        hideHeader
+        bodyClassName="p-0"
+      >
+        {selectedScholar && (
+          <div className="bg-white rounded-3xl w-full p-6 sm:p-8 relative">
             <button
               onClick={() => setSelectedScholar(null)}
               className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center text-base"
@@ -440,9 +669,16 @@ export default function TeacherRoster() {
                 <i className="ph-bold ph-student text-brand-violet text-3xl"></i>
               </div>
               <div>
-                <span className="text-xs font-mono font-bold text-brand-violet bg-brand-violetLight px-2 py-0.5 rounded-md">
-                  {selectedScholar.id}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold text-brand-violet bg-brand-violetLight px-2 py-0.5 rounded-md">
+                    {selectedScholar.id}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                    selectedScholar.gender === 'Female' ? 'bg-rose-50 text-rose-700' : 'bg-indigo-50 text-indigo-700'
+                  }`}>
+                    {selectedScholar.gender}
+                  </span>
+                </div>
                 <h3 className="text-xl font-serif font-bold text-brand-textMain mt-1">{selectedScholar.name}</h3>
                 <p className="text-xs text-brand-textMuted">{assignedClass} • {selectedScholar.house} House</p>
               </div>
@@ -473,19 +709,31 @@ export default function TeacherRoster() {
                 )}
               </div>
 
-              <button
-                onClick={() => {
-                  toast.success(`Academic Snapshot for ${selectedScholar.name} prepared.`);
-                  setSelectedScholar(null);
-                }}
-                className="w-full py-3 bg-brand-violet text-white font-bold rounded-xl hover:bg-brand-violetDark shadow-md transition-all"
-              >
-                Close Profile
-              </button>
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const rawDigits = selectedScholar.parentPhone.replace(/[^0-9]/g, '');
+                    const teacherTitle = AuthService.getCurrentUser()?.fullName || 'Class Teacher';
+                    const msg = encodeURIComponent(`Good day, this is ${teacherTitle} from The Roseland Preparatory School regarding your ward, ${selectedScholar.name}.`);
+                    window.open(`https://wa.me/${rawDigits}?text=${msg}`, '_blank');
+                  }}
+                  className="flex-1 py-3 bg-emerald-50 text-emerald-800 font-bold rounded-xl hover:bg-emerald-100 transition-all"
+                >
+                  Message Guardian (WhatsApp)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedScholar(null)}
+                  className="flex-1 py-3 bg-brand-violet text-white font-bold rounded-xl hover:bg-brand-violetDark shadow-md transition-all"
+                >
+                  Close Profile
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
     </div>
   );
