@@ -8,6 +8,7 @@ import Modal from '@/components/ui/Modal';
 
 export default function HRPage() {
   const [activeTab, setActiveTab] = useState<'staff' | 'payroll' | 'leave'>('staff');
+  const [roleFilter, setRoleFilter] = useState<'ALL' | 'TEACHER' | 'ADMINISTRATION'>('ALL');
   const [staff, setStaff] = useState<any[]>([]);
   const [payroll, setPayroll] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,11 +28,49 @@ export default function HRPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const staffRes = await RoselandApi.hr.getStaff();
-      setStaff(staffRes);
-      
-      const payrollRes = await RoselandApi.hr.getPayroll();
-      setPayroll(payrollRes);
+      const [staffRes, authStaffRes, payrollRes] = await Promise.all([
+        RoselandApi.hr.getStaff().catch(() => []),
+        RoselandApi.auth.getStaffDirectory().catch(() => []),
+        RoselandApi.hr.getPayroll().catch(() => []),
+      ]);
+
+      const hrList = Array.isArray(staffRes) ? staffRes : [];
+      const authList = Array.isArray(authStaffRes)
+        ? authStaffRes.filter((u: any) => ['TEACHER', 'HEADMASTER', 'BURSAR', 'SUPER_ADMIN'].includes(u.role))
+        : [];
+
+      if (authList.length > 0) {
+        const hrByUserId = new Map(hrList.map((h: any) => [String(h.user_id), h]));
+        const merged = authList.map((u: any) => {
+          const existingHr = hrByUserId.get(String(u.id));
+          const jobTitle = u.role === 'TEACHER' ? 'Teacher' : u.role === 'BURSAR' ? 'Bursar' : 'Headmaster';
+          const department = u.role === 'TEACHER' ? 'Academics' : 'Administration';
+          if (existingHr) {
+            return {
+              ...existingHr,
+              full_name: u.fullName || existingHr.full_name,
+              job_title: jobTitle,
+              department,
+            };
+          }
+          return {
+            id: u.id,
+            user_id: u.id,
+            full_name: u.fullName,
+            job_title: jobTitle,
+            department,
+            base_salary: 2000,
+            allowances: 0,
+            ssnit_number: '',
+            is_active: true,
+          };
+        });
+        setStaff(merged.sort((a: any, b: any) => String(a.full_name).localeCompare(String(b.full_name))));
+      } else {
+        setStaff(hrList.filter((s: any) => s.is_active !== false));
+      }
+
+      setPayroll(Array.isArray(payrollRes) ? payrollRes : []);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load HR data");
@@ -83,7 +122,14 @@ export default function HRPage() {
     }
   };
 
-  const totalMonthlyPayroll = staff.reduce((sum, s) => sum + s.base_salary, 0);
+  const filteredStaff = staff.filter((s) => {
+    if (roleFilter === 'TEACHER') return s.job_title === 'Teacher';
+    if (roleFilter === 'ADMINISTRATION') return s.job_title !== 'Teacher';
+    return true;
+  });
+
+  const totalMonthlyPayroll = filteredStaff.reduce((sum, s) => sum + (Number(s.base_salary) || 0), 0);
+  const staffNameById = new Map(staff.map((s) => [String(s.id), s.full_name]));
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -155,6 +201,34 @@ export default function HRPage() {
         </div>
         
         <div className="flex items-center gap-3">
+          {activeTab === 'staff' && (
+            <div className="flex items-center bg-white border border-gray-200 rounded-xl p-1 gap-1">
+              <button
+                onClick={() => setRoleFilter('ALL')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  roleFilter === 'ALL' ? 'bg-brand-violet text-white' : 'text-gray-500 hover:text-brand-textMain'
+                }`}
+              >
+                All Staff ({staff.length})
+              </button>
+              <button
+                onClick={() => setRoleFilter('TEACHER')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  roleFilter === 'TEACHER' ? 'bg-brand-violet text-white' : 'text-gray-500 hover:text-brand-textMain'
+                }`}
+              >
+                Teachers ({staff.filter((s) => s.job_title === 'Teacher').length})
+              </button>
+              <button
+                onClick={() => setRoleFilter('ADMINISTRATION')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  roleFilter === 'ADMINISTRATION' ? 'bg-brand-violet text-white' : 'text-gray-500 hover:text-brand-textMain'
+                }`}
+              >
+                Headmaster & Admin ({staff.filter((s) => s.job_title !== 'Teacher').length})
+              </button>
+            </div>
+          )}
           <button
             onClick={loadData}
             className="px-3 py-1.5 border border-gray-200 text-gray-600 font-bold rounded-xl text-xs hover:bg-gray-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
@@ -174,7 +248,7 @@ export default function HRPage() {
         ) : (
           <>
             {activeTab === 'staff' && (
-              staff.length === 0 ? (
+              filteredStaff.length === 0 ? (
                 <div className="p-12 text-center space-y-3">
                   <p className="font-serif font-bold text-base text-brand-textMain">No Staff Profiles Found</p>
                   <p className="text-xs text-brand-textMuted">Staff must be synced from the Auth module.</p>
@@ -192,7 +266,7 @@ export default function HRPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {staff.map(s => (
+                      {filteredStaff.map(s => (
                         <tr key={s.id} className="hover:bg-brand-bg transition-colors">
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-3">
@@ -253,7 +327,10 @@ export default function HRPage() {
                       {payroll.map(p => (
                         <tr key={p.id} className="hover:bg-brand-bg transition-colors">
                           <td className="py-4 px-6 font-bold text-brand-textMain">{p.month_year}</td>
-                          <td className="py-4 px-4 text-gray-400 font-mono text-[10px]">{p.staff_id.substring(0,8)}</td>
+                          <td className="py-4 px-4">
+                            <span className="font-bold text-brand-textMain block">{staffNameById.get(String(p.staff_id)) || 'Staff Member'}</span>
+                            <span className="text-gray-400 font-mono text-[10px]">{p.staff_id.substring(0,8)}</span>
+                          </td>
                           <td className="py-4 px-4 font-mono font-bold text-brand-textMain">GH₵ {p.gross_pay.toFixed(2)}</td>
                           <td className="py-4 px-4 font-mono font-bold text-rose-500">GH₵ {p.ssnit_tier_2_employee.toFixed(2)}</td>
                           <td className="py-4 px-4 font-mono font-bold text-rose-500">GH₵ {p.gra_paye_tax.toFixed(2)}</td>
