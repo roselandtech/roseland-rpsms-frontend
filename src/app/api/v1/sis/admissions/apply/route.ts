@@ -1,9 +1,190 @@
 import { NextResponse } from 'next/server';
+import * as tls from 'tls';
+import * as net from 'net';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const ADMISSIONS_RECIPIENT_EMAIL = process.env.ADMISSIONS_EMAIL || 'info@roselandprep.edu.gh';
+
+interface SmtpConfig {
+  host: string;
+  port: number;
+  user: string;
+  pass: string;
+  from: string;
+  to: string;
+  replyTo?: string;
+  subject: string;
+  text: string;
+  html: string;
+}
+
+/**
+ * Zero-dependency SMTP client supporting both implicit TLS (port 465) and STARTTLS (port 587)
+ * for Gmail / Google Workspace (smtp.gmail.com) and custom SMTP servers.
+ */
+async function sendViaSmtp(cfg: SmtpConfig): Promise<void> {
+  const extractEmail = (addr: string) => {
+    const match = addr.match(/<([^>]+)>/);
+    return match ? match[1].trim() : addr.trim();
+  };
+
+  const fromAddress = extractEmail(cfg.from);
+  const toAddress = extractEmail(cfg.to);
+  const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  const encodedSubject = `=?UTF-8?B?${Buffer.from(cfg.subject, 'utf-8').toString('base64')}?=`;
+
+  const headers = [
+    `From: ${cfg.from}`,
+    `To: ${cfg.to}`,
+    ...(cfg.replyTo ? [`Reply-To: ${cfg.replyTo}`] : []),
+    `Subject: ${encodedSubject}`,
+    `Date: ${new Date().toUTCString()}`,
+    `Message-ID: <${Date.now()}.${Math.random().toString(36).slice(2)}@roselandprep.edu.gh>`,
+    `MIME-Version: 1.0`,
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+  ];
+
+  const mimeBody = [
+    ...headers,
+    '',
+    `--${boundary}`,
+    'Content-Type: text/plain; charset="UTF-8"',
+    'Content-Transfer-Encoding: base64',
+    '',
+    Buffer.from(cfg.text, 'utf-8').toString('base64').replace(/(.{76})/g, '$1\r\n'),
+    '',
+    `--${boundary}`,
+    'Content-Type: text/html; charset="UTF-8"',
+    'Content-Transfer-Encoding: base64',
+    '',
+    Buffer.from(cfg.html, 'utf-8').toString('base64').replace(/(.{76})/g, '$1\r\n'),
+    '',
+    `--${boundary}--`,
+    '',
+  ].join('\r\n');
+
+  const connectAndSend = (port: number, useImplicitTls: boolean): Promise<void> =>
+    new Promise((resolve, reject) => {
+      let socket: net.Socket | tls.TLSSocket;
+      let buffer = '';
+      let currentWait: ((line: string) => void) | null = null;
+
+      const timeout = setTimeout(() => {
+        socket?.destroy();
+        reject(new Error(`SMTP connection timed out on ${cfg.host}:${port}`));
+      }, 10000);
+
+      const cleanup = () => clearTimeout(timeout);
+
+      const onData = (chunk: Buffer | string) => {
+        buffer += chunk.toString('utf-8');
+        const lines = buffer.split('\r\n');
+        buffer = lines.pop() || '';
+        for (const line of lines) {
+          // Multi-line SMTP responses have a hyphen at index 3 (e.g. "250-PIPELINING"), final line has space ("250 OK")
+          if (line.length >= 3 && (line.length === 3 || line[3] === ' ')) {
+            if (currentWait) {
+              const cb = currentWait;
+              currentWait = null;
+              cb(line);
+            }
+          }
+        }
+      };
+
+      const readResponse = (): Promise<string> =>
+        new Promise((res, rej) => {
+          currentWait = (line: string) => {
+            const code = parseInt(line.slice(0, 3), 10);
+            if (code >= 400) {
+              rej(new Error(`SMTP Error (${code}): ${line}`));
+            } else {
+              res(line);
+            }
+          };
+        });
+
+      const sendCmd = async (cmd: string): Promise<string> => {
+        const p = readResponse();
+        socket.write(`${cmd}\r\n`);
+        return p;
+      };
+
+      const runConversation = async () => {
+        try {
+          await readResponse(); // 220 banner
+          await sendCmd(`EHLO roselandprep.edu.gh`);
+
+          if (!useImplicitTls) {
+            await sendCmd('STARTTLS');
+            socket.removeAllListeners('data');
+            socket = await new Promise<tls.TLSSocket>((resTls, rejTls) => {
+              const tlsSock = tls.connect(
+                {
+                  socket: socket,
+                  host: cfg.host,
+                  servername: cfg.host,
+                },
+                () => resTls(tlsSock)
+              );
+              tlsSock.once('error', rejTls);
+            });
+            socket.on('data', onData);
+            socket.once('error', (err) => {
+              cleanup();
+              reject(err);
+            });
+            await sendCmd(`EHLO roselandprep.edu.gh`);
+          }
+
+          await sendCmd('AUTH LOGIN');
+          await sendCmd(Buffer.from(cfg.user, 'utf-8').toString('base64'));
+          await sendCmd(Buffer.from(cfg.pass, 'utf-8').toString('base64'));
+          await sendCmd(`MAIL FROM:<${fromAddress}>`);
+          await sendCmd(`RCPT TO:<${toAddress}>`);
+          await sendCmd('DATA');
+          // Dot-stuffing per RFC 5321
+          const safeData = mimeBody.replace(/\r\n\./g, '\r\n..');
+          await sendCmd(`${safeData}\r\n.`);
+          socket.write('QUIT\r\n');
+          socket.end();
+          cleanup();
+          resolve();
+        } catch (err) {
+          cleanup();
+          socket?.destroy();
+          reject(err);
+        }
+      };
+
+      if (useImplicitTls) {
+        socket = tls.connect({ host: cfg.host, port, servername: cfg.host });
+      } else {
+        socket = net.connect({ host: cfg.host, port });
+      }
+
+      socket.on('data', onData);
+      socket.once('error', (err) => {
+        cleanup();
+        reject(err);
+      });
+
+      runConversation();
+    });
+
+  // Try configured port first; if 587 fails and host is Gmail, fallback to 465 implicit TLS
+  try {
+    await connectAndSend(cfg.port, cfg.port === 465);
+  } catch (firstErr) {
+    if (cfg.port !== 465 && cfg.host.includes('gmail.com')) {
+      await connectAndSend(465, true);
+    } else {
+      throw firstErr;
+    }
+  }
+}
 
 interface AdmissionApplicationPayload {
   applicant_name: string;
@@ -250,7 +431,37 @@ async function dispatchEmail(
   const html = buildHtmlEmail(app, appNo, submittedAt);
   const text = buildPlainTextEmail(app, appNo, submittedAt);
 
-  // 1. Try Resend HTTP API (Zero dependencies, recommended for Next.js)
+  // 1. Try Gmail / Google Workspace SMTP (or custom SMTP)
+  const smtpUser = process.env.SMTP_USER;
+  const rawSmtpPass = process.env.SMTP_PASSWORD || process.env.SMTP_PASS;
+  const smtpHost = process.env.SMTP_HOST || (smtpUser && rawSmtpPass ? 'smtp.gmail.com' : '');
+  if (smtpHost && smtpUser && rawSmtpPass) {
+    try {
+      const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
+      // Strip accidental spaces from 16-character Google App Passwords (e.g. "abcd efgh ijkl mnop")
+      const smtpPass = smtpHost.includes('gmail.com') ? rawSmtpPass.replace(/\s+/g, '') : rawSmtpPass.trim();
+      const fromHeader =
+        process.env.EMAIL_FROM || `The Roseland Preparatory School <${smtpUser}>`;
+
+      await sendViaSmtp({
+        host: smtpHost,
+        port: smtpPort,
+        user: smtpUser.trim(),
+        pass: smtpPass,
+        from: fromHeader,
+        to: ADMISSIONS_RECIPIENT_EMAIL,
+        replyTo: app.parent_email || undefined,
+        subject,
+        text,
+        html,
+      });
+      return { sent: true, method: 'smtp', detail: `Delivered via ${smtpHost}` };
+    } catch (e: any) {
+      console.warn('[Admissions Email] SMTP dispatch error:', e?.message || e);
+    }
+  }
+
+  // 2. Try Resend HTTP API (Zero dependencies, recommended for Next.js)
   const resendKey = process.env.RESEND_API_KEY;
   if (resendKey) {
     try {
