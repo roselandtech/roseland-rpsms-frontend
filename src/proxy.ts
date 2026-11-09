@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const PROTECTED_PORTALS: Record<string, string[]> = {
-  '/admin': ['SUPER_ADMIN', 'HEADMASTER', 'BURSAR'],
-  '/headmaster': ['HEADMASTER', 'SUPER_ADMIN'],
-  '/teacher': ['TEACHER', 'HEADMASTER', 'SUPER_ADMIN'],
-  '/parent': ['PARENT', 'SUPER_ADMIN'],
-  '/bursar': ['BURSAR', 'SUPER_ADMIN'],
-  '/cbt': ['STUDENT', 'TEACHER', 'HEADMASTER', 'SUPER_ADMIN'],
+  '/admin': ['ADMIN', 'SUPER_ADMIN', 'HEADMASTER', 'BURSAR'],
+  '/headmaster': ['HEADMASTER', 'ADMIN', 'SUPER_ADMIN'],
+  '/teacher': ['TEACHER', 'HEADMASTER', 'ADMIN', 'SUPER_ADMIN'],
+  '/parent': ['PARENT', 'ADMIN', 'SUPER_ADMIN'],
+  '/bursar': ['BURSAR', 'ADMIN', 'HEADMASTER', 'SUPER_ADMIN'],
+  '/cbt': ['STUDENT', 'TEACHER', 'HEADMASTER', 'ADMIN', 'SUPER_ADMIN'],
 };
 
 export function proxy(request: NextRequest) {
@@ -38,12 +38,15 @@ export function proxy(request: NextRequest) {
     // Redirect unauthorized user to their primary portal
     let targetPortal = '/login';
     switch (role) {
-      case 'SUPER_ADMIN':
-      case 'BURSAR':
-        targetPortal = '/admin';
+      case 'ADMIN':
+        targetPortal = '/admin/permissions';
         break;
+      case 'SUPER_ADMIN':
       case 'HEADMASTER':
         targetPortal = '/headmaster';
+        break;
+      case 'BURSAR':
+        targetPortal = '/admin/finance';
         break;
       case 'TEACHER':
         targetPortal = '/teacher';

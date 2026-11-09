@@ -13,7 +13,7 @@ export interface StaffMember {
   email: string;
   username: string;
   role: string;
-  rawRole: 'SUPER_ADMIN' | 'HEADMASTER' | 'TEACHER' | 'BURSAR' | 'SUPPORT';
+  rawRole: 'ADMIN' | 'SUPER_ADMIN' | 'HEADMASTER' | 'TEACHER' | 'BURSAR' | 'SUPPORT';
   department: 'Teaching' | 'Admin' | 'Transport' | 'Support';
   assignedClass?: string;
   assignedClasses?: string[];
@@ -49,7 +49,7 @@ export default function AdminStaffPage() {
     email: '',
     username: '',
     phone: '+233 24 ',
-    role: 'TEACHER' as 'SUPER_ADMIN' | 'HEADMASTER' | 'TEACHER' | 'BURSAR' | 'SUPPORT',
+    role: 'TEACHER' as 'ADMIN' | 'SUPER_ADMIN' | 'HEADMASTER' | 'TEACHER' | 'BURSAR' | 'SUPPORT',
     password: '',
     ntcLicense: '',
     assignedClass: '',
@@ -90,14 +90,17 @@ export default function AdminStaffPage() {
         const mapped: StaffMember[] = authStaff.value.map((u: any, idx: number) => {
           let dept: StaffMember['department'] = 'Teaching';
           let roleTitle = u.fullName || 'Faculty Member';
-          const r = u.role || 'TEACHER';
-
+          let r = u.role || 'TEACHER';
           if (r === 'SUPER_ADMIN') {
+            r = u.email?.toLowerCase() === 'admin@roselandprep.edu.gh' ? 'ADMIN' : 'HEADMASTER';
+          }
+
+          if (r === 'ADMIN') {
             dept = 'Admin';
-            roleTitle = 'Proprietress & Super Admin';
+            roleTitle = 'System Administrator (RBAC)';
           } else if (r === 'HEADMASTER') {
             dept = 'Teaching';
-            roleTitle = 'Headmaster & Academic Supervisor';
+            roleTitle = 'Headmaster & School Leader';
           } else if (r === 'BURSAR') {
             dept = 'Admin';
             roleTitle = 'School Bursar & Accounts Lead';
@@ -112,6 +115,8 @@ export default function AdminStaffPage() {
           if (r === 'TEACHER') {
             dept = 'Teaching';
             roleTitle = assignedForm ? `${assignedForm} Form Master` : (subs.length > 0 ? `Subject Specialist (${subs.join(', ')})` : 'Subject Specialist (Floating)');
+          } else if (r === 'HEADMASTER' && assignedForm) {
+            roleTitle = `Headmaster • ${assignedForm} Form Master`;
           }
 
           return {
@@ -214,12 +219,12 @@ export default function AdminStaffPage() {
         role: onboardForm.role,
         password: onboardForm.password,
         phone: onboardForm.phone,
-        assignedClass: onboardForm.role === 'TEACHER' ? onboardForm.assignedClass : undefined,
+        assignedClass: (onboardForm.role === 'TEACHER' || onboardForm.role === 'HEADMASTER') ? onboardForm.assignedClass : undefined,
         avatar: onboardForm.avatar || ''
       });
 
-      // 2. If Teacher, allocate subjects & class in Academic microservice
-      if (onboardForm.role === 'TEACHER') {
+      // 2. If Teacher or Headmaster, allocate subjects & class in Academic microservice
+      if (onboardForm.role === 'TEACHER' || onboardForm.role === 'HEADMASTER') {
         await RoselandApi.academic.saveFacultyAllocation({
           teacher_name: onboardForm.fullName,
           teacher_email: onboardForm.email,
@@ -432,19 +437,21 @@ export default function AdminStaffPage() {
 
                     <td className="py-4 px-4">
                       <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md mb-1 ${
-                        st.rawRole === 'SUPER_ADMIN' ? 'bg-purple-100 text-purple-800' :
+                        st.rawRole === 'ADMIN' || st.rawRole === 'SUPER_ADMIN' ? 'bg-purple-100 text-purple-800' :
                         st.rawRole === 'HEADMASTER' ? 'bg-amber-100 text-amber-800' :
                         st.rawRole === 'BURSAR' ? 'bg-blue-100 text-blue-800' :
                         'bg-emerald-100 text-emerald-800'
                       }`}>
                         {st.rawRole}
                       </span>
-                      {st.rawRole === 'TEACHER' ? (
+                      {(st.rawRole === 'TEACHER' || st.rawRole === 'HEADMASTER') ? (
                         st.assignedClass ? (
                           <span className="text-brand-textMain font-bold inline-flex items-center gap-1.5 text-xs">
                             <i className="ph ph-chalkboard-simple text-brand-violet text-sm"></i>
                             <span>{st.assignedClass} Form Master</span>
                           </span>
+                        ) : st.rawRole === 'HEADMASTER' ? (
+                          <span className="text-[11px] text-gray-500 block">{st.role}</span>
                         ) : (
                           <span className="text-purple-700 font-bold inline-flex items-center gap-1 text-[10px] bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
                             <i className="ph ph-sparkle text-xs"></i>
@@ -467,7 +474,7 @@ export default function AdminStaffPage() {
                         </div>
                       ) : (
                         <span className="text-gray-400 italic text-[11px]">
-                          {st.rawRole === 'TEACHER' ? 'Pending Allocation' : 'General Administration'}
+                          {(st.rawRole === 'TEACHER' || st.rawRole === 'HEADMASTER') ? 'Click Assign Workload' : 'General Administration'}
                         </span>
                       )}
                     </td>
@@ -484,7 +491,7 @@ export default function AdminStaffPage() {
                         </div>
                       ) : (
                         <span className="text-gray-400 italic">
-                          {st.rawRole === 'TEACHER' ? 'Unregistered' : 'Non-Teaching'}
+                          {st.rawRole === 'TEACHER' ? 'Unregistered' : 'Executive / Admin'}
                         </span>
                       )}
                     </td>
@@ -500,7 +507,7 @@ export default function AdminStaffPage() {
                     </td>
 
                     <td className="py-4 px-6 text-right space-x-2">
-                      {st.rawRole === 'TEACHER' && (
+                      {(st.rawRole === 'TEACHER' || st.rawRole === 'HEADMASTER') && (
                         <button
                           onClick={() => handleOpenAllocation(st)}
                           className="px-3 py-1.5 bg-brand-violet/10 text-brand-violet hover:bg-brand-violet hover:text-white rounded-xl font-bold transition-all text-xs cursor-pointer inline-flex items-center gap-1"
@@ -515,7 +522,7 @@ export default function AdminStaffPage() {
                       >
                         Dossier
                       </button>
-                      {st.rawRole !== 'SUPER_ADMIN' && (
+                      {st.rawRole !== 'ADMIN' && st.rawRole !== 'SUPER_ADMIN' && (
                         <button
                           onClick={() => handleDeleteStaff(st)}
                           title="Remove Account"
@@ -566,7 +573,7 @@ export default function AdminStaffPage() {
                     { key: 'TEACHER', label: 'Teacher / Lead', icon: 'ph-chalkboard-teacher' },
                     { key: 'HEADMASTER', label: 'Headmaster', icon: 'ph-student' },
                     { key: 'BURSAR', label: 'School Bursar', icon: 'ph-bank' },
-                    { key: 'SUPER_ADMIN', label: 'Administrator', icon: 'ph-shield-check' },
+                    { key: 'ADMIN', label: 'System Admin', icon: 'ph-shield-check' },
                   ].map((r) => (
                     <button
                       key={r.key}
@@ -644,8 +651,8 @@ export default function AdminStaffPage() {
                 </div>
               </div>
 
-              {/* Conditional Teacher Allocation Block */}
-              {onboardForm.role === 'TEACHER' && (
+              {/* Conditional Teacher / Headmaster Allocation Block */}
+              {(onboardForm.role === 'TEACHER' || onboardForm.role === 'HEADMASTER') && (
                 <div className="bg-brand-bg/80 p-4 rounded-2xl border border-gray-200 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>

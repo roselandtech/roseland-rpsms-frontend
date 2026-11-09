@@ -36,35 +36,52 @@ export default function TeacherGrading() {
         const user = AuthService.getCurrentUser();
         let targetClass = user?.assignedClass || '';
 
-        let available: {id: string, name: string}[] = [];
-        if (user) {
-          try {
-            const alloc = await RoselandApi.academic.getTeacherAllocation(user.email || user.username || user.id);
-            
-            // Save allocated subjects
-            if (alloc?.subjects && Array.isArray(alloc.subjects)) {
-              setTeacherAllocatedSubjects(alloc.subjects);
-            }
+        let available: { id: string; name: string; current_enrolled?: number }[] = [];
+        const [allocRes, classesRes] = await Promise.allSettled([
+          user ? RoselandApi.academic.getTeacherAllocation(user.email || user.username || user.id) : Promise.resolve(null),
+          RoselandApi.sis.getClasses(),
+        ]);
 
-            // Combine assignedClasses and formClass to ensure they have access to all their classes
-            const allowedClasses = new Set<string>();
-            if (alloc?.formClass) allowedClasses.add(alloc.formClass);
-            if (alloc?.assignedClasses && Array.isArray(alloc.assignedClasses)) {
-              alloc.assignedClasses.forEach((c: string) => allowedClasses.add(c));
-            }
-            available = Array.from(allowedClasses).map(c => ({ id: c, name: c }));
-          } catch (allocErr) {
-            console.warn("Could not fetch specific teacher allocation, falling back to empty list.", allocErr);
-          }
+        const alloc = allocRes.status === 'fulfilled' ? allocRes.value : null;
+        const allSchoolClasses =
+          classesRes.status === 'fulfilled' && Array.isArray(classesRes.value)
+            ? classesRes.value
+            : [];
+
+        if (alloc?.subjects && Array.isArray(alloc.subjects) && alloc.subjects.length > 0) {
+          setTeacherAllocatedSubjects(alloc.subjects);
+        }
+
+        const allowedClasses = new Set<string>();
+        if (targetClass) allowedClasses.add(targetClass);
+        if (alloc?.formClass) allowedClasses.add(alloc.formClass);
+        if (alloc?.assignedClasses && Array.isArray(alloc.assignedClasses)) {
+          alloc.assignedClasses.forEach((c: string) => {
+            if (c) allowedClasses.add(c);
+          });
+        }
+
+        const isExecutive = user?.role === 'HEADMASTER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+        if (isExecutive || allowedClasses.size === 0) {
+          const merged = new Map<string, { id: string; name: string; current_enrolled?: number }>();
+          allowedClasses.forEach((c) => merged.set(c, { id: c, name: c }));
+          allSchoolClasses.forEach((c: any) => {
+            if (c?.name) merged.set(c.name, { id: c.id || c.name, name: c.name, current_enrolled: c.current_enrolled });
+          });
+          available = Array.from(merged.values());
+        } else {
+          available = Array.from(allowedClasses).map((c) => ({ id: c, name: c }));
         }
 
         setClassList(available);
 
         // Fallback default selection
-        if (!targetClass && available.length > 0) {
-          targetClass = available[0].name;
-        } else if (targetClass && !available.find(c => c.name === targetClass) && available.length > 0) {
-          // If the cached assigned class is no longer in their allowed list, force select the first valid one
+        if (alloc?.formClass) {
+          targetClass = alloc.formClass;
+        } else if (!targetClass && available.length > 0) {
+          const withStudents = available.find((c) => (c.current_enrolled ?? 0) > 0);
+          targetClass = withStudents ? withStudents.name : available[0].name;
+        } else if (targetClass && !available.find((c) => c.name === targetClass) && available.length > 0) {
           targetClass = available[0].name;
         }
 
@@ -145,17 +162,27 @@ export default function TeacherGrading() {
     const loadCurriculum = async () => {
       if (!assignedClass) return;
       try {
-        const res = await RoselandApi.academic.curriculum.getForClass(assignedClass);
+        const [res, allSubsRes] = await Promise.allSettled([
+          RoselandApi.academic.curriculum.getForClass(assignedClass),
+          RoselandApi.academic.getSubjects(),
+        ]);
         
         // Start with the teacher's specifically allocated subjects
         let allValidSubjects = [...teacherAllocatedSubjects];
         
-        if (res && Array.isArray(res) && res.length > 0) {
-          const curriculumNames = res.map((s: any) => s.subject_name);
-          // Add any curriculum subjects not already in the list
+        if (res.status === 'fulfilled' && Array.isArray(res.value) && res.value.length > 0) {
+          const curriculumNames = res.value.map((s: any) => s.subject_name);
           curriculumNames.forEach((n: string) => {
-            if (!allValidSubjects.includes(n)) {
+            if (n && !allValidSubjects.includes(n)) {
               allValidSubjects.push(n);
+            }
+          });
+        }
+
+        if (allValidSubjects.length === 0 && allSubsRes.status === 'fulfilled' && Array.isArray(allSubsRes.value)) {
+          allSubsRes.value.forEach((s: any) => {
+            if (s.name && !allValidSubjects.includes(s.name)) {
+              allValidSubjects.push(s.name);
             }
           });
         }

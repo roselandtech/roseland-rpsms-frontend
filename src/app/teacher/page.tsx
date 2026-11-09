@@ -43,13 +43,27 @@ export default function TeacherDashboard() {
         setUser(currentUser);
       }
 
-      // Fetch class list to ensure valid class context
-      const classRes = await RoselandApi.sis.getClasses();
-      const available = Array.isArray(classRes?.data) ? classRes.data : Array.isArray(classRes) ? classRes : [];
+      // Fetch class list and teacher allocation to ensure valid class context
+      const [classRes, allocRes] = await Promise.allSettled([
+        RoselandApi.sis.getClasses(),
+        currentUser ? RoselandApi.academic.getTeacherAllocation(currentUser.email || currentUser.username || currentUser.id) : Promise.resolve(null),
+      ]);
+      const available =
+        classRes.status === 'fulfilled'
+          ? (Array.isArray(classRes.value?.data) ? classRes.value.data : Array.isArray(classRes.value) ? classRes.value : [])
+          : [];
+      const alloc = allocRes.status === 'fulfilled' ? allocRes.value : null;
       setClassList(available);
 
+      if (!currentClass && alloc?.formClass) {
+        currentClass = alloc.formClass;
+      }
+      if (!currentClass && Array.isArray(alloc?.assignedClasses) && alloc.assignedClasses.length > 0) {
+        currentClass = alloc.assignedClasses[0];
+      }
       if (!currentClass && available.length > 0) {
-        currentClass = available[0].name;
+        const withStudents = available.find((c: any) => (c.current_enrolled ?? 0) > 0);
+        currentClass = withStudents ? withStudents.name : available[0].name;
       }
       setAssignedClass(currentClass);
 

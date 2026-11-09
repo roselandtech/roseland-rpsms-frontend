@@ -6,6 +6,8 @@ import Sidebar, { NavItem, NavGroup } from './Sidebar';
 import TopHeader from './TopHeader';
 import CommandPalette from './CommandPalette';
 import { AuthService, RoselandUser } from '@/lib/auth';
+import { RoselandApi } from '@/lib/api';
+import { filterNavGroupsByPermissions, filterNavItemsByPermissions } from '@/lib/executiveNav';
 
 interface PortalLayoutProps {
   children: React.ReactNode;
@@ -49,6 +51,37 @@ export default function PortalLayout({
 
     setCurrentUser(user);
     setIsAuthenticating(false);
+
+    // Sync live role permissions from the backend RBAC matrix so any permission
+    // changes saved by the System Admin take effect immediately in the sidebar
+    const targetRole = user.role === 'SUPER_ADMIN' ? 'HEADMASTER' : user.role;
+    RoselandApi.auth.getRolePermissions()
+      .then((matrix: any) => {
+        if (!Array.isArray(matrix)) return;
+        const matched = matrix.find((r: any) => r.role === targetRole);
+        if (matched && Array.isArray(matched.permissions)) {
+          const updatedUser: RoselandUser = { ...user, permissions: matched.permissions };
+          setCurrentUser(updatedUser);
+          localStorage.setItem('roseland_user', JSON.stringify(updatedUser));
+        }
+      })
+      .catch(() => {});
+
+    const handlePermissionsUpdated = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      if (!detail || !detail.role || !Array.isArray(detail.permissions)) return;
+      const latestUser = AuthService.getCurrentUser();
+      if (!latestUser) return;
+      const effectiveRole = latestUser.role === 'SUPER_ADMIN' ? 'HEADMASTER' : latestUser.role;
+      if (detail.role === effectiveRole) {
+        const updatedUser: RoselandUser = { ...latestUser, permissions: detail.permissions };
+        setCurrentUser(updatedUser);
+        localStorage.setItem('roseland_user', JSON.stringify(updatedUser));
+      }
+    };
+
+    window.addEventListener('roseland:permissions-updated', handlePermissionsUpdated);
+    return () => window.removeEventListener('roseland:permissions-updated', handlePermissionsUpdated);
   }, [router, pathname]);
 
   // Close mobile sidebar automatically on route navigation
@@ -94,10 +127,27 @@ export default function PortalLayout({
   }
 
   const resolvedName = currentUser?.fullName || currentUser?.username || userName || 'Staff Member';
-  const resolvedRole = currentUser?.assignedClass
-    ? `${currentUser.assignedClass} Form Master`
-    : (currentUser?.role ? currentUser.role.replace(/_/g, ' ') : userRole || 'Faculty');
+  const resolvedRole = currentUser?.role === 'ADMIN'
+    ? 'System Administrator (RBAC)'
+    : currentUser?.role === 'HEADMASTER' || currentUser?.role === 'SUPER_ADMIN'
+      ? (currentUser?.assignedClass ? `Headmaster • ${currentUser.assignedClass} Teacher` : 'Headmaster & School Leader')
+      : currentUser?.assignedClass
+        ? `${currentUser.assignedClass} Form Master`
+        : (currentUser?.role ? currentUser.role.replace(/_/g, ' ') : userRole || 'Faculty');
   const resolvedAvatar = currentUser?.avatar || userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(resolvedName)}&background=4F46E5&color=fff`;
+
+  const resolvedPortalName = currentUser?.role === 'ADMIN'
+    ? 'System Administration'
+    : portalName;
+
+  // Filter navGroups and navItems dynamically based on the user's role & configured permissions
+  const filteredNavGroups = navGroups
+    ? filterNavGroupsByPermissions(navGroups, currentUser?.role, currentUser?.permissions)
+    : undefined;
+
+  const filteredNavItems = navItems
+    ? filterNavItemsByPermissions(navItems, currentUser?.role, currentUser?.permissions)
+    : undefined;
 
   return (
     <div className="flex h-screen overflow-hidden font-sans antialiased bg-brand-bg text-brand-textMain">
@@ -116,12 +166,12 @@ export default function PortalLayout({
         setIsOpen={setIsSidebarOpen} 
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
-        portalName={portalName}
+        portalName={resolvedPortalName}
         userName={resolvedName}
         userRole={resolvedRole}
         userAvatar={resolvedAvatar}
-        navItems={navItems}
-        navGroups={navGroups}
+        navItems={filteredNavItems}
+        navGroups={filteredNavGroups}
       />
 
       {/* MAIN CONTENT AREA */}

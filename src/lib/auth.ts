@@ -10,13 +10,14 @@ export interface RoselandUser {
   email: string;
   username: string;
   fullName: string;
-  role: 'SUPER_ADMIN' | 'HEADMASTER' | 'TEACHER' | 'BURSAR' | 'PARENT' | 'STUDENT';
+  role: 'ADMIN' | 'SUPER_ADMIN' | 'HEADMASTER' | 'TEACHER' | 'BURSAR' | 'PARENT' | 'STUDENT';
   portalAccess: string;
   avatar?: string;
   phone?: string;
   wardIndexNumbers?: string[];
   assignedClass?: string;
   studentIndexNo?: string;
+  permissions?: string[];
 }
 
 export interface AuthSession {
@@ -108,11 +109,13 @@ export const AuthService = {
    */
   getPortalUrlForUser(user: RoselandUser): string {
     switch (user.role) {
+      case 'ADMIN':
+        return '/admin/permissions';
       case 'SUPER_ADMIN':
-      case 'BURSAR':
-        return '/admin';
       case 'HEADMASTER':
         return '/headmaster';
+      case 'BURSAR':
+        return '/admin/finance';
       case 'TEACHER':
         return '/teacher';
       case 'PARENT':
@@ -131,6 +134,17 @@ export const AuthService = {
     const defaultPortal = this.getPortalUrlForUser(user);
     if (!redirectQuery || !redirectQuery.startsWith('/')) {
       return defaultPortal;
+    }
+
+    // ADMIN and HEADMASTER can navigate across /admin, /headmaster, and /teacher
+    if (user.role === 'ADMIN' || user.role === 'HEADMASTER' || user.role === 'SUPER_ADMIN') {
+      if (
+        redirectQuery.startsWith('/admin') ||
+        redirectQuery.startsWith('/headmaster') ||
+        redirectQuery.startsWith('/teacher')
+      ) {
+        return redirectQuery;
+      }
     }
 
     // Only allow deep links if they match the user's primary portal domain

@@ -33,25 +33,56 @@ export default function CATrackerPage() {
     const init = async () => {
       const user = AuthService.getCurrentUser();
       let targetClass = user?.assignedClass || '';
-      let available: {id: string, name: string}[] = [];
-      if (user) {
-        try {
-          const alloc = await RoselandApi.academic.getTeacherAllocation(user.email || user.username || user.id);
-          
-          if (alloc?.subjects && Array.isArray(alloc.subjects)) {
-              setAllocatedSubjects(alloc.subjects);
-          }
-          
-          const allowedClasses = new Set<string>();
-          if (alloc?.formClass) allowedClasses.add(alloc.formClass);
-          if (alloc?.assignedClasses && Array.isArray(alloc.assignedClasses)) {
-            alloc.assignedClasses.forEach((c: string) => allowedClasses.add(c));
-          }
-          available = Array.from(allowedClasses).map(c => ({ id: c, name: c }));
-        } catch (err) {}
+      let available: { id: string; name: string; current_enrolled?: number }[] = [];
+
+      const [allocRes, classesRes] = await Promise.allSettled([
+        user ? RoselandApi.academic.getTeacherAllocation(user.email || user.username || user.id) : Promise.resolve(null),
+        RoselandApi.sis.getClasses(),
+      ]);
+
+      const alloc = allocRes.status === 'fulfilled' ? allocRes.value : null;
+      const allSchoolClasses =
+        classesRes.status === 'fulfilled' && Array.isArray(classesRes.value)
+          ? classesRes.value
+          : [];
+
+      if (alloc?.subjects && Array.isArray(alloc.subjects) && alloc.subjects.length > 0) {
+        setAllocatedSubjects(alloc.subjects);
       }
+
+      const allowedClasses = new Set<string>();
+      if (targetClass) allowedClasses.add(targetClass);
+      if (alloc?.formClass) allowedClasses.add(alloc.formClass);
+      if (alloc?.assignedClasses && Array.isArray(alloc.assignedClasses)) {
+        alloc.assignedClasses.forEach((c: string) => {
+          if (c) allowedClasses.add(c);
+        });
+      }
+
+      const isExecutive = user?.role === 'HEADMASTER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+      if (isExecutive || allowedClasses.size === 0) {
+        // Put allocated classes first, followed by all school classes
+        const merged = new Map<string, { id: string; name: string; current_enrolled?: number }>();
+        allowedClasses.forEach((c) => merged.set(c, { id: c, name: c }));
+        allSchoolClasses.forEach((c: any) => {
+          if (c?.name) merged.set(c.name, { id: c.id || c.name, name: c.name, current_enrolled: c.current_enrolled });
+        });
+        available = Array.from(merged.values());
+      } else {
+        available = Array.from(allowedClasses).map((c) => ({ id: c, name: c }));
+      }
+
       setClassList(available);
-      if (available.length > 0) setAssignedClass(available[0].name);
+      if (alloc?.formClass) {
+        setAssignedClass(alloc.formClass);
+      } else if (targetClass) {
+        setAssignedClass(targetClass);
+      } else if (available.length > 0) {
+        const withStudents = available.find((c) => (c.current_enrolled ?? 0) > 0);
+        setAssignedClass(withStudents ? withStudents.name : available[0].name);
+      } else {
+        setLoading(false);
+      }
     };
     init();
   }, []);
@@ -60,29 +91,45 @@ export default function CATrackerPage() {
     const loadCurriculum = async () => {
       if (!assignedClass) return;
       try {
-        const res = await RoselandApi.academic.curriculum.getForClass(assignedClass);
+        const [res, allSubsRes] = await Promise.allSettled([
+          RoselandApi.academic.curriculum.getForClass(assignedClass),
+          RoselandApi.academic.getSubjects(),
+        ]);
         let allValidSubjects = [...allocatedSubjects];
         
-        if (res && res.length > 0) {
-          const names = res.map((s: any) => s.subject_name);
-          names.forEach((n: string) => {
-            if (!allValidSubjects.includes(n)) allValidSubjects.push(n);
+        if (res.status === 'fulfilled' && Array.isArray(res.value) && res.value.length > 0) {
+          res.value.forEach((s: any) => {
+            if (s.subject_name && !allValidSubjects.includes(s.subject_name)) {
+              allValidSubjects.push(s.subject_name);
+            }
+          });
+        }
+
+        // If no curriculum mapping or teacher subject allocation exists yet, fall back to registered school subjects
+        if (allValidSubjects.length === 0 && allSubsRes.status === 'fulfilled' && Array.isArray(allSubsRes.value)) {
+          allSubsRes.value.forEach((s: any) => {
+            if (s.name && !allValidSubjects.includes(s.name)) {
+              allValidSubjects.push(s.name);
+            }
           });
         }
         
         if (allValidSubjects.length > 0) {
-            setAvailableSubjects(allValidSubjects);
-            if (!allValidSubjects.includes(subject)) {
-                setSubject(allocatedSubjects.length > 0 ? allocatedSubjects[0] : allValidSubjects[0]);
-            }
+          setAvailableSubjects(allValidSubjects);
+          if (!allValidSubjects.includes(subject)) {
+            setSubject(allocatedSubjects.length > 0 ? allocatedSubjects[0] : allValidSubjects[0]);
+          }
         } else {
-            setAvailableSubjects([]);
-            setSubject('');
+          setAvailableSubjects([]);
+          setSubject('');
+          setLoading(false);
         }
       } catch (err) {
         if (allocatedSubjects.length > 0) {
-            setAvailableSubjects(allocatedSubjects);
-            if (!allocatedSubjects.includes(subject)) setSubject(allocatedSubjects[0]);
+          setAvailableSubjects(allocatedSubjects);
+          if (!allocatedSubjects.includes(subject)) setSubject(allocatedSubjects[0]);
+        } else {
+          setLoading(false);
         }
       }
     };

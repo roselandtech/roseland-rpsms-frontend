@@ -18,9 +18,11 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   const cookieStore = await cookies();
   const role = cookieStore.get('roseland_role')?.value;
   const navItems = [...baseNavItems];
-  
+
   if (role === 'HEADMASTER' || role === 'SUPER_ADMIN') {
-    navItems.push({ name: 'Executive Command', href: '/headmaster', icon: 'ph ph-gauge' });
+    navItems.unshift({ name: '← Headmaster Cockpit', href: '/headmaster', icon: 'ph ph-gauge' });
+  } else if (role === 'ADMIN') {
+    navItems.unshift({ name: '← System Admin (RBAC)', href: '/admin/permissions', icon: 'ph ph-shield-check' });
   }
 
   return (

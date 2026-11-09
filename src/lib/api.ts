@@ -107,10 +107,19 @@ export async function apiRequest<T = any>(
   const maxAttempts = isBrowser ? 5 : 2;
   let lastError: Error | null = null;
 
-  // In the browser, prefer same-origin proxy ('') first to execute Next.js Route Handlers
-  // directly and avoid CORS preflight overhead, then alternate with API_BASE on retry.
+  // In the browser, when running on localhost, prefer the local gateway (http://localhost:8000)
+  // directly (except for Next.js local route handlers like /api/v1/sis/admissions/apply) so
+  // stale Next.js rewrite caches never route local requests to production Render.
+  const isLocalhostBrowser =
+    isBrowser &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
+    !endpoint.startsWith('/api/v1/sis/admissions/apply');
+
   const getBaseForAttempt = (attempt: number): string => {
     if (!isBrowser) return API_BASE;
+    if (isLocalhostBrowser) {
+      return attempt % 2 === 0 ? 'http://localhost:8000' : '';
+    }
     // Attempt 0, 2, 4 -> same-origin Next.js Route Handlers / rewrites ('')
     // Attempt 1, 3 -> direct configured API_BASE (bypasses proxy timeout during cold start)
     return attempt % 2 === 0 ? '' : API_BASE || BACKEND_DIRECT_URL || '';
@@ -222,6 +231,12 @@ export const RoselandApi = {
       apiRequest('/api/v1/auth/settings/profile', {
         method: 'PUT',
         body: JSON.stringify(settingsData),
+      }),
+    getRolePermissions: () => apiRequest('/api/v1/auth/permissions'),
+    updateRolePermissions: (role: string, permissions: string[]) =>
+      apiRequest(`/api/v1/auth/permissions/${encodeURIComponent(role)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ permissions }),
       }),
   },
 

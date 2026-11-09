@@ -405,13 +405,17 @@ function AdminAcademicsContent() {
           .filter((n) => n.length > 0)
       );
       const isStaffActive = (name?: string | null) => {
-        if (!name || name === 'Unassigned') return false;
+        if (!name || name.trim() === '' || name.trim().toLowerCase() === 'unassigned') return false;
+        // If staff directory did not load, trust the recorded teacher name rather than blanking all classes
+        if (activeStaffNames.size === 0) return true;
         return activeStaffNames.has(name.trim().toLowerCase());
       };
 
+      const normClassKey = (c?: string | null) => (c || '').trim().toLowerCase();
+
       const enrolledByClass = new Map<string, Set<string>>();
       studentList.forEach((s) => {
-        const key = s.class_grade;
+        const key = (s.class_grade || '').trim();
         if (!key) return;
         if (!enrolledByClass.has(key)) enrolledByClass.set(key, new Set());
         enrolledByClass.get(key)!.add(s.index_no);
@@ -419,41 +423,75 @@ function AdminAcademicsContent() {
 
       const scoredPupilsByClass = new Map<string, Set<string>>();
       scoreList.forEach((s) => {
-        if (!s.class_grade) return;
-        if (!scoredPupilsByClass.has(s.class_grade)) scoredPupilsByClass.set(s.class_grade, new Set());
-        scoredPupilsByClass.get(s.class_grade)!.add(s.student_index_no);
+        const key = (s.class_grade || '').trim();
+        if (!key) return;
+        if (!scoredPupilsByClass.has(key)) scoredPupilsByClass.set(key, new Set());
+        scoredPupilsByClass.get(key)!.add(s.student_index_no);
       });
 
-      const masterByClass = new Map<string, { name: string; subjects: string[] }>();
-      allocationList.forEach((a) => {
-        if (a.formClass && isStaffActive(a.teacherName)) {
-          masterByClass.set(a.formClass, {
-            name: a.teacherName || 'Unassigned',
-            subjects: Array.isArray(a.subjects) ? a.subjects : [],
+      // Map normalized class name -> { name, subjects } from both staffDirectory.assignedClass and facultyAllocations
+      const masterByClassNorm = new Map<string, { rawClass: string; name: string; subjects: string[] }>();
+
+      // 1. Seed from Auth Staff Directory (assignedClass)
+      staffList.forEach((st) => {
+        const tName = (st.fullName || st.name || '').trim();
+        const aClass = (st.assignedClass || '').trim();
+        if (tName && aClass && aClass.toLowerCase() !== 'unassigned') {
+          masterByClassNorm.set(normClassKey(aClass), {
+            rawClass: aClass,
+            name: tName,
+            subjects: [],
           });
         }
       });
 
-      const registryByClass = new Map<string, any>();
-      registryClasses.forEach((rc) => {
-        registryByClass.set(rc.name, rc);
+      // 2. Overlay from Academic Faculty Allocations (formClass + subjects)
+      allocationList.forEach((a) => {
+        const fClass = (a.formClass || '').trim();
+        if (fClass && isStaffActive(a.teacherName)) {
+          const existing = masterByClassNorm.get(normClassKey(fClass));
+          masterByClassNorm.set(normClassKey(fClass), {
+            rawClass: existing?.rawClass || fClass,
+            name: a.teacherName || existing?.name || 'Unassigned',
+            subjects: Array.isArray(a.subjects) ? a.subjects : (existing?.subjects || []),
+          });
+        }
       });
 
-      // Union of every canonical class and any additional class from allocations or students
-      const allClasses = new Set<string>([
-        ...registryByClass.keys(),
-        ...enrolledByClass.keys(),
-        ...masterByClass.keys(),
-        ...scoredPupilsByClass.keys(),
-      ]);
+      // Also attach allocated subjects even if formClass came from staffDirectory
+      allocationList.forEach((a) => {
+        if (!a.teacherName || !Array.isArray(a.subjects) || a.subjects.length === 0) return;
+        masterByClassNorm.forEach((val, key) => {
+          if (val.name.trim().toLowerCase() === a.teacherName.trim().toLowerCase() && val.subjects.length === 0) {
+            masterByClassNorm.set(key, { ...val, subjects: a.subjects! });
+          }
+        });
+      });
 
-      const composed: ClassStream[] = Array.from(allClasses)
+      const registryByClass = new Map<string, any>();
+      registryClasses.forEach((rc) => {
+        if (rc.name) registryByClass.set(rc.name.trim(), rc);
+      });
+
+      // Use canonical active classes from SIS registry (or fallback to allocations/students if SIS registry is empty)
+      const canonicalNameByNorm = new Map<string, string>();
+      Array.from(registryByClass.keys()).forEach((k) => canonicalNameByNorm.set(normClassKey(k), k));
+      if (canonicalNameByNorm.size === 0) {
+        Array.from(enrolledByClass.keys()).forEach((k) => {
+          if (!canonicalNameByNorm.has(normClassKey(k))) canonicalNameByNorm.set(normClassKey(k), k);
+        });
+        masterByClassNorm.forEach((v, normK) => {
+          if (!canonicalNameByNorm.has(normK)) canonicalNameByNorm.set(normK, v.rawClass);
+        });
+      }
+
+      const composed: ClassStream[] = Array.from(canonicalNameByNorm.values())
         .sort((a, b) => a.localeCompare(b))
         .map((classGrade) => {
           const reg = registryByClass.get(classGrade);
           const enrolled = enrolledByClass.get(classGrade) || new Set<string>();
           const scoredPupils = scoredPupilsByClass.get(classGrade) || new Set<string>();
-          const allocation = masterByClass.get(classGrade);
+          const allocation = masterByClassNorm.get(normClassKey(classGrade));
 
           // Count only pupils who are BOTH enrolled and scored, so a stale
           // score row for a transferred pupil cannot push the rate past 100%.

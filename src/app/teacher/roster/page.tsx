@@ -40,12 +40,45 @@ export default function TeacherRoster() {
         const user = AuthService.getCurrentUser();
         let targetClass = user?.assignedClass || '';
 
-        const classRes = await RoselandApi.sis.getClasses();
-        const available = Array.isArray(classRes?.data) ? classRes.data : Array.isArray(classRes) ? classRes : [];
-        setClassList(available);
+        const [classRes, allocRes] = await Promise.allSettled([
+          RoselandApi.sis.getClasses(),
+          user ? RoselandApi.academic.getTeacherAllocation(user.email || user.username || user.id) : Promise.resolve(null),
+        ]);
 
-        if (!targetClass && available.length > 0) {
-          targetClass = available[0].name;
+        const rawClasses =
+          classRes.status === 'fulfilled'
+            ? (Array.isArray(classRes.value?.data) ? classRes.value.data : Array.isArray(classRes.value) ? classRes.value : [])
+            : [];
+
+        const alloc = allocRes.status === 'fulfilled' ? allocRes.value : null;
+        if (!targetClass && alloc?.formClass) {
+          targetClass = alloc.formClass;
+        }
+
+        // For TEACHERS with specific assigned classes, prioritize their classes; for HEADMASTER/ADMIN or unallocated, show all classes
+        const teacherClasses = new Set<string>();
+        if (targetClass) teacherClasses.add(targetClass);
+        if (alloc?.formClass) teacherClasses.add(alloc.formClass);
+        if (Array.isArray(alloc?.assignedClasses)) {
+          alloc.assignedClasses.forEach((c: string) => {
+            if (c) teacherClasses.add(c);
+          });
+        }
+
+        const isExecutive = user?.role === 'HEADMASTER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+        let finalClassList: { id: string; name: string; current_enrolled?: number }[] = rawClasses;
+
+        if (!isExecutive && teacherClasses.size > 0) {
+          const filtered = rawClasses.filter((c: any) => teacherClasses.has(c.name));
+          if (filtered.length > 0) finalClassList = filtered;
+        }
+
+        setClassList(finalClassList);
+
+        if (!targetClass && finalClassList.length > 0) {
+          // Prefer the first class that actually has enrolled students so roster isn't blank
+          const withStudents = finalClassList.find((c: any) => (c.current_enrolled ?? 0) > 0);
+          targetClass = withStudents ? withStudents.name : finalClassList[0].name;
         }
         setAssignedClass(targetClass);
       } catch (err) {
