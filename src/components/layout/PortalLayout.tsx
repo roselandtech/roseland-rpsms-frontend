@@ -137,7 +137,7 @@ export default function PortalLayout({
   const resolvedAvatar = currentUser?.avatar || userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(resolvedName)}&background=4F46E5&color=fff`;
 
   const resolvedPortalName = currentUser?.role === 'ADMIN'
-    ? 'System Administration'
+    ? 'System Admin'
     : portalName;
 
   // Filter navGroups and navItems dynamically based on the user's role & configured permissions

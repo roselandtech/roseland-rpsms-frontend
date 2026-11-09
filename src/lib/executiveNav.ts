@@ -1,6 +1,6 @@
 import { NavGroup, NavItem } from '@/components/layout/Sidebar';
 
-export const EXECUTIVE_PORTAL_NAME = "Headmaster & Executive Command";
+export const EXECUTIVE_PORTAL_NAME = "Headmaster Portal";
 
 export const ITEM_PERMISSION_MAP: Record<string, string[]> = {
   // System Administration (RBAC)
