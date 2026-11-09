@@ -11,11 +11,19 @@ export default function HRPage() {
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'TEACHER' | 'ADMINISTRATION'>('ALL');
   const [staff, setStaff] = useState<any[]>([]);
   const [payroll, setPayroll] = useState<any[]>([]);
+  const [leaves, setLeaves] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal States
   const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
   const [payrollMonth, setPayrollMonth] = useState('2026-08');
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [leaveStaffId, setLeaveStaffId] = useState('');
+  const [leaveType, setLeaveType] = useState('Annual');
+  const [leaveStartDate, setLeaveStartDate] = useState('');
+  const [leaveEndDate, setLeaveEndDate] = useState('');
+  const [leaveReason, setLeaveReason] = useState('');
+  const [isSubmittingLeave, setIsSubmittingLeave] = useState(false);
   
   const [editingStaff, setEditingStaff] = useState<any>(null);
   const [editSalaryVal, setEditSalaryVal] = useState('');
@@ -28,10 +36,11 @@ export default function HRPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [staffRes, authStaffRes, payrollRes] = await Promise.all([
+      const [staffRes, authStaffRes, payrollRes, leaveRes] = await Promise.all([
         RoselandApi.hr.getStaff().catch(() => []),
         RoselandApi.auth.getStaffDirectory().catch(() => []),
         RoselandApi.hr.getPayroll().catch(() => []),
+        RoselandApi.hr.getLeave().catch(() => []),
       ]);
 
       const hrList = Array.isArray(staffRes) ? staffRes : [];
@@ -71,6 +80,7 @@ export default function HRPage() {
       }
 
       setPayroll(Array.isArray(payrollRes) ? payrollRes : []);
+      setLeaves(Array.isArray(leaveRes) ? leaveRes : []);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load HR data");
@@ -130,6 +140,42 @@ export default function HRPage() {
 
   const totalMonthlyPayroll = filteredStaff.reduce((sum, s) => sum + (Number(s.base_salary) || 0), 0);
   const staffNameById = new Map(staff.map((s) => [String(s.id), s.full_name]));
+  const pendingLeavesCount = leaves.filter((l) => l.status === 'Pending').length;
+
+  const handleCreateLeave = async () => {
+    if (!leaveStaffId || !leaveStartDate || !leaveEndDate) {
+      toast.error('Please select a staff member and start/end dates.');
+      return;
+    }
+    setIsSubmittingLeave(true);
+    try {
+      await RoselandApi.hr.createLeave({
+        staff_id: leaveStaffId,
+        leave_type: leaveType,
+        start_date: leaveStartDate,
+        end_date: leaveEndDate,
+        reason: leaveReason,
+      });
+      toast.success('Leave application submitted!');
+      setIsLeaveModalOpen(false);
+      setLeaveReason('');
+      loadData();
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not submit leave request');
+    } finally {
+      setIsSubmittingLeave(false);
+    }
+  };
+
+  const handleUpdateLeaveStatus = async (leaveId: string, status: 'Approved' | 'Rejected') => {
+    try {
+      await RoselandApi.hr.updateLeaveStatus(leaveId, status);
+      toast.success(`Leave request ${status.toLowerCase()}!`);
+      loadData();
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not update leave status');
+    }
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -140,6 +186,16 @@ export default function HRPage() {
         </div>
         
         <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              if (!leaveStaffId && staff.length > 0) setLeaveStaffId(staff[0].id);
+              setIsLeaveModalOpen(true);
+            }}
+            icon={<i className="ph-bold ph-calendar-plus"></i>}
+          >
+            Log Leave Request
+          </Button>
           <Button
             variant="primary"
             onClick={() => setIsPayrollModalOpen(true)}
@@ -166,7 +222,7 @@ export default function HRPage() {
 
         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pending Leaves</span>
-          <h3 className="text-2xl font-serif font-bold text-amber-500 mt-1">0</h3>
+          <h3 className="text-2xl font-serif font-bold text-amber-500 mt-1">{pendingLeavesCount}</h3>
           <span className="text-xs text-amber-600 font-semibold">Requires headmaster approval</span>
         </div>
       </div>
@@ -196,7 +252,7 @@ export default function HRPage() {
               activeTab === 'leave' ? 'bg-brand-violet text-white shadow-sm' : 'text-brand-textMuted hover:bg-white'
             }`}
           >
-            Leave Requests (0)
+            Leave Requests ({leaves.length})
           </button>
         </div>
         
@@ -344,10 +400,74 @@ export default function HRPage() {
             )}
             
             {activeTab === 'leave' && (
-              <div className="p-12 text-center space-y-3">
-                <p className="font-serif font-bold text-base text-brand-textMain">No Leave Requests</p>
-                <p className="text-xs text-brand-textMuted">No staff members have submitted leave requests yet.</p>
-              </div>
+              leaves.length === 0 ? (
+                <div className="p-12 text-center space-y-3">
+                  <p className="font-serif font-bold text-base text-brand-textMain">No Leave Requests</p>
+                  <p className="text-xs text-brand-textMuted">Click &ldquo;Log Leave Request&rdquo; above or submit a request from the Teacher Portal.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-brand-bg text-gray-400 uppercase font-bold tracking-wider border-b border-gray-100 text-[10px]">
+                      <tr>
+                        <th className="py-4 px-6">Staff Member</th>
+                        <th className="py-4 px-4">Leave Type</th>
+                        <th className="py-4 px-4">Duration</th>
+                        <th className="py-4 px-4">Reason</th>
+                        <th className="py-4 px-4">Status</th>
+                        <th className="py-4 px-6 text-right">Decision</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {leaves.map((l) => {
+                        const resolvedName = l.staff_name || staffNameById.get(String(l.staff_id)) || 'Staff Member';
+                        return (
+                          <tr key={l.id} className="hover:bg-brand-bg transition-colors">
+                            <td className="py-4 px-6">
+                              <strong className="text-sm font-bold text-brand-textMain block">{resolvedName}</strong>
+                              <span className="text-[10px] text-gray-400">{l.job_title || 'Faculty'}</span>
+                            </td>
+                            <td className="py-4 px-4 font-bold text-brand-violet">{l.leave_type}</td>
+                            <td className="py-4 px-4 font-mono text-[11px] text-gray-600">
+                              {l.start_date} &rarr; {l.end_date}
+                            </td>
+                            <td className="py-4 px-4 text-gray-600 max-w-xs truncate">{l.reason || '—'}</td>
+                            <td className="py-4 px-4">
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
+                                l.status === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
+                                l.status === 'Rejected' ? 'bg-rose-100 text-rose-700' :
+                                'bg-amber-100 text-amber-700'
+                              }`}>
+                                {l.status}
+                              </span>
+                            </td>
+                            <td className="py-4 px-6 text-right">
+                              {l.status === 'Pending' ? (
+                                <div className="inline-flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleUpdateLeaveStatus(l.id, 'Approved')}
+                                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold cursor-pointer"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={() => handleUpdateLeaveStatus(l.id, 'Rejected')}
+                                    className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold cursor-pointer"
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-[11px] text-gray-400 italic">Decision recorded</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )
             )}
           </>
         )}
@@ -432,6 +552,89 @@ export default function HRPage() {
             </Button>
             <Button variant="primary" onClick={handleGeneratePayroll} icon={<i className="ph-bold ph-calculator"></i>}>
               Process Payroll
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Log / Request Leave Modal */}
+      <Modal
+        isOpen={isLeaveModalOpen}
+        onClose={() => setIsLeaveModalOpen(false)}
+        title="Log Staff Leave Request"
+        subtitle="Annual, Sick, Maternity, or Compassionate Leave"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1">Staff Member</label>
+            <select
+              value={leaveStaffId}
+              onChange={(e) => setLeaveStaffId(e.target.value)}
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
+            >
+              <option value="">Select staff member...</option>
+              {staff.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.full_name} ({s.job_title})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1">Leave Type</label>
+            <select
+              value={leaveType}
+              onChange={(e) => setLeaveType(e.target.value)}
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
+            >
+              <option value="Annual">Annual Leave</option>
+              <option value="Sick">Sick / Medical Leave</option>
+              <option value="Maternity">Maternity / Paternity Leave</option>
+              <option value="Compassionate">Compassionate Leave</option>
+              <option value="Study">Study / Exam Leave</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-1">Start Date</label>
+              <input
+                type="date"
+                value={leaveStartDate}
+                onChange={(e) => setLeaveStartDate(e.target.value)}
+                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-1">End Date</label>
+              <input
+                type="date"
+                value={leaveEndDate}
+                onChange={(e) => setLeaveEndDate(e.target.value)}
+                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1">Reason / Notes</label>
+            <textarea
+              rows={3}
+              value={leaveReason}
+              onChange={(e) => setLeaveReason(e.target.value)}
+              placeholder="Provide reason or coverage notes..."
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
+            />
+          </div>
+
+          <div className="pt-4 flex justify-end gap-3 border-t border-gray-100">
+            <Button variant="ghost" onClick={() => setIsLeaveModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleCreateLeave} disabled={isSubmittingLeave}>
+              {isSubmittingLeave ? 'Submitting...' : 'Submit Leave Request'}
             </Button>
           </div>
         </div>

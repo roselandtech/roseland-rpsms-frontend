@@ -34,6 +34,14 @@ export default function TeacherDashboard() {
   // Dynamic Pedagogical Tasks
   const [tasks, setTasks] = useState<{ id: string; text: string; due: string; done: boolean; priority: string }[]>([]);
 
+  // Leave Request Modal
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [leaveType, setLeaveType] = useState('Annual');
+  const [leaveStartDate, setLeaveStartDate] = useState('');
+  const [leaveEndDate, setLeaveEndDate] = useState('');
+  const [leaveReason, setLeaveReason] = useState('');
+  const [isSubmittingLeave, setIsSubmittingLeave] = useState(false);
+
   const loadTeacherData = useCallback(async () => {
     try {
       const currentUser = AuthService.getCurrentUser();
@@ -158,6 +166,36 @@ export default function TeacherDashboard() {
     }
   };
 
+  const handleSubmitLeaveRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!leaveStartDate || !leaveEndDate) {
+      toast.error('Please select start and end dates.');
+      return;
+    }
+    const staffIdentifier = user?.id || user?.fullName || '';
+    if (!staffIdentifier) {
+      toast.error('Unable to identify your staff profile.');
+      return;
+    }
+    setIsSubmittingLeave(true);
+    try {
+      await RoselandApi.hr.createLeave({
+        staff_id: staffIdentifier,
+        leave_type: leaveType,
+        start_date: leaveStartDate,
+        end_date: leaveEndDate,
+        reason: leaveReason,
+      });
+      toast.success('Leave application submitted to Headmaster & HR!');
+      setIsLeaveModalOpen(false);
+      setLeaveReason('');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not submit leave request');
+    } finally {
+      setIsSubmittingLeave(false);
+    }
+  };
+
   const teacherName = user?.fullName || user?.username || "Teacher";
   const attendanceRate = enrollmentCount > 0 ? ((presentCount / enrollmentCount) * 100).toFixed(1) : "0.0";
 
@@ -207,6 +245,14 @@ export default function TeacherDashboard() {
           >
             Lesson Studio
           </Link>
+          <button
+            type="button"
+            onClick={() => setIsLeaveModalOpen(true)}
+            className="px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl text-xs backdrop-blur-xs border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <i className="ph-bold ph-calendar-plus"></i>
+            Request Leave
+          </button>
         </div>
       </div>
 
@@ -362,6 +408,91 @@ export default function TeacherDashboard() {
         </div>
 
       </div>
+
+      {/* Request Leave Modal */}
+      {isLeaveModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-brand-bg/50">
+              <div>
+                <h3 className="text-lg font-serif font-bold text-brand-textMain">Submit Leave Application</h3>
+                <p className="text-xs text-brand-textMuted mt-0.5">{teacherName}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsLeaveModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 cursor-pointer"
+              >
+                <i className="ph-bold ph-x text-sm"></i>
+              </button>
+            </div>
+            <form onSubmit={handleSubmitLeaveRequest} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Leave Type</label>
+                <select
+                  value={leaveType}
+                  onChange={(e) => setLeaveType(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
+                >
+                  <option value="Annual">Annual Leave</option>
+                  <option value="Sick">Sick / Medical Leave</option>
+                  <option value="Maternity">Maternity / Paternity Leave</option>
+                  <option value="Compassionate">Compassionate Leave</option>
+                  <option value="Study">Study / Exam Leave</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    value={leaveStartDate}
+                    onChange={(e) => setLeaveStartDate(e.target.value)}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">End Date</label>
+                  <input
+                    type="date"
+                    value={leaveEndDate}
+                    onChange={(e) => setLeaveEndDate(e.target.value)}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Reason / Coverage Notes</label>
+                <textarea
+                  rows={3}
+                  value={leaveReason}
+                  onChange={(e) => setLeaveReason(e.target.value)}
+                  placeholder="Provide reason and lesson coverage notes..."
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
+                />
+              </div>
+              <div className="pt-3 flex justify-end gap-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsLeaveModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingLeave}
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-brand-violet hover:bg-brand-violetDark text-white shadow-sm disabled:opacity-50 cursor-pointer"
+                >
+                  {isSubmittingLeave ? 'Submitting...' : 'Submit Application'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -117,6 +117,9 @@ export default function AdminPermissionsPage() {
   const [loading, setLoading] = useState(true);
   const [savingRole, setSavingRole] = useState<string | null>(null);
   const [updatingStaffId, setUpdatingStaffId] = useState<string | null>(null);
+  const [resetTarget, setResetTarget] = useState<any | null>(null);
+  const [resetNewPwd, setResetNewPwd] = useState('');
+  const [isResettingPwd, setIsResettingPwd] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -198,6 +201,26 @@ export default function AdminPermissionsPage() {
       toast.error(err?.message || 'Could not update staff role');
     } finally {
       setUpdatingStaffId(null);
+    }
+  };
+
+  const handleResetStaffPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetTarget || !resetNewPwd) return;
+    if (resetNewPwd.trim().length < 6) {
+      toast.error('New password must be at least 6 characters.');
+      return;
+    }
+    setIsResettingPwd(true);
+    try {
+      await RoselandApi.auth.resetStaffPassword(resetTarget.id, resetNewPwd.trim());
+      toast.success(`Password reset for ${resetTarget.fullName}!`);
+      setResetTarget(null);
+      setResetNewPwd('');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not reset password');
+    } finally {
+      setIsResettingPwd(false);
     }
   };
 
@@ -442,13 +465,26 @@ export default function AdminPermissionsPage() {
                       </select>
                     </td>
                     <td className="py-3.5 px-6 text-right">
-                      <Link
-                        href="/admin/staff"
-                        className="px-3 py-1.5 bg-brand-violet/10 text-brand-violet hover:bg-brand-violet hover:text-white rounded-xl font-bold transition-all inline-flex items-center gap-1"
-                      >
-                        <i className="ph-bold ph-chalkboard-simple"></i>
-                        Assign Class / Subjects
-                      </Link>
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setResetTarget(st);
+                            setResetNewPwd('Roseland2026!');
+                          }}
+                          className="px-3 py-1.5 border border-gray-200 text-gray-600 hover:border-brand-violet hover:text-brand-violet rounded-xl font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <i className="ph-bold ph-key"></i>
+                          Reset Password
+                        </button>
+                        <Link
+                          href="/admin/staff"
+                          className="px-3 py-1.5 bg-brand-violet/10 text-brand-violet hover:bg-brand-violet hover:text-white rounded-xl font-bold transition-all inline-flex items-center gap-1"
+                        >
+                          <i className="ph-bold ph-chalkboard-simple"></i>
+                          Assign Class / Subjects
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -457,6 +493,59 @@ export default function AdminPermissionsPage() {
           </table>
         </div>
       </div>
+
+      {/* Admin Reset Staff Password Modal */}
+      {resetTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-brand-bg/50">
+              <div>
+                <h3 className="text-lg font-serif font-bold text-brand-textMain">Reset Staff Password</h3>
+                <p className="text-xs text-brand-textMuted mt-0.5">{resetTarget.fullName} ({resetTarget.email})</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setResetTarget(null)}
+                className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 cursor-pointer"
+              >
+                <i className="ph-bold ph-x text-sm"></i>
+              </button>
+            </div>
+            <form onSubmit={handleResetStaffPassword} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">New Password</label>
+                <input
+                  type="text"
+                  value={resetNewPwd}
+                  onChange={(e) => setResetNewPwd(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-mono outline-none focus:border-brand-violet"
+                  placeholder="Enter new temporary password"
+                  required
+                />
+                <p className="text-[11px] text-brand-textMuted mt-1.5">
+                  The password will be encrypted using bcrypt (10 salt rounds). The staff member can change it anytime using the key icon in their portal sidebar.
+                </p>
+              </div>
+              <div className="pt-3 flex justify-end gap-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setResetTarget(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isResettingPwd}
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-brand-violet hover:bg-brand-violetDark text-white shadow-sm disabled:opacity-50 cursor-pointer"
+                >
+                  {isResettingPwd ? 'Resetting...' : 'Save New Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

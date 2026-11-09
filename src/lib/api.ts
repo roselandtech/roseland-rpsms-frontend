@@ -238,6 +238,16 @@ export const RoselandApi = {
         method: 'PUT',
         body: JSON.stringify({ permissions }),
       }),
+    resetStaffPassword: (userId: string, newPassword: string) =>
+      apiRequest(`/api/v1/auth/staff/${encodeURIComponent(userId)}/password`, {
+        method: 'PATCH',
+        body: JSON.stringify({ newPassword }),
+      }),
+    changePassword: (data: { identifier: string; currentPassword: string; newPassword: string }) =>
+      apiRequest('/api/v1/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
 
   // 2. Academic Core & SBA Engine (Port 8082 via Gateway)
