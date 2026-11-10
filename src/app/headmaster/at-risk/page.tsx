@@ -259,22 +259,54 @@ export default function HeadmasterAtRiskPage() {
     setIsSavingPlan(true);
     try {
       // 1. Optimistic local update
-      setFlaggedStudents((prev) =>
-        prev.map((item) =>
-          item.index === planForm.index_no
-            ? {
-                ...item,
-                intervention: planForm.intervention_type,
-                assigned_teacher: planForm.assigned_teacher,
-                assigned_teacher_id: planForm.assigned_teacher_id,
-                acknowledgment_status: 'PENDING',
-                target_average: `${planForm.target_average}%`,
-                target_average_num: Number(planForm.target_average),
-                notes: planForm.notes,
-              }
-            : item
-        )
-      );
+      setFlaggedStudents((prev) => {
+        const targetIdx = planForm.index_no.trim().toLowerCase();
+        const existingIdx = prev.findIndex((item) => item.index.trim().toLowerCase() === targetIdx);
+        if (existingIdx >= 0) {
+          const updated = [...prev];
+          updated[existingIdx] = {
+            ...updated[existingIdx],
+            intervention: planForm.intervention_type,
+            assigned_teacher: planForm.assigned_teacher,
+            assigned_teacher_id: planForm.assigned_teacher_id,
+            acknowledgment_status: 'PENDING',
+            target_average: `${planForm.target_average}%`,
+            target_average_num: Number(planForm.target_average),
+            notes: planForm.notes,
+          };
+          return updated;
+        } else {
+          const newEntry: FlaggedStudent = {
+            id: planForm.index_no,
+            student_id: planForm.index_no,
+            index: planForm.index_no,
+            name: planForm.student_name,
+            class: planForm.class_grade || 'Primary Cohort',
+            average: `${planForm.current_average || 45}%`,
+            current_average: Number(planForm.current_average || 45),
+            attendance: '85%',
+            attendance_rate: 85,
+            bottlenecks: planForm.focus_subjects ? planForm.focus_subjects.split(',').map((s) => s.trim()).filter(Boolean) : ['Foundational Literacy & Numeracy'],
+            intervention: planForm.intervention_type,
+            assigned_teacher: planForm.assigned_teacher,
+            assigned_teacher_id: planForm.assigned_teacher_id,
+            acknowledgment_status: 'PENDING',
+            acknowledged_at: null,
+            acknowledged_by: null,
+            target_average: `${planForm.target_average}%`,
+            target_average_num: Number(planForm.target_average),
+            parent_name: 'Parent / Guardian',
+            parent_phone: '+233 24 000 0000',
+            parent_status: 'Not Summoned',
+            riskLevel: 'Moderate',
+            sessions_completed: 0,
+            status: 'In Progress',
+            notes: planForm.notes,
+            avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
+          };
+          return [newEntry, ...prev];
+        }
+      });
 
       // 2. Persist to backend
       await RoselandApi.academic.saveRemedialPlan({
