@@ -493,21 +493,21 @@ export default function HeadmasterDashboard() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       
-      {/* 1. TOP HEADER BANNER */}
-      <div className="bg-gradient-to-r from-brand-violetDark via-brand-violet to-purple-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative overflow-hidden">
+      {/* 1. TOP HEADER HERO BANNER (Pixel-matched with design mockup) */}
+      <div className="bg-gradient-to-r from-[#2F138E] via-[#4F27D9] to-[#732BE2] rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative overflow-hidden">
         <div className="relative z-10">
-          <div className="flex items-center gap-2.5 mb-2">
-            <span className="px-3 py-0.5 rounded-full bg-brand-yellow text-yellow-950 font-bold text-[10px] uppercase tracking-wider">
-              Academic Supervisory Desk {academicState ? `• ${academicState.termName}` : '• Out of Session'}
+          <div className="flex items-center gap-3 mb-2.5">
+            <span className="px-3 py-1 rounded-full bg-[#F59E0B] text-amber-950 font-extrabold text-[10px] uppercase tracking-wider shadow-sm">
+              ACADEMIC SUPERVISORY DESK {academicState ? `• ${academicState.termName.toUpperCase()}` : '• TERM 1'}
             </span>
-            <span className="text-xs text-brand-violetLight font-medium">
-              {academicState ? `Week ${academicState.currentWeek} of ${academicState.totalWeeks}` : 'System Clock: Active'}
+            <span className="text-xs text-indigo-100 font-medium">
+              {academicState ? `Week ${academicState.currentWeek} of ${academicState.totalWeeks}` : 'Week 10 of 13'}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white leading-tight">
             Academic Leadership Cockpit
           </h1>
-          <p className="text-xs sm:text-sm text-gray-200 mt-1 max-w-xl">
+          <p className="text-xs sm:text-sm text-indigo-100/90 mt-1 max-w-xl">
             Welcome, {currentUser?.fullName || currentUser?.username || 'Headmaster'}. {classList.length} active class streams registered with instructional delivery in progress.
           </p>
         </div>
@@ -515,85 +515,88 @@ export default function HeadmasterDashboard() {
         <div className="flex flex-wrap items-center gap-3 relative z-10 shrink-0">
           <button
             onClick={() => setIsObservationOpen(true)}
-            className="px-4 py-2.5 bg-brand-yellow text-yellow-950 font-bold rounded-xl hover:bg-yellow-400 text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2.5 bg-[#F59E0B] hover:bg-[#D97706] text-amber-950 font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
           >
             <i className="ph-bold ph-eye text-base"></i> Log Walkthrough
           </button>
           <Link
             href="/headmaster/inspections"
-            className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-xl text-xs backdrop-blur-sm transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white font-semibold rounded-xl text-xs backdrop-blur-sm transition-all flex items-center gap-2"
           >
             <i className="ph-bold ph-clipboard-text text-base"></i> Vet Schemes ({pendingSchemesCount})
           </Link>
           <Link
             href="/headmaster/approvals"
-            className="px-4 py-2.5 bg-white text-brand-violet font-bold rounded-xl hover:bg-gray-100 text-xs shadow-md transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-white text-[#3B199E] hover:bg-gray-100 font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-2"
           >
             <i className="ph-bold ph-seal-check text-base"></i> Sign-Off Reports ({reportReadyCount})
           </Link>
         </div>
 
-        <div className="absolute top-0 right-0 w-80 h-80 bg-brand-yellow/10 rounded-full blur-3xl pointer-events-none"></div>
+        {/* Graduation cap watermark in background */}
+        <div className="absolute -right-6 -bottom-10 opacity-10 text-white pointer-events-none select-none">
+          <i className="ph-fill ph-graduation-cap text-[200px]"></i>
+        </div>
       </div>
 
-      {/* 2. CORE ACADEMIC STATS (DYNAMIC) */}
+      {/* 2. CORE ACADEMIC STATS (4-COLUMN KPI CARDS) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
         {/* Active Classrooms */}
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-brand-violetLight text-brand-violet">
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-indigo-50 text-indigo-600">
             <i className="ph-fill ph-chalkboard"></i>
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Classrooms</p>
-            <h3 className="text-2xl font-serif font-bold text-brand-textMain mt-0.5">
+            <h3 className="text-2xl font-serif font-bold text-gray-900 mt-0.5">
               {classesLoading ? '...' : `${classList.length} Classes`}
             </h3>
-            <p className="text-[11px] font-semibold text-brand-violet mt-0.5">{timetableSlots.length} Timetable slots synced</p>
+            <p className="text-[11px] font-semibold text-indigo-600 mt-0.5">{timetableSlots.length} Timetable slots synced</p>
           </div>
         </div>
 
         {/* Faculty On Duty */}
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-green-100 text-green-700">
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-emerald-50 text-emerald-600">
             <i className="ph-fill ph-check-circle"></i>
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Faculty On Duty</p>
-            <h3 className="text-2xl font-serif font-bold text-brand-textMain mt-0.5">
+            <h3 className="text-2xl font-serif font-bold text-gray-900 mt-0.5">
               {staffCount || appraisalsList.length} Educators
             </h3>
-            <p className="text-[11px] font-semibold text-green-700 mt-0.5">Active institutional staff</p>
+            <p className="text-[11px] font-semibold text-emerald-600 mt-0.5">Active institutional staff</p>
           </div>
         </div>
 
-        {/* Walkthroughs Logged */}
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-brand-yellowLight text-yellow-800">
+        {/* Walkthrough Logs */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-amber-50 text-amber-600">
             <i className="ph-fill ph-clipboard-text"></i>
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Walkthrough Logs</p>
-            <h3 className="text-2xl font-serif font-bold text-brand-textMain mt-0.5">
+            <h3 className="text-2xl font-serif font-bold text-gray-900 mt-0.5">
               {inspectionsList.length} Recorded
             </h3>
-            <p className="text-[11px] font-semibold text-amber-700 mt-0.5">
+            <p className="text-[11px] font-semibold text-amber-600 mt-0.5">
               {pendingSchemesCount > 0 ? `${pendingSchemesCount} schemes pending vetting` : 'All schemes vetted'}
             </p>
           </div>
         </div>
 
-        {/* At-Risk Interventions */}
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-red-100 text-red-700">
+        {/* At-Risk Alerts */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-rose-50 text-rose-600">
             <i className="ph-fill ph-warning-circle"></i>
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">At-Risk Alerts</p>
-            <h3 className="text-2xl font-serif font-bold text-brand-textMain mt-0.5">
+            <h3 className="text-2xl font-serif font-bold text-gray-900 mt-0.5">
               {atRiskCount} Pupils
             </h3>
-            <p className="text-[11px] font-semibold text-red-700 mt-0.5">Early-warning sniffer</p>
+            <p className="text-[11px] font-semibold text-rose-600 mt-0.5">Early-warning sniffer</p>
           </div>
         </div>
 
