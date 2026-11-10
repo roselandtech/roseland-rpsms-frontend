@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+const STAFF_ROLES = ['ADMIN', 'SUPER_ADMIN', 'HEADMASTER', 'BURSAR', 'TEACHER'];
+
 const PROTECTED_PORTALS: Record<string, string[]> = {
-  '/admin': ['ADMIN', 'SUPER_ADMIN', 'HEADMASTER', 'BURSAR'],
-  '/headmaster': ['HEADMASTER', 'ADMIN', 'SUPER_ADMIN'],
-  '/teacher': ['TEACHER', 'HEADMASTER', 'ADMIN', 'SUPER_ADMIN'],
-  '/parent': ['PARENT', 'ADMIN', 'SUPER_ADMIN'],
-  '/bursar': ['BURSAR', 'ADMIN', 'HEADMASTER', 'SUPER_ADMIN'],
-  '/cbt': ['STUDENT', 'TEACHER', 'HEADMASTER', 'ADMIN', 'SUPER_ADMIN'],
+  '/admin': STAFF_ROLES,
+  '/headmaster': STAFF_ROLES,
+  '/teacher': STAFF_ROLES,
+  '/parent': ['PARENT', 'ADMIN', 'SUPER_ADMIN', 'HEADMASTER'],
+  '/bursar': STAFF_ROLES,
+  '/cbt': ['STUDENT', ...STAFF_ROLES],
 };
 
 export function proxy(request: NextRequest) {

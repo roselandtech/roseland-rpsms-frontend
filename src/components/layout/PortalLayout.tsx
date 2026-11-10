@@ -7,7 +7,7 @@ import TopHeader from './TopHeader';
 import CommandPalette from './CommandPalette';
 import { AuthService, RoselandUser } from '@/lib/auth';
 import { RoselandApi } from '@/lib/api';
-import { filterNavGroupsByPermissions, filterNavItemsByPermissions } from '@/lib/executiveNav';
+import { filterNavGroupsByPermissions, filterNavItemsByPermissions, isHrefAllowedByPermissions } from '@/lib/executiveNav';
 
 interface PortalLayoutProps {
   children: React.ReactNode;
@@ -63,6 +63,9 @@ export default function PortalLayout({
           const updatedUser: RoselandUser = { ...user, permissions: matched.permissions };
           setCurrentUser(updatedUser);
           localStorage.setItem('roseland_user', JSON.stringify(updatedUser));
+          if (pathname && !isHrefAllowedByPermissions(pathname, updatedUser.role, updatedUser.permissions)) {
+            router.replace(AuthService.getPortalUrlForUser(updatedUser));
+          }
         }
       })
       .catch(() => {});
