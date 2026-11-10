@@ -18,6 +18,10 @@ interface FlaggedStudent {
   bottlenecks: string[];
   intervention: string;
   assigned_teacher: string;
+  assigned_teacher_id?: string | null;
+  acknowledgment_status?: string;
+  acknowledged_at?: string | null;
+  acknowledged_by?: string | null;
   target_average: string;
   target_average_num: number;
   parent_name: string;
@@ -35,6 +39,7 @@ export default function HeadmasterAtRiskPage() {
   const [isInterventionModalOpen, setIsInterventionModalOpen] = useState(false);
   const [flaggedStudents, setFlaggedStudents] = useState<FlaggedStudent[]>([]);
   const [allStudents, setAllStudents] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<any[]>([]);
   const [classList, setClassList] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>('ALL');
@@ -51,7 +56,8 @@ export default function HeadmasterAtRiskPage() {
     class_grade: '',
     intervention_type: 'After-School Remedial Catch-Up',
     focus_subjects: 'Mathematics, English Literacy',
-    assigned_teacher: 'Remedial Lead Specialist',
+    assigned_teacher: '',
+    assigned_teacher_id: '',
     current_average: 45,
     target_average: 65,
     notes: '',
@@ -78,6 +84,10 @@ export default function HeadmasterAtRiskPage() {
         bottlenecks: Array.isArray(s.bottlenecks) && s.bottlenecks.length > 0 ? s.bottlenecks : ['Foundational Literacy & Numeracy'],
         intervention: s.intervention || 'Pending Formulation',
         assigned_teacher: s.assigned_teacher || 'Not Assigned',
+        assigned_teacher_id: s.assigned_teacher_id || null,
+        acknowledgment_status: s.acknowledgment_status || (s.intervention && s.intervention !== 'Pending Formulation' ? 'PENDING' : 'UNASSIGNED'),
+        acknowledged_at: s.acknowledged_at || null,
+        acknowledged_by: s.acknowledged_by || null,
         target_average: s.target_average || '65.0%',
         target_average_num: Number(s.target_average_num ?? 65),
         parent_name: s.parent_name || 'Parent / Guardian',
@@ -98,9 +108,21 @@ export default function HeadmasterAtRiskPage() {
       setClassList(classes);
 
       // Fetch all students to power modal autocomplete if needed
-      const sisStudents = await RoselandApi.sis.getStudents().catch(() => []);
-      const sisList = Array.isArray(sisStudents?.data) ? sisStudents.data : Array.isArray(sisStudents) ? sisStudents : [];
+      const [sisStudents, staffRes] = await Promise.allSettled([
+        RoselandApi.sis.getStudents(),
+        RoselandApi.auth.getStaffDirectory(),
+      ]);
+      const sisList = sisStudents.status === 'fulfilled' && Array.isArray(sisStudents.value?.data)
+        ? sisStudents.value.data
+        : sisStudents.status === 'fulfilled' && Array.isArray(sisStudents.value)
+        ? sisStudents.value
+        : [];
       setAllStudents(sisList);
+
+      const sList = staffRes.status === 'fulfilled' && Array.isArray(staffRes.value)
+        ? staffRes.value
+        : [];
+      setStaffList(sList);
     } catch (err) {
       console.warn("At-risk registry loading failed", err);
       toast.error("Failed to load live at-risk scholars.");
@@ -135,6 +157,9 @@ export default function HeadmasterAtRiskPage() {
 
   // Open modal with pre-filled student
   const openPlanModal = (student?: FlaggedStudent) => {
+    const defaultTeacher = staffList.length > 0 ? (staffList[0].full_name || staffList[0].name) : 'Anita Kusi';
+    const defaultTeacherId = staffList.length > 0 ? String(staffList[0].id) : '';
+
     if (student) {
       setPlanForm({
         index_no: student.index,
@@ -142,7 +167,8 @@ export default function HeadmasterAtRiskPage() {
         class_grade: student.class,
         intervention_type: student.intervention !== 'Pending Formulation' ? student.intervention : 'After-School Remedial Catch-Up',
         focus_subjects: student.bottlenecks.join(', '),
-        assigned_teacher: student.assigned_teacher !== 'Not Assigned' ? student.assigned_teacher : 'Remedial Lead Specialist',
+        assigned_teacher: student.assigned_teacher !== 'Not Assigned' ? student.assigned_teacher : defaultTeacher,
+        assigned_teacher_id: student.assigned_teacher_id || defaultTeacherId,
         current_average: student.current_average || 45,
         target_average: student.target_average_num || 65,
         notes: student.notes || '',
@@ -154,7 +180,8 @@ export default function HeadmasterAtRiskPage() {
         class_grade: classList[0] || 'Basic 1',
         intervention_type: 'After-School Remedial Catch-Up',
         focus_subjects: 'Mathematics, English Literacy',
-        assigned_teacher: 'Remedial Lead Specialist',
+        assigned_teacher: defaultTeacher,
+        assigned_teacher_id: defaultTeacherId,
         current_average: 45,
         target_average: 65,
         notes: '',
@@ -180,12 +207,13 @@ export default function HeadmasterAtRiskPage() {
         intervention_type: planForm.intervention_type,
         focus_subjects: planForm.focus_subjects,
         assigned_teacher: planForm.assigned_teacher,
+        assigned_teacher_id: planForm.assigned_teacher_id,
         current_average: Number(planForm.current_average),
         target_average: Number(planForm.target_average),
         notes: planForm.notes,
       });
 
-      toast.success(`Intervention plan deployed for ${planForm.student_name}!`);
+      toast.success(`Intervention plan deployed for ${planForm.student_name} and assigned to ${planForm.assigned_teacher}!`);
       setIsInterventionModalOpen(false);
       await loadAtRiskData();
     } catch (err: any) {
@@ -443,11 +471,27 @@ export default function HeadmasterAtRiskPage() {
 
                     <td className="py-4 px-4">
                       <strong className="text-brand-textMain block font-semibold">{s.intervention}</strong>
-                      <span className="text-[10px] text-gray-400 font-medium">
-                        Lead: {s.assigned_teacher} • Target: {s.target_average}
+                      <span className="text-[10px] text-gray-500 font-medium block">
+                        Lead: <strong className="text-brand-textMain">{s.assigned_teacher}</strong> • Target: {s.target_average}
                       </span>
+                      
+                      {/* Teacher Acknowledgment Status Indicator */}
+                      {s.intervention !== 'Pending Formulation' && (
+                        <div className="mt-1">
+                          {s.acknowledgment_status === 'ACKNOWLEDGED' ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md">
+                              <i className="ph-fill ph-check-circle text-emerald-600"></i> Acknowledged by Lead
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-md animate-pulse">
+                              <i className="ph-bold ph-clock text-amber-600"></i> Awaiting Lead Acknowledgment
+                            </span>
+                          )}
+                        </div>
+                      )}
+
                       {s.parent_status === 'Summons Dispatched' && (
-                        <span className="block mt-0.5 text-[10px] text-blue-600 font-semibold">
+                        <span className="block mt-1 text-[10px] text-blue-600 font-semibold">
                           <i className="ph-bold ph-paper-plane-tilt"></i> Summons Dispatched
                         </span>
                       )}
@@ -583,15 +627,45 @@ export default function HeadmasterAtRiskPage() {
           </div>
 
           <div>
-            <label className="block font-bold text-brand-textMain uppercase mb-1">Assigned Remedial Lead / Teacher *</label>
-            <input
-              type="text"
-              value={planForm.assigned_teacher}
-              onChange={(e) => setPlanForm({ ...planForm, assigned_teacher: e.target.value })}
-              placeholder="e.g. Assigned Subject Specialist / Form Master"
-              required
-              className="w-full bg-brand-bg border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-violet font-semibold"
-            />
+            <label className="block font-bold text-brand-textMain uppercase mb-1">
+              Assigned Remedial Lead / Teacher *
+            </label>
+            {staffList.length > 0 ? (
+              <select
+                value={planForm.assigned_teacher}
+                onChange={(e) => {
+                  const selName = e.target.value;
+                  const match = staffList.find((st: any) => (st.full_name || st.name) === selName);
+                  setPlanForm({
+                    ...planForm,
+                    assigned_teacher: selName,
+                    assigned_teacher_id: match?.id ? String(match.id) : '',
+                  });
+                }}
+                required
+                className="w-full bg-brand-bg border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-violet font-semibold text-xs"
+              >
+                <option value="">-- Select Remedial Lead --</option>
+                {staffList.map((st: any) => {
+                  const tName = st.full_name || st.name || `${st.first_name || ''} ${st.last_name || ''}`.trim();
+                  const tRole = st.role || st.assigned_class || 'Faculty';
+                  return (
+                    <option key={st.id || tName} value={tName}>
+                      {tName} ({tRole})
+                    </option>
+                  );
+                })}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={planForm.assigned_teacher}
+                onChange={(e) => setPlanForm({ ...planForm, assigned_teacher: e.target.value })}
+                placeholder="e.g. Assigned Subject Specialist / Form Master"
+                required
+                className="w-full bg-brand-bg border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-violet font-semibold"
+              />
+            )}
           </div>
 
           <div>

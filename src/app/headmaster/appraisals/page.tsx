@@ -33,6 +33,7 @@ interface TeacherAppraisal {
   name: string;
   role: string;
   assigned: string;
+  phone?: string;
   subjects?: string;
   ntcLicense: string;
   ntcPoints: string;
@@ -187,13 +188,14 @@ export default function HeadmasterAppraisalsPage() {
 
       await RoselandApi.academic.evaluateTeacher(payload);
 
-      // Dispatch alert to educator
+      // Dispatch confidential direct alert to educator only (never whole school broadcast)
       try {
-        await RoselandApi.notify.broadcastNotice({
-          targetGroup: "FACULTY & STAFF",
-          title: `Appraisal Scorecard Updated: ${selectedTeacher.name}`,
-          message: `${inspector} finalized your GES 5-Domain pedagogical evaluation. Classified as: ${editStatus}.`
-        });
+        if (selectedTeacher.phone) {
+          await RoselandApi.notify.sendSms({
+            phone: selectedTeacher.phone,
+            message: `Roseland HM Desk: Dear ${selectedTeacher.name}, your pedagogical evaluation has been updated by ${inspector}. Classified as: ${editStatus}. Check your appraisal portal.`
+          });
+        }
       } catch {}
 
       toast.success(`GES 5-Domain appraisal saved for ${selectedTeacher.name}`);
@@ -234,13 +236,14 @@ export default function HeadmasterAppraisalsPage() {
 
       await RoselandApi.academic.scheduleTeacherWalkthrough(payload);
 
-      // Dispatch notification
+      // Dispatch confidential direct alert to educator only (never whole school broadcast)
       try {
-        await RoselandApi.notify.broadcastNotice({
-          targetGroup: "FACULTY & STAFF",
-          title: `Observation Scheduled: ${scheduleModalTeacher.name}`,
-          message: `${inspector} scheduled a supervisory classroom walkthrough for ${scheduleModalTeacher.name} on ${scheduleDate} at ${scheduleTime}. Focus: ${scheduleFocus}.`
-        });
+        if (scheduleModalTeacher.phone) {
+          await RoselandApi.notify.sendSms({
+            phone: scheduleModalTeacher.phone,
+            message: `Roseland HM Desk: Dear ${scheduleModalTeacher.name}, a classroom observation has been scheduled for ${scheduleDate} at ${scheduleTime}. Focus: ${scheduleFocus}.`
+          });
+        }
       } catch {}
 
       toast.success(`Walkthrough scheduled for ${scheduleModalTeacher.name} on ${scheduleDate} at ${scheduleTime}`);
@@ -285,13 +288,14 @@ export default function HeadmasterAppraisalsPage() {
         inspector_name: inspector
       });
 
-      // Dispatch notification
+      // Dispatch confidential direct alert to educator only (never whole school broadcast)
       try {
-        await RoselandApi.notify.broadcastNotice({
-          targetGroup: "FACULTY & STAFF",
-          title: `Walkthrough Observation Recorded: ${logWalkthroughTeacher.name}`,
-          message: `${inspector} recorded a ${wtRating}/5 ★ classroom walkthrough for ${logWalkthroughTeacher.name} in ${wtClass}.`
-        });
+        if (logWalkthroughTeacher.phone) {
+          await RoselandApi.notify.sendSms({
+            phone: logWalkthroughTeacher.phone,
+            message: `Roseland HM Desk: Dear ${logWalkthroughTeacher.name}, supervisory observation notes (${wtRating}/5 ★) have been recorded for your lesson in ${wtClass}. View feedback in your portal.`
+          });
+        }
       } catch {}
 
       toast.success(`Walkthrough recorded & synced for ${logWalkthroughTeacher.name}!`);

@@ -499,8 +499,14 @@ export const RoselandApi = {
       apiRequest(`/api/v1/academic/bece/masterclasses/${encodeURIComponent(masterclassId)}`, {
         method: 'DELETE',
       }),
-    getAtRiskStudents: (classGrade?: string) =>
-      apiRequest(`/api/v1/academic/remedial/at-risk${classGrade ? `?class_grade=${encodeURIComponent(classGrade)}` : ''}`),
+    getAtRiskStudents: (classGrade?: string, assignedTeacher?: string, acknowledgmentStatus?: string) => {
+      const q = new URLSearchParams();
+      if (classGrade) q.set('class_grade', classGrade);
+      if (assignedTeacher) q.set('assigned_teacher', assignedTeacher);
+      if (acknowledgmentStatus) q.set('acknowledgment_status', acknowledgmentStatus);
+      const queryStr = q.toString() ? `?${q.toString()}` : '';
+      return apiRequest(`/api/v1/academic/remedial/at-risk${queryStr}`);
+    },
     saveRemedialPlan: (planData: any) =>
       apiRequest('/api/v1/academic/remedial/plan', {
         method: 'POST',
@@ -520,6 +526,16 @@ export const RoselandApi = {
       apiRequest('/api/v1/academic/remedial/session', {
         method: 'POST',
         body: JSON.stringify(sessionData),
+      }),
+    acknowledgeRemedialCase: (payload: { indexNo?: string; index_no?: string; interventionId?: string; intervention_id?: string; teacherName?: string; teacher_name?: string; acknowledgmentNotes?: string; acknowledgment_notes?: string }) =>
+      apiRequest('/api/v1/academic/remedial/acknowledge', {
+        method: 'POST',
+        body: JSON.stringify({
+          index_no: payload.index_no || payload.indexNo,
+          intervention_id: payload.intervention_id || payload.interventionId,
+          teacher_name: payload.teacher_name || payload.teacherName,
+          acknowledgment_notes: payload.acknowledgment_notes || payload.acknowledgmentNotes,
+        }),
       }),
     logBehavior: (behaviorData: any) =>
       apiRequest('/api/v1/academic/behavior/log', {

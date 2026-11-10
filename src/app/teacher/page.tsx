@@ -31,6 +31,7 @@ export default function TeacherDashboard() {
 
   // Timetable
   const [schedule, setSchedule] = useState<any[]>([]);
+  const [pendingRemedialCount, setPendingRemedialCount] = useState<number>(0);
 
   // Dynamic Pedagogical Tasks
   const [tasks, setTasks] = useState<{ id: string; text: string; due: string; done: boolean; priority: string }[]>([]);
@@ -132,6 +133,29 @@ export default function TeacherDashboard() {
           { id: 't2', text: `Review terminal continuous assessment entry for ${currentClass}`, due: "This Week", done: false, priority: "Medium" },
           { id: 't3', text: `Submit updated weekly lesson scheme to Headmaster`, due: "Friday", done: true, priority: "Medium" }
         ];
+
+        // Check for pending Headmaster remedial directives assigned to this educator
+        try {
+          const teacherIdent = currentUser?.fullName || currentUser?.username || '';
+          if (teacherIdent) {
+            const remedialRes = await RoselandApi.academic.getAtRiskStudents(undefined, teacherIdent);
+            const rList = Array.isArray(remedialRes?.data) ? remedialRes.data : Array.isArray(remedialRes) ? remedialRes : [];
+            const unacked = rList.filter((r: any) => (r.acknowledgment_status || r.acknowledgmentStatus) === 'PENDING');
+            setPendingRemedialCount(unacked.length);
+            if (unacked.length > 0) {
+              dynamicTasks.unshift({
+                id: 'remedial-directive-urgent',
+                text: `Headmaster Directive: Acknowledge & accept ${unacked.length} assigned remedial case${unacked.length > 1 ? 's' : ''}`,
+                due: "Action Required",
+                done: false,
+                priority: "Urgent"
+              });
+            }
+          }
+        } catch (err) {
+          console.warn("Could not check remedial directives", err);
+        }
+
         setTasks(dynamicTasks);
       }
 
@@ -147,6 +171,10 @@ export default function TeacherDashboard() {
   }, [loadTeacherData]);
 
   const toggleTask = (id: string) => {
+    if (id === 'remedial-directive-urgent') {
+      window.location.href = '/teacher/remedial';
+      return;
+    }
     setTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t));
     toast.success("Task status updated!");
   };
@@ -256,6 +284,32 @@ export default function TeacherDashboard() {
           </button>
         </div>
       </div>
+
+      {/* Headmaster Directive Alert Banner */}
+      {pendingRemedialCount > 0 && (
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+              <i className="ph-fill ph-warning-circle text-xl text-yellow-200 animate-pulse"></i>
+            </div>
+            <div>
+              <h4 className="font-serif font-bold text-sm">
+                Headmaster Directive: {pendingRemedialCount} Remedial Intervention Case{pendingRemedialCount > 1 ? 's' : ''} Assigned to You
+              </h4>
+              <p className="text-xs text-amber-100 mt-0.5">
+                You have been designated as lead remedial mentor. Please review the pastoral directive and formally confirm assignment.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/teacher/remedial"
+            className="px-4 py-2.5 bg-white text-amber-800 font-bold rounded-xl text-xs shadow-md hover:bg-amber-50 transition-all flex items-center justify-center gap-1.5 self-start sm:self-auto shrink-0"
+          >
+            <span>Review & Acknowledge</span>
+            <i className="ph-bold ph-arrow-right"></i>
+          </Link>
+        </div>
+      )}
 
       {/* Quick Stat Metric Triad */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
