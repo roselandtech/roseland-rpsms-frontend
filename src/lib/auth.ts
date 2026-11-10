@@ -15,6 +15,7 @@ export interface RoselandUser {
   avatar?: string;
   phone?: string;
   wardIndexNumbers?: string[];
+  wardIds?: string[];
   assignedClass?: string;
   studentIndexNo?: string;
   permissions?: string[];
