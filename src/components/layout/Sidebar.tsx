@@ -68,8 +68,8 @@ export default function Sidebar({
       <div className={`h-20 flex items-center border-b border-gray-100 shrink-0 ${
         isCollapsed ? 'justify-center px-2' : 'justify-between px-6'
       }`}>
-        <Link href="/" className="flex items-center gap-3 group min-w-0 flex-1">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center p-1 shadow-md border border-gray-100 group-hover:scale-105 transition-transform shrink-0 overflow-hidden">
+        <Link href="/" className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="w-9 h-9 shrink-0 flex items-center justify-center">
             <img src="/logo.png" alt="Roseland Crest" className="w-full h-full object-contain" />
           </div>
           {!isCollapsed && (
