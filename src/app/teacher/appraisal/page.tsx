@@ -4,6 +4,20 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { RoselandApi } from '@/lib/api';
 import { AuthService, RoselandUser } from '@/lib/auth';
+import { printTeacherAppraisalDossier } from '@/lib/pdf-printer';
+
+interface WalkthroughItem {
+  id?: string;
+  teacherName: string;
+  classGrade: string;
+  subject: string;
+  strandTopic: string;
+  rating: number;
+  commendations: string;
+  actionPoints: string;
+  inspectorName?: string;
+  inspectedAt?: string;
+}
 
 interface TeacherDossier {
   id: string | null;
@@ -16,6 +30,7 @@ interface TeacherDossier {
   performanceIndex: string;
   lessonPlanScore: string;
   walkthroughScore: string;
+  walkthroughHistory?: WalkthroughItem[];
   status: string;
   scheduledDate?: string;
   scheduledTime?: string;
@@ -34,7 +49,7 @@ interface TeacherDossier {
 }
 
 export default function TeacherAppraisalPage() {
-  const [currentUser, setCurrentUser] = useState<RoselandUser | null>(null);
+  const [, setCurrentUser] = useState<RoselandUser | null>(null);
   const [dossier, setDossier] = useState<TeacherDossier | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -64,6 +79,12 @@ export default function TeacherAppraisalPage() {
     loadDossier();
   }, [loadDossier]);
 
+  const handleExportDossier = () => {
+    if (!dossier) return;
+    printTeacherAppraisalDossier(dossier as any);
+    toast.success("Your official GES 5-Domain pedagogical appraisal dossier has been generated for printing.");
+  };
+
   return (
     <div className="space-y-8 max-w-5xl mx-auto animate-fade-in">
       
@@ -81,12 +102,14 @@ export default function TeacherAppraisalPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => toast.success("Your official appraisal transcript has been compiled for export.")}
-          className="px-4 py-2.5 bg-brand-violet text-white font-bold rounded-xl text-xs hover:bg-brand-violetDark shadow-md flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
-        >
-          <i className="ph-bold ph-file-arrow-down"></i> Export My Dossier
-        </button>
+        {dossier && (
+          <button
+            onClick={handleExportDossier}
+            className="px-4 py-2.5 bg-brand-violet text-white font-bold rounded-xl text-xs hover:bg-brand-violetDark shadow-md flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+          >
+            <i className="ph-bold ph-printer"></i> Export Official Dossier (PDF)
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -166,12 +189,12 @@ export default function TeacherAppraisalPage() {
             {/* Metrics Breakdown Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-4 rounded-2xl bg-brand-bg border border-gray-100 text-center">
-                <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">Scheme Compliance</span>
+                <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">Scheme Compliance (30%)</span>
                 <strong className="text-lg font-bold text-brand-textMain block mt-1">{dossier.lessonPlanScore}</strong>
                 <span className="text-[10px] text-gray-400">Weekly Lesson Plans Vetted</span>
               </div>
               <div className="p-4 rounded-2xl bg-brand-bg border border-gray-100 text-center">
-                <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">Rubric Evaluation</span>
+                <span className="text-[10px] text-gray-400 block font-bold uppercase tracking-wider">Supervisory Rubric (70%)</span>
                 <strong className="text-lg font-bold text-amber-700 block mt-1">{dossier.walkthroughScore}</strong>
                 <span className="text-[10px] text-gray-400">GES 5-Domain Benchmark</span>
               </div>
@@ -227,7 +250,7 @@ export default function TeacherAppraisalPage() {
                   <i className="ph-bold ph-thumbs-up"></i> Commendations & Strengths:
                 </strong>
                 <ul className="list-disc list-inside text-green-950 space-y-1">
-                  {dossier.strengths.map((s, idx) => (
+                  {(dossier.strengths || []).map((s, idx) => (
                     <li key={idx}>{s}</li>
                   ))}
                 </ul>
@@ -240,6 +263,52 @@ export default function TeacherAppraisalPage() {
                 <p className="text-purple-950 leading-relaxed">{dossier.growthAreas}</p>
               </div>
             </div>
+          </div>
+
+          {/* Classroom Walkthrough Observation History */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-serif font-bold text-lg text-brand-textMain">
+                  Classroom Walkthrough Observations ({dossier.walkthroughHistory?.length || 0})
+                </h3>
+                <p className="text-xs text-brand-textMuted mt-0.5">
+                  Direct supervisory visits and pedagogical ratings recorded by Administration.
+                </p>
+              </div>
+            </div>
+
+            {(!dossier.walkthroughHistory || dossier.walkthroughHistory.length === 0) ? (
+              <div className="p-8 text-center bg-brand-bg rounded-2xl border border-dashed border-gray-200 text-xs text-brand-textMuted">
+                No direct classroom observations recorded in the current cycle.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {dossier.walkthroughHistory.map((w, idx) => (
+                  <div key={w.id || idx} className="p-4 rounded-2xl bg-brand-bg border border-gray-100 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <strong className="text-brand-textMain text-sm block">{w.classGrade} • {w.subject}</strong>
+                        <span className="text-[11px] text-brand-violet font-semibold">{w.strandTopic}</span>
+                      </div>
+                      <span className="font-mono text-sm font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-xl">
+                        ★ {w.rating} / 5.0
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-xl border border-gray-100 space-y-1">
+                      <p><strong className="text-green-800">Commendation:</strong> {w.commendations}</p>
+                      <p><strong className="text-purple-800">Action Point:</strong> {w.actionPoints}</p>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-gray-400 font-mono">
+                      <span>Evaluator: {w.inspectorName || 'Headmaster'}</span>
+                      <span>{w.inspectedAt ? new Date(w.inspectedAt).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'Recorded'}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>

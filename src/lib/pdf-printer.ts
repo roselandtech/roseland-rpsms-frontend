@@ -1419,3 +1419,264 @@ export function printLessonPlan(data: LessonPlanPrintData): void {
 export const printStudentReportCard = printTerminalReportCard;
 export type StudentReportCardPrintData = TerminalReportCardPrintData;
 
+/* ========================================================================= */
+/* 12. TEACHER 5-DOMAIN APPRAISAL DOSSIER & WALKTHROUGH TRANSCRIPT PRINTER   */
+/* ========================================================================= */
+
+export interface TeacherAppraisalPrintData {
+  name: string;
+  role: string;
+  assigned: string;
+  ntcLicense: string;
+  ntcPoints: string;
+  performanceIndex: string;
+  lessonPlanScore: string;
+  walkthroughScore: string;
+  status: string;
+  rubric: Record<string, { name: string; score: number; max: number; notes: string }>;
+  strengths: string[];
+  growthAreas: string;
+  evaluatedBy?: string;
+  evaluatedAt?: string;
+  walkthroughHistory?: Array<{
+    classGrade: string;
+    subject: string;
+    strandTopic: string;
+    rating: number;
+    commendations: string;
+    actionPoints: string;
+    inspectorName?: string;
+    inspectedAt?: string;
+  }>;
+}
+
+export function printTeacherAppraisalDossier(data: TeacherAppraisalPrintData): void {
+  const printDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const evaluator = data.evaluatedBy || AuthService.getCurrentUser()?.fullName || 'Headmaster';
+
+  const domainRows = Object.values(data.rubric || {})
+    .map(
+      (d, idx) => `
+      <tr>
+        <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-weight: 700; color: #0f172a; width: 42%;">
+          Domain ${idx + 1}: ${d.name}
+        </td>
+        <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-align: center; font-family: monospace; font-weight: 800; color: #5B42F3; width: 15%;">
+          ${d.score} / ${d.max}
+        </td>
+        <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; color: #475569; font-size: 9.5px;">
+          ${d.notes || 'Satisfactory adherence to GES pedagogical benchmarks.'}
+        </td>
+      </tr>
+    `
+    )
+    .join('');
+
+  const walkthroughRows =
+    data.walkthroughHistory && data.walkthroughHistory.length > 0
+      ? data.walkthroughHistory
+          .slice(0, 5)
+          .map(
+            (w) => `
+          <tr>
+            <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 9.5px;">
+              ${w.inspectedAt ? new Date(w.inspectedAt).toLocaleDateString('en-GB') : printDate}
+            </td>
+            <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-weight: 700; color: #0f172a; font-size: 9.5px;">
+              ${w.classGrade} • ${w.subject}
+            </td>
+            <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 9.5px; color: #475569;">
+              ${w.strandTopic}
+            </td>
+            <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: center; font-family: monospace; font-weight: 800; color: #b45309; font-size: 9.5px;">
+              ★ ${w.rating} / 5.0
+            </td>
+            <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 9px; color: #334155;">
+              ${w.commendations}
+            </td>
+          </tr>
+        `
+          )
+          .join('')
+      : `
+        <tr>
+          <td colspan="5" style="padding: 10px; text-align: center; color: #94a3b8; font-style: italic; font-size: 9.5px;">
+            No classroom walkthrough observations recorded in the current cycle.
+          </td>
+        </tr>
+      `;
+
+  const html = `
+    <div style="max-width: 720px; margin: 0 auto; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 24px 28px; background: #fff;">
+      <table style="width: 100%; border-bottom: 2.5px solid #5B42F3; padding-bottom: 12px; margin-bottom: 16px;">
+        <tr>
+          <td style="width: 60px; vertical-align: middle;">
+            <img src="/logo.png" alt="Logo" style="width: 52px; height: 52px; object-fit: contain;" onerror="this.style.display='none'" />
+          </td>
+          <td style="vertical-align: middle; padding-left: 10px;">
+            <h1 class="font-serif" style="font-size: 17px; font-weight: 800; color: #1e1b4b; text-transform: uppercase;">The Roseland Preparatory School</h1>
+            <p style="font-size: 9.5px; font-weight: 700; color: #5B42F3; text-transform: uppercase; letter-spacing: 1px;">Office of the Headmaster • GES / NaCCA 5-Domain Faculty Appraisal Dossier</p>
+            <p style="font-size: 8.5px; color: #64748b; margin-top: 2px;">GES Reg: RPS-GES-4029 • Ga West Municipal, Greater Accra</p>
+          </td>
+          <td style="text-align: right; vertical-align: top;">
+            <span style="font-size: 8.5px; color: #64748b; display: block;">DATE: ${printDate}</span>
+            <strong style="font-size: 9.5px; color: #5B42F3; text-transform: uppercase; display: block; margin-top: 2px;">${data.status}</strong>
+          </td>
+        </tr>
+      </table>
+
+      <table style="width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: 10.5px;">
+        <tr>
+          <td style="width: 35%;">
+            <span style="font-size: 8.5px; text-transform: uppercase; color: #64748b; display: block;">Educator Full Name</span>
+            <strong style="font-size: 13px; color: #0f172a;">${data.name}</strong>
+          </td>
+          <td style="width: 25%;">
+            <span style="font-size: 8.5px; text-transform: uppercase; color: #64748b; display: block;">Role & Cohort</span>
+            <strong>${data.role} (${data.assigned})</strong>
+          </td>
+          <td style="width: 20%;">
+            <span style="font-size: 8.5px; text-transform: uppercase; color: #64748b; display: block;">NTC License / CPD</span>
+            <strong class="font-mono" style="font-size: 9.5px;">${data.ntcLicense} (${data.ntcPoints})</strong>
+          </td>
+          <td style="width: 20%; text-align: right;">
+            <span style="font-size: 8.5px; text-transform: uppercase; color: #64748b; display: block;">Overall Index</span>
+            <strong class="font-mono" style="font-size: 14px; color: #5B42F3;">${data.performanceIndex}</strong>
+          </td>
+        </tr>
+      </table>
+
+      <table style="width: 100%; margin-bottom: 14px;">
+        <tr>
+          <td style="width: 50%; padding-right: 6px;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; font-size: 10px;">
+              <span style="color: #64748b; text-transform: uppercase; font-size: 8px; font-weight: 700; display: block;">Lesson Scheme Vetting Compliance (30% Weight)</span>
+              <strong style="font-size: 12px; color: #0f172a;">${data.lessonPlanScore}</strong>
+            </div>
+          </td>
+          <td style="width: 50%; padding-left: 6px;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; font-size: 10px;">
+              <span style="color: #64748b; text-transform: uppercase; font-size: 8px; font-weight: 700; display: block;">Pedagogical Rubric & Walkthrough Score (70% Weight)</span>
+              <strong style="font-size: 12px; color: #b45309;">${data.walkthroughScore}</strong>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <div style="margin-bottom: 14px;">
+        <span style="font-size: 9px; text-transform: uppercase; font-weight: 800; color: #475569; display: block; margin-bottom: 4px;">
+          GES / NaCCA 5-Domain Supervisory Scorecard
+        </span>
+        <table style="width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 10px;">
+          <thead style="background: #f1f5f9;">
+            <tr>
+              <th style="padding: 6px 10px; text-align: left; font-size: 8.5px; text-transform: uppercase; color: #475569;">Domain</th>
+              <th style="padding: 6px 10px; text-align: center; font-size: 8.5px; text-transform: uppercase; color: #475569;">Score</th>
+              <th style="padding: 6px 10px; text-align: left; font-size: 8.5px; text-transform: uppercase; color: #475569;">Supervisory Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${domainRows}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <span style="font-size: 9px; text-transform: uppercase; font-weight: 800; color: #475569; display: block; margin-bottom: 4px;">
+          Classroom Walkthrough Observation Log
+        </span>
+        <table style="width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 9.5px;">
+          <thead style="background: #f1f5f9;">
+            <tr>
+              <th style="padding: 6px 8px; text-align: left; font-size: 8px; text-transform: uppercase; color: #475569;">Date</th>
+              <th style="padding: 6px 8px; text-align: left; font-size: 8px; text-transform: uppercase; color: #475569;">Class & Subject</th>
+              <th style="padding: 6px 8px; text-align: left; font-size: 8px; text-transform: uppercase; color: #475569;">Strand / Topic</th>
+              <th style="padding: 6px 8px; text-align: center; font-size: 8px; text-transform: uppercase; color: #475569;">Rating</th>
+              <th style="padding: 6px 8px; text-align: left; font-size: 8px; text-transform: uppercase; color: #475569;">Observation Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${walkthroughRows}
+          </tbody>
+        </table>
+      </div>
+
+      <table style="width: 100%; margin-bottom: 14px; font-size: 10px;">
+        <tr>
+          <td style="width: 50%; padding-right: 6px; vertical-align: top;">
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px;">
+              <strong style="color: #166534; text-transform: uppercase; font-size: 8.5px; display: block; margin-bottom: 3px;">Commendations & Strengths:</strong>
+              <span style="color: #14532d;">${(data.strengths || []).join(' • ') || 'Strong commitment to learner progress.'}</span>
+            </div>
+          </td>
+          <td style="width: 50%; padding-left: 6px; vertical-align: top;">
+            <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 10px;">
+              <strong style="color: #5B42F3; text-transform: uppercase; font-size: 8.5px; display: block; margin-bottom: 3px;">Target Growth Areas:</strong>
+              <span style="color: #3b0764;">${data.growthAreas || 'Continue integrating physical teaching manipulatives.'}</span>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <table style="width: 100%; border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 14px;">
+        <tr>
+          <td style="font-size: 8px; color: #94a3b8;">Official GES / NaCCA Faculty Appraisal Transcript • The Roseland Preparatory School</td>
+          <td style="text-align: right;">
+            <span class="font-serif" style="font-size: 11px; font-weight: 700; font-style: italic; color: #1e1b4b;">${evaluator}</span>
+            <span style="font-size: 7.5px; text-transform: uppercase; color: #64748b; display: block;">Headmaster & Supervisory Director</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `;
+
+  printIsolatedHtml(html, `AppraisalDossier_${data.name.replace(/[^a-zA-Z0-9]/g, '_')}`);
+}
+
+export function printFacultyCommendations(teachers: Array<{ name: string; role?: string; assigned?: string; performanceIndex?: string }>): void {
+  const printDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const headmaster = AuthService.getCurrentUser()?.fullName || 'Headmaster';
+
+  const certificatesHtml = teachers
+    .map(
+      (t, idx) => `
+    <div style="max-width: 700px; margin: 0 auto ${idx < teachers.length - 1 ? '28px' : '0'} auto; border: 3px double #5B42F3; border-radius: 14px; padding: 28px 32px; background: #fff; page-break-inside: avoid;">
+      <div style="text-align: center; border-bottom: 2px solid #eab308; padding-bottom: 14px; margin-bottom: 18px;">
+        <img src="/logo.png" alt="Logo" style="width: 56px; height: 56px; object-fit: contain; margin-bottom: 6px;" onerror="this.style.display='none'" />
+        <h1 class="font-serif" style="font-size: 20px; font-weight: 800; color: #1e1b4b; text-transform: uppercase; letter-spacing: 1px;">The Roseland Preparatory School</h1>
+        <p style="font-size: 10px; font-weight: 700; color: #5B42F3; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 3px;">Directorate of Academic Supervision & Quality Assurance</p>
+      </div>
+
+      <div style="text-align: center; padding: 12px 0;">
+        <span style="display: inline-block; background: #fef9c3; color: #854d0e; border: 1px solid #fde047; padding: 4px 12px; border-radius: 9999px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
+          Official Certificate of Pedagogical Commendation
+        </span>
+        <p style="font-size: 11px; color: #475569; margin-top: 14px;">This official commendation is proudly presented to</p>
+        <h2 class="font-serif" style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 8px 0;">${t.name}</h2>
+        <p style="font-size: 11px; font-weight: 700; color: #5B42F3;">${t.role || 'Academic Educator'} • ${t.assigned || 'Faculty'}</p>
+        <p style="font-size: 11px; color: #334155; line-height: 1.6; max-width: 540px; margin: 14px auto 0 auto;">
+          In recognition of <strong>Exemplary Pedagogical Performance (${t.performanceIndex || 'Top Tier'})</strong> across the GES / NaCCA 5-Domain Supervisory Rubric, consistent lesson scheme compliance, and outstanding dedication to scholar growth.
+        </p>
+      </div>
+
+      <table style="width: 100%; border-top: 1px dashed #cbd5e1; padding-top: 14px; margin-top: 20px;">
+        <tr>
+          <td style="font-size: 9px; color: #64748b;">
+            <strong>Date Issued:</strong> ${printDate}<br />
+            <span class="font-mono" style="font-size: 8px; color: #94a3b8;">REF: RPS-CMD-${new Date().getFullYear()}-${idx + 1}</span>
+          </td>
+          <td style="text-align: right;">
+            <span class="font-serif" style="font-size: 13px; font-weight: 800; font-style: italic; color: #1e1b4b;">${headmaster}</span>
+            <span style="font-size: 8.5px; text-transform: uppercase; color: #64748b; font-weight: 700; display: block;">Headmaster & Academic Director</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `
+    )
+    .join('');
+
+  printIsolatedHtml(certificatesHtml, 'Faculty_Commendation_Certificates');
+}
+
+

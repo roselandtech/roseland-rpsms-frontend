@@ -598,6 +598,21 @@ export const RoselandApi = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    logTeacherWalkthrough: (data: {
+      teacher_id?: string;
+      teacher_name: string;
+      class_grade: string;
+      subject: string;
+      strand_topic?: string;
+      rating: number;
+      commendations?: string;
+      action_points?: string;
+      inspector_name?: string;
+    }) =>
+      apiRequest('/api/v1/academic/appraisals/log-walkthrough', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
     issueCommendations: () =>
       apiRequest('/api/v1/academic/appraisals/commendations', {
         method: 'POST',
