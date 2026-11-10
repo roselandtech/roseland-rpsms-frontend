@@ -501,6 +501,21 @@ export const RoselandApi = {
       }),
     getAtRiskStudents: (classGrade?: string) =>
       apiRequest(`/api/v1/academic/remedial/at-risk${classGrade ? `?class_grade=${encodeURIComponent(classGrade)}` : ''}`),
+    saveRemedialPlan: (planData: any) =>
+      apiRequest('/api/v1/academic/remedial/plan', {
+        method: 'POST',
+        body: JSON.stringify(planData),
+      }),
+    summonParent: (payload: { indexNo?: string; index_no?: string; studentName?: string; student_name?: string; reason?: string; meeting_date?: string }) =>
+      apiRequest('/api/v1/academic/remedial/summon-parent', {
+        method: 'POST',
+        body: JSON.stringify({
+          index_no: payload.index_no || payload.indexNo,
+          student_name: payload.student_name || payload.studentName,
+          reason: payload.reason,
+          meeting_date: payload.meeting_date,
+        }),
+      }),
     logRemedialSession: (sessionData: any) =>
       apiRequest('/api/v1/academic/remedial/session', {
         method: 'POST',
@@ -847,10 +862,27 @@ export const RoselandApi = {
       }),
     getDailyAttendance: (classGrade: string, rollDate?: string) =>
       apiRequest(`/api/v1/sis/attendance/daily?class_grade=${encodeURIComponent(classGrade)}${rollDate ? `&roll_date=${rollDate}` : ''}`),
+    getAttendanceLogs: (params?: { rollDate?: string; classGrade?: string; status?: string }) => {
+      const q = new URLSearchParams();
+      if (params?.rollDate) q.set('roll_date', params.rollDate);
+      if (params?.classGrade) q.set('class_grade', params.classGrade);
+      if (params?.status) q.set('status', params.status);
+      const qs = q.toString();
+      return apiRequest(`/api/v1/sis/attendance/logs${qs ? `?${qs}` : ''}`);
+    },
     submitRollCall: (submission: any) =>
       apiRequest('/api/v1/sis/attendance/batch', {
         method: 'POST',
         body: JSON.stringify(submission),
+      }),
+    sendAbsenceNotice: (payload: { indexNo?: string; index_no?: string; rollDate?: string; roll_date?: string; customMessage?: string; custom_message?: string }) =>
+      apiRequest('/api/v1/sis/attendance/absence-notice', {
+        method: 'POST',
+        body: JSON.stringify({
+          index_no: payload.index_no || payload.indexNo,
+          roll_date: payload.roll_date || payload.rollDate,
+          custom_message: payload.custom_message || payload.customMessage,
+        }),
       }),
   },
 

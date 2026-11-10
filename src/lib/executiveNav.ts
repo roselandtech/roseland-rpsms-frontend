@@ -30,6 +30,7 @@ export const ITEM_PERMISSION_MAP: Record<string, string[]> = {
   // Admissions & Students (SIS)
   '/admin/admissions': ['manage_admissions'],
   '/admin/students': ['manage_students'],
+  '/headmaster/attendance': ['view_executive', 'manage_students'],
   '/headmaster/at-risk': ['manage_students'],
   '/headmaster/discipline': ['manage_students'],
 
@@ -168,6 +169,7 @@ export const executiveNavGroups: NavGroup[] = [
     items: [
       { name: 'Admissions & Pipeline', href: '/admin/admissions', icon: 'ph ph-user-plus' },
       { name: 'Students & Parents (SIS)', href: '/admin/students', icon: 'ph ph-student' },
+      { name: 'Daily Attendance Logs', href: '/headmaster/attendance', icon: 'ph ph-calendar-check' },
       { name: 'At-Risk Scholar Registry', href: '/headmaster/at-risk', icon: 'ph ph-warning-circle' },
       { name: 'Pastoral Care & Discipline', href: '/headmaster/discipline', icon: 'ph ph-shield-star' },
     ]

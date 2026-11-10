@@ -61,6 +61,7 @@ export default function HeadmasterDashboard() {
   const [appraisalsList, setAppraisalsList] = useState<any[]>([]);
   const [timetableSlots, setTimetableSlots] = useState<any[]>([]);
   const [reportReadyCount, setReportReadyCount] = useState(0);
+  const [attendanceSummary, setAttendanceSummary] = useState<{ rate: number; absents: number; pendingClasses: number } | null>(null);
   const [, setIsLoadingDashboard] = useState(true);
 
   // Calendar State
@@ -108,16 +109,37 @@ export default function HeadmasterDashboard() {
         })
         .catch(() => {});
 
-      // 2. SIS Students (Compute Live At-Risk Scholars)
-      const sisPromise = RoselandApi.sis.getStudents()
-        .then((students) => {
-          const list = Array.isArray(students?.data) ? students.data : Array.isArray(students) ? students : [];
-          const atRisk = list.filter((s: any) => {
-            const score = Number(s.avg_score ?? s.avgScore ?? 100);
-            const att = Number(s.attendance_pct ?? s.attendancePct ?? 100);
-            return score < 50 || att < 75 || s.status === 'AT_RISK' || s.isAtRisk;
-          });
-          setAtRiskCount(atRisk.length);
+      // 2. SIS & Academic Telemetry (Compute Live At-Risk Scholars from Academic Engine)
+      const sisPromise = RoselandApi.academic.getAtRiskStudents()
+        .then((res) => {
+          const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+          setAtRiskCount(list.length);
+        })
+        .catch(() => {
+          // Fallback to sis students
+          RoselandApi.sis.getStudents()
+            .then((students) => {
+              const list = Array.isArray(students?.data) ? students.data : Array.isArray(students) ? students : [];
+              const atRisk = list.filter((s: any) => {
+                const score = Number(s.avg_score ?? s.avgScore ?? 100);
+                const att = Number(s.attendance_pct ?? s.attendancePct ?? 100);
+                return score < 50 || att < 75 || s.status === 'AT_RISK' || s.isAtRisk;
+              });
+              setAtRiskCount(atRisk.length);
+            })
+            .catch(() => {});
+        });
+
+      // 2b. Daily Attendance Telemetry
+      const attendancePromise = RoselandApi.sis.getAttendanceLogs()
+        .then((res) => {
+          if (res?.summary) {
+            setAttendanceSummary({
+              rate: res.summary.attendance_rate || 0,
+              absents: res.summary.absent_count || 0,
+              pendingClasses: res.summary.classes_pending || 0,
+            });
+          }
         })
         .catch(() => {});
 
@@ -204,6 +226,7 @@ export default function HeadmasterDashboard() {
       await Promise.allSettled([
         staffPromise,
         sisPromise,
+        attendancePromise,
         opsPromise,
         schemesPromise,
         appraisalsPromise,
@@ -271,6 +294,28 @@ export default function HeadmasterDashboard() {
         title: `${atRiskCount} Scholar${atRiskCount > 1 ? 's' : ''} Flagged with Performance/Attendance Bottlenecks`,
         time: 'Intervention Plan Needed',
         link: '/headmaster/at-risk',
+        badgeColor: 'text-red-700 bg-red-50'
+      });
+    }
+
+    if (attendanceSummary && attendanceSummary.pendingClasses > 0) {
+      queue.push({
+        id: 'act-attendance-pending',
+        type: 'Attendance Compliance',
+        title: `${attendanceSummary.pendingClasses} Class Stream${attendanceSummary.pendingClasses > 1 ? 's' : ''} Pending Daily Roll Call`,
+        time: 'Form Masters Action Needed',
+        link: '/headmaster/attendance',
+        badgeColor: 'text-amber-700 bg-amber-50'
+      });
+    }
+
+    if (attendanceSummary && attendanceSummary.absents > 0) {
+      queue.push({
+        id: 'act-attendance-absents',
+        type: 'Daily Absentee Alert',
+        title: `${attendanceSummary.absents} Scholar${attendanceSummary.absents > 1 ? 's' : ''} Marked Absent Today`,
+        time: 'Parent Absence SMS Queue Ready',
+        link: '/headmaster/attendance',
         badgeColor: 'text-red-700 bg-red-50'
       });
     }
@@ -738,7 +783,11 @@ export default function HeadmasterDashboard() {
           {/* Quick Academic Hubs */}
           <div className="bg-brand-violetLight/40 rounded-3xl p-6 border border-brand-violet/20">
             <h3 className="font-serif font-bold text-base text-brand-textMain mb-3">Academic Management</h3>
-            <div className="grid grid-cols-2 gap-2.5 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+              <Link href="/headmaster/attendance" className="p-3 bg-white rounded-xl border border-gray-200/60 font-bold text-brand-textMain hover:border-brand-violet hover:text-brand-violet transition-all flex flex-col items-center text-center shadow-xs">
+                <i className="ph-fill ph-calendar-check text-xl text-blue-600 mb-1"></i>
+                Daily Attendance
+              </Link>
               <Link href="/headmaster/at-risk" className="p-3 bg-white rounded-xl border border-gray-200/60 font-bold text-brand-textMain hover:border-brand-violet hover:text-brand-violet transition-all flex flex-col items-center text-center shadow-xs">
                 <i className="ph-fill ph-warning-circle text-xl text-red-600 mb-1"></i>
                 At-Risk Sniffer
@@ -754,6 +803,10 @@ export default function HeadmasterDashboard() {
               <Link href="/headmaster/appraisals" className="p-3 bg-white rounded-xl border border-gray-200/60 font-bold text-brand-textMain hover:border-brand-violet hover:text-brand-violet transition-all flex flex-col items-center text-center shadow-xs">
                 <i className="ph-fill ph-medal text-xl text-emerald-600 mb-1"></i>
                 Staff Appraisals
+              </Link>
+              <Link href="/headmaster/approvals" className="p-3 bg-white rounded-xl border border-gray-200/60 font-bold text-brand-textMain hover:border-brand-violet hover:text-brand-violet transition-all flex flex-col items-center text-center shadow-xs">
+                <i className="ph-fill ph-seal-check text-xl text-indigo-600 mb-1"></i>
+                Report Sign-Offs
               </Link>
             </div>
           </div>
