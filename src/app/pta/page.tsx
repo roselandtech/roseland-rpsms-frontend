@@ -46,12 +46,12 @@ export default function PTAPage() {
               </p>
             </div>
 
-            <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
-              <img
-                src="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=800"
-                alt="PTA Conference Session"
-                className="w-full h-[400px] object-cover"
-              />
+            <div className="rounded-3xl overflow-hidden shadow-xl border border-gray-100 bg-gradient-to-br from-brand-violet to-brand-violetDark flex items-center justify-center p-12 text-white text-center min-h-[350px]">
+              <div>
+                <i className="ph-bold ph-users-three text-6xl text-amber-300 mb-4 inline-block"></i>
+                <h3 className="text-xl font-serif font-bold">PTA Collaborative Forum</h3>
+                <p className="text-xs text-white/80 mt-2 max-w-sm">United for academic distinction, pastoral welfare, and institutional progress.</p>
+              </div>
             </div>
           </div>
 

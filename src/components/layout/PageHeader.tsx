@@ -18,18 +18,20 @@ export default function PageHeader({
   title,
   subtitle,
   breadcrumbs = [{ label: 'Home', href: '/' }],
-  bgImage = 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&q=80&w=2000'
+  bgImage
 }: PageHeaderProps) {
   return (
     <section className="relative pt-32 pb-16 lg:pt-40 lg:pb-24 bg-gray-900 text-white overflow-hidden">
       {/* Background with Dark Overlay Gradient */}
-      <div className="absolute inset-0 z-0 opacity-30 mix-blend-overlay">
-        <img
-          src={bgImage}
-          alt={title}
-          className="w-full h-full object-cover object-center"
-        />
-      </div>
+      {bgImage && (
+        <div className="absolute inset-0 z-0 opacity-30 mix-blend-overlay">
+          <img
+            src={bgImage}
+            alt={title}
+            className="w-full h-full object-cover object-center"
+          />
+        </div>
+      )}
       <div className="absolute inset-0 bg-gradient-to-r from-gray-950 via-gray-900/90 to-brand-violetDark/70 z-0"></div>
 
       {/* Decorative Blur Circles */}

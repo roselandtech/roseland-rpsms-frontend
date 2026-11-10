@@ -76,7 +76,7 @@ export default function TeacherMessages() {
             id: `thread-${sIndex}`,
             parentName: pName,
             studentName: sName,
-            avatar: s.avatar || s.photo_url || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200`,
+            avatar: '',
             lastMessage: `Parent channel opened for ${sName}.`,
             lastTime: "Active",
             unread: 0,

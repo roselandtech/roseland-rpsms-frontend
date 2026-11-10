@@ -126,14 +126,14 @@ export default function Sidebar({
                     <Link 
                       href={item.href}
                       onClick={() => setIsOpen(false)}
-                      className={`w-full flex items-center rounded-xl text-xs transition-all outline-none focus:outline-none ${
+                      className={`w-full flex items-center rounded-xl text-xs transition-colors outline-none focus:outline-none ${
                         isCollapsed 
-                          ? 'justify-center p-3' 
+                          ? 'justify-center p-2.5' 
                           : 'justify-between px-3.5 py-2.5'
                       } ${
                         isActive 
-                          ? 'bg-gradient-to-r from-brand-violet to-brand-violetDark text-white font-bold shadow-md shadow-brand-violet/25' 
-                          : 'font-medium text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                          ? 'bg-brand-violet text-white font-semibold' 
+                          : 'font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -210,14 +210,14 @@ export default function Sidebar({
                   <Link 
                     href={item.href} 
                     onClick={() => setIsOpen(false)}
-                    className={`w-full flex items-center rounded-xl text-xs transition-all outline-none focus:outline-none ${
+                    className={`w-full flex items-center rounded-xl text-xs transition-colors outline-none focus:outline-none ${
                       isCollapsed 
-                        ? 'justify-center p-3' 
+                        ? 'justify-center p-2.5' 
                         : 'justify-between px-3.5 py-2.5'
                     } ${
                       isActive 
-                        ? 'bg-gradient-to-r from-brand-violet to-brand-violetDark text-white font-bold shadow-md shadow-brand-violet/25' 
-                        : 'font-medium text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                        ? 'bg-brand-violet text-white font-semibold' 
+                        : 'font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -290,12 +290,8 @@ export default function Sidebar({
         )}
 
         <div className={`flex items-center rounded-2xl bg-slate-800/40 border border-slate-800 ${isCollapsed ? 'justify-center p-2' : 'gap-3 p-2.5'}`}>
-          <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shadow-sm shrink-0">
-            {displayAvatar ? (
-              <img src={displayAvatar} alt={displayName} className="w-full h-full object-cover" />
-            ) : (
-              <i className="ph-bold ph-user-circle text-slate-400 text-2xl"></i>
-            )}
+          <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0 shadow-sm">
+            <i className="ph-bold ph-user-circle text-slate-300 text-2xl"></i>
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0 text-left">

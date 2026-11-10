@@ -88,7 +88,7 @@ export default function TeacherRemedial() {
       const mapToRemedialCase = (item: any): RemedialCase => ({
         id: item.student_id || item.index_number || item.index_no || item.index || item.id,
         name: item.student_name || item.name || item.full_name,
-        avatar: item.avatar || item.photo_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200",
+        avatar: '',
         focusArea: item.intervention || item.focus_area || item.reason || (item.bottlenecks?.length ? item.bottlenecks.join(', ') : "Core Subject Remediation"),
         currentAverage: item.average || (item.current_average ? `${item.current_average}%` : "Below 50%"),
         targetAverage: item.target_average || "65.0%",

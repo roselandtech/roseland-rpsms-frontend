@@ -561,11 +561,9 @@ export default function HeadmasterDailyAttendancePage() {
                     {/* Scholar */}
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={r.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150'}
-                          alt={r.student_name}
-                          className="w-9 h-9 rounded-full object-cover border border-gray-200"
-                        />
+                        <div className="w-9 h-9 rounded-full bg-slate-100 text-brand-textMain font-bold text-xs flex items-center justify-center border border-gray-200 uppercase shrink-0">
+                          {r.student_name ? r.student_name.charAt(0) : 'S'}
+                        </div>
                         <div>
                           <strong className="text-sm font-bold text-brand-textMain block">{r.student_name}</strong>
                           <span className="font-mono text-[10px] text-gray-400">{r.index_no} • {r.class_grade}</span>

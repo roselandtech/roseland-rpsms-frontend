@@ -116,7 +116,7 @@ export default function TeacherRoster() {
         return {
           id: sIndex,
           name: fullName,
-          avatar: s.avatar || s.photo_url || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200`,
+          avatar: '',
           gender: rawGender.startsWith('F') ? 'Female' : 'Male',
           house,
           parentName: s.parent_name || s.guardian_name || "Parent/Guardian",

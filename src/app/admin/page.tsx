@@ -240,7 +240,7 @@ export default function AdminDashboard() {
       fee_status: 'PARTIAL',
       avg_score: 0,
       attendance_pct: 100,
-      avatar: `https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=200`
+      avatar: ''
     };
 
     try {

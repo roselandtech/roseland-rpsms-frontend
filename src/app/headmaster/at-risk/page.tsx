@@ -99,7 +99,7 @@ export default function HeadmasterAtRiskPage() {
         sessions_completed: Number(s.sessions_completed || 0),
         status: s.status || 'Active',
         notes: s.notes || '',
-        avatar: s.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
+        avatar: s.avatar || '',
       }));
 
       setFlaggedStudents(mapped);
@@ -302,7 +302,7 @@ export default function HeadmasterAtRiskPage() {
             sessions_completed: 0,
             status: 'In Progress',
             notes: planForm.notes,
-            avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
+            avatar: '',
           };
           return [newEntry, ...prev];
         }
@@ -528,11 +528,9 @@ export default function HeadmasterAtRiskPage() {
                   <tr key={s.index} className="hover:bg-gray-50/80 transition-colors">
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={s.avatar}
-                          alt={s.name}
-                          className="w-9 h-9 rounded-full object-cover border border-gray-200"
-                        />
+                        <div className="w-9 h-9 rounded-full bg-slate-100 text-brand-textMain font-bold text-xs flex items-center justify-center border border-gray-200 uppercase shrink-0">
+                          {s.name ? s.name.charAt(0) : 'S'}
+                        </div>
                         <div>
                           <strong className="text-sm font-bold text-brand-textMain block">{s.name}</strong>
                           <span className="font-mono text-[10px] text-gray-400">{s.index} • {s.class}</span>
