@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { RoselandApi } from '@/lib/api';
+import { AuthService } from '@/lib/auth';
 import { executiveNavGroups, filterNavGroupsByPermissions } from '@/lib/executiveNav';
 import Modal from '@/components/ui/Modal';
 
@@ -121,6 +122,13 @@ export default function AdminPermissionsPage() {
   const [resetTarget, setResetTarget] = useState<any | null>(null);
   const [resetNewPwd, setResetNewPwd] = useState('');
   const [isResettingPwd, setIsResettingPwd] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    setCurrentUser(AuthService.getCurrentUser());
+  }, []);
+
+  const isCurrentUserAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN';
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -154,6 +162,10 @@ export default function AdminPermissionsPage() {
 
   const handleTogglePermission = (permKey: string) => {
     if (!activeRoleRecord) return;
+    if (activeRoleRecord.role === 'ADMIN' && !isCurrentUserAdmin) {
+      toast.error('Security Policy: Only verified System Administrators can modify Admin role capabilities.');
+      return;
+    }
     const exists = activeRoleRecord.permissions.includes(permKey);
     const nextPerms = exists
       ? activeRoleRecord.permissions.filter((p) => p !== permKey)
@@ -174,6 +186,10 @@ export default function AdminPermissionsPage() {
 
   const handleSaveRolePermissions = async () => {
     if (!activeRoleRecord) return;
+    if (activeRoleRecord.role === 'ADMIN' && !isCurrentUserAdmin) {
+      toast.error('Security Policy: Only verified System Administrators can modify Admin role capabilities.');
+      return;
+    }
     setSavingRole(activeRoleRecord.role);
     try {
       await RoselandApi.auth.updateRolePermissions(activeRoleRecord.role, activeRoleRecord.permissions);
@@ -193,6 +209,15 @@ export default function AdminPermissionsPage() {
   };
 
   const handleChangeStaffRole = async (staffId: string, newRole: string) => {
+    if (newRole === 'ADMIN' && !isCurrentUserAdmin) {
+      toast.error('Security Policy: Only verified System Administrators can assign the System Admin role.');
+      return;
+    }
+    const staff = staffList.find((s) => s.id === staffId);
+    if ((staff?.role === 'ADMIN' || staff?.role === 'SUPER_ADMIN') && !isCurrentUserAdmin) {
+      toast.error('Security Policy: Only verified System Administrators can alter Admin accounts.');
+      return;
+    }
     setUpdatingStaffId(staffId);
     try {
       await RoselandApi.auth.updateStaffAllocation(staffId, { role: newRole });
@@ -354,11 +379,15 @@ export default function AdminPermissionsPage() {
             </div>
             <button
               onClick={handleSaveRolePermissions}
-              disabled={savingRole === activeRoleRecord?.role}
+              disabled={savingRole === activeRoleRecord?.role || (activeRoleRecord?.role === 'ADMIN' && !isCurrentUserAdmin)}
               className="px-6 py-2.5 bg-brand-violet hover:bg-brand-violetDark text-white font-bold rounded-xl text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-2 shrink-0"
             >
               <i className="ph-bold ph-floppy-disk text-sm"></i>
-              {savingRole === activeRoleRecord?.role ? 'Saving...' : `Save ${activeRoleRecord?.role} Permissions`}
+              {savingRole === activeRoleRecord?.role
+                ? 'Saving...'
+                : (activeRoleRecord?.role === 'ADMIN' && !isCurrentUserAdmin)
+                  ? 'Admin Only (Protected)'
+                  : `Save ${activeRoleRecord?.role} Permissions`}
             </button>
           </div>
 
@@ -607,14 +636,16 @@ export default function AdminPermissionsPage() {
                     <td className="py-3.5 px-4">
                       <select
                         value={effectiveRole}
-                        disabled={updatingStaffId === st.id}
+                        disabled={updatingStaffId === st.id || (!isCurrentUserAdmin && effectiveRole === 'ADMIN')}
                         onChange={(e) => handleChangeStaffRole(st.id, e.target.value)}
-                        className="bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-brand-textMain outline-none focus:border-brand-violet cursor-pointer"
+                        className={`bg-white border rounded-xl px-2.5 py-1.5 text-xs font-bold outline-none focus:border-brand-violet cursor-pointer ${
+                          effectiveRole === 'ADMIN' ? 'text-purple-800 border-purple-200' : 'text-brand-textMain border-gray-200'
+                        }`}
                       >
                         <option value="HEADMASTER">HEADMASTER (School Leader)</option>
                         <option value="TEACHER">TEACHER (Faculty)</option>
                         <option value="BURSAR">BURSAR (Finance)</option>
-                        <option value="ADMIN">ADMIN (System RBAC)</option>
+                        {isCurrentUserAdmin && <option value="ADMIN">ADMIN (System RBAC)</option>}
                       </select>
                     </td>
 

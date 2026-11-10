@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { RoselandApi } from '@/lib/api';
+import { AuthService } from '@/lib/auth';
 import { useClasses } from '@/hooks/useClasses';
 import { useSubjects } from '@/hooks/useSubjects';
 import { printStaffComprehensiveDossier } from '@/lib/pdf-printer';
@@ -48,6 +49,7 @@ export default function AdminStaffPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [dossierTab, setDossierTab] = useState<'profile' | 'workload' | 'appraisal' | 'portal'>('profile');
   const [activeStaffAppraisal, setActiveStaffAppraisal] = useState<any>(null);
   const [loadingAppraisal, setLoadingAppraisal] = useState(false);
@@ -55,7 +57,10 @@ export default function AdminStaffPage() {
 
   useEffect(() => {
     setMounted(true);
+    setCurrentUser(AuthService.getCurrentUser());
   }, []);
+
+  const isCurrentUserAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN';
 
   // Fetch live appraisal ratings whenever active staff changes
   useEffect(() => {
@@ -287,6 +292,11 @@ export default function AdminStaffPage() {
     e.preventDefault();
     if (!onboardForm.fullName || !onboardForm.email || !onboardForm.password) {
       toast.error('Please enter Full Name, Email, and Password.');
+      return;
+    }
+
+    if (onboardForm.role === 'ADMIN' && !isCurrentUserAdmin) {
+      toast.error('Security Policy: Only verified System Administrators can provision System Admin accounts.');
       return;
     }
 
@@ -678,12 +688,12 @@ export default function AdminStaffPage() {
               {/* Role Selection */}
               <div>
                 <label className="text-xs font-bold text-brand-textMain block mb-1.5">Institutional Role</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className={`grid grid-cols-2 ${isCurrentUserAdmin ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-2`}>
                   {[
                     { key: 'TEACHER', label: 'Teacher / Lead', icon: 'ph-chalkboard-teacher' },
                     { key: 'HEADMASTER', label: 'Headmaster', icon: 'ph-student' },
                     { key: 'BURSAR', label: 'School Bursar', icon: 'ph-bank' },
-                    { key: 'ADMIN', label: 'System Admin', icon: 'ph-shield-check' },
+                    ...(isCurrentUserAdmin ? [{ key: 'ADMIN', label: 'System Admin', icon: 'ph-shield-check' }] : []),
                   ].map((r) => (
                     <button
                       key={r.key}
