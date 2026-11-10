@@ -45,6 +45,7 @@ export default function HeadmasterAtRiskPage() {
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>('ALL');
   const [selectedRiskFilter, setSelectedRiskFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSwitchingScholar, setIsSwitchingScholar] = useState(false);
 
   // Summon parent loading state map
   const [summoningMap, setSummoningMap] = useState<Record<string, boolean>>({});
@@ -192,12 +193,29 @@ export default function HeadmasterAtRiskPage() {
     });
   }, [flaggedStudents, selectedClassFilter, selectedRiskFilter, searchQuery]);
 
+  // Comprehensive scholar options combining flagged scholars and SIS enrollment
+  const scholarOptions = useMemo(() => {
+    const map = new Map<string, { index: string; name: string; classGrade: string; avg: number }>();
+    flaggedStudents.forEach((s) => {
+      map.set(s.index, { index: s.index, name: s.name, classGrade: s.class, avg: s.current_average });
+    });
+    allStudents.forEach((st) => {
+      const idx = st.index_no || st.index_number || st.id;
+      const name = st.fullName || st.full_name || st.name || `${st.first_name || ''} ${st.last_name || ''}`.trim() || 'Scholar';
+      if (idx && !map.has(idx)) {
+        map.set(idx, { index: idx, name, classGrade: st.class_grade || 'Primary Cohort', avg: Number(st.avg_score || 45) });
+      }
+    });
+    return Array.from(map.values());
+  }, [flaggedStudents, allStudents]);
+
   // Open modal with pre-filled student
   const openPlanModal = (student?: FlaggedStudent) => {
     const firstStaffName = staffList.length > 0 
       ? (staffList[0].fullName || staffList[0].full_name || staffList[0].name || 'Anita Kusi') 
       : 'Anita Kusi';
     const firstStaffId = staffList.length > 0 ? String(staffList[0].id) : '';
+    setIsSwitchingScholar(!student);
 
     if (student) {
       setPlanForm({
@@ -213,15 +231,16 @@ export default function HeadmasterAtRiskPage() {
         notes: student.notes || '',
       });
     } else {
+      const defaultScholar = scholarOptions.length > 0 ? scholarOptions[0] : null;
       setPlanForm({
-        index_no: '',
-        student_name: '',
-        class_grade: classList[0] || 'Basic 1',
+        index_no: defaultScholar ? defaultScholar.index : '',
+        student_name: defaultScholar ? defaultScholar.name : '',
+        class_grade: defaultScholar ? defaultScholar.classGrade : (classList[0] || 'Basic 1'),
         intervention_type: 'After-School Remedial Catch-Up',
         focus_subjects: 'Mathematics, English Literacy',
         assigned_teacher: firstStaffName,
         assigned_teacher_id: firstStaffId,
-        current_average: 45,
+        current_average: defaultScholar ? defaultScholar.avg : 45,
         target_average: 65,
         notes: '',
       });
@@ -233,22 +252,41 @@ export default function HeadmasterAtRiskPage() {
   const handleSavePlan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!planForm.index_no || !planForm.student_name) {
-      toast.error('Please enter scholar details.');
+      toast.error('Please select or specify a scholar.');
       return;
     }
 
     setIsSavingPlan(true);
     try {
+      // 1. Optimistic local update
+      setFlaggedStudents((prev) =>
+        prev.map((item) =>
+          item.index === planForm.index_no
+            ? {
+                ...item,
+                intervention: planForm.intervention_type,
+                assigned_teacher: planForm.assigned_teacher,
+                assigned_teacher_id: planForm.assigned_teacher_id,
+                acknowledgment_status: 'PENDING',
+                target_average: `${planForm.target_average}%`,
+                target_average_num: Number(planForm.target_average),
+                notes: planForm.notes,
+              }
+            : item
+        )
+      );
+
+      // 2. Persist to backend
       await RoselandApi.academic.saveRemedialPlan({
         index_no: planForm.index_no,
         student_name: planForm.student_name,
-        class_grade: planForm.class_grade,
+        class_grade: planForm.class_grade || 'Primary Cohort',
         intervention_type: planForm.intervention_type,
         focus_subjects: planForm.focus_subjects,
         assigned_teacher: planForm.assigned_teacher,
         assigned_teacher_id: planForm.assigned_teacher_id,
-        current_average: Number(planForm.current_average),
-        target_average: Number(planForm.target_average),
+        current_average: Number(planForm.current_average || 45),
+        target_average: Number(planForm.target_average || 65),
         notes: planForm.notes,
       });
 
@@ -579,40 +617,69 @@ export default function HeadmasterAtRiskPage() {
         size="md"
       >
         <form onSubmit={handleSavePlan} className="space-y-4 text-xs pt-2">
-          <div>
-            <label className="block font-bold text-brand-textMain uppercase mb-1">Scholar *</label>
-            <select
-              value={planForm.index_no}
-              onChange={(e) => {
-                const selectedIdx = e.target.value;
-                const match = allStudents.find((st: any) => (st.index_no || st.index_number || st.id) === selectedIdx);
-                if (match) {
-                  setPlanForm((prev) => ({
-                    ...prev,
-                    index_no: match.index_no || match.index_number || match.id,
-                    student_name: match.full_name || `${match.first_name || ''} ${match.last_name || ''}`.trim(),
-                    class_grade: match.class_grade || prev.class_grade,
-                    current_average: Number(match.avg_score || 45),
-                  }));
-                } else {
-                  setPlanForm((prev) => ({ ...prev, index_no: selectedIdx }));
-                }
-              }}
-              required
-              className="w-full bg-brand-bg border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-violet font-bold text-xs"
-            >
-              <option value="">-- Select Scholar --</option>
-              {allStudents.map((st: any) => {
-                const idx = st.index_no || st.index_number || st.id;
-                const name = st.full_name || st.name || st.fullName || `${st.first_name || ''} ${st.last_name || ''}`.trim() || 'Scholar';
-                return (
-                  <option key={idx} value={idx}>
-                    {name} ({st.class_grade || 'Scholar'} - {idx})
+          {planForm.student_name && !isSwitchingScholar ? (
+            <div className="bg-brand-bg p-3.5 rounded-2xl border border-gray-200/80 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-brand-violet/10 flex items-center justify-center font-bold text-brand-violet">
+                  <i className="ph-bold ph-student text-lg"></i>
+                </div>
+                <div>
+                  <h4 className="font-serif font-bold text-sm text-brand-textMain">{planForm.student_name}</h4>
+                  <span className="text-[10px] font-mono text-gray-500 font-bold">{planForm.index_no} • {planForm.class_grade}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSwitchingScholar(true)}
+                className="text-[11px] font-bold text-brand-violet hover:underline cursor-pointer"
+              >
+                Change Scholar
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-bold text-brand-textMain uppercase">Select Scholar *</label>
+                {planForm.student_name && (
+                  <button
+                    type="button"
+                    onClick={() => setIsSwitchingScholar(false)}
+                    className="text-[10px] text-gray-500 hover:underline cursor-pointer"
+                  >
+                    Keep current
+                  </button>
+                )}
+              </div>
+              <select
+                value={planForm.index_no}
+                onChange={(e) => {
+                  const selectedIdx = e.target.value;
+                  const match = scholarOptions.find((o) => o.index === selectedIdx);
+                  if (match) {
+                    setPlanForm((prev) => ({
+                      ...prev,
+                      index_no: match.index,
+                      student_name: match.name,
+                      class_grade: match.classGrade || prev.class_grade,
+                      current_average: match.avg || prev.current_average,
+                    }));
+                    setIsSwitchingScholar(false);
+                  } else {
+                    setPlanForm((prev) => ({ ...prev, index_no: selectedIdx }));
+                  }
+                }}
+                required
+                className="w-full bg-brand-bg border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-violet font-bold text-xs cursor-pointer"
+              >
+                <option value="">-- Choose Scholar from Registry --</option>
+                {scholarOptions.map((opt) => (
+                  <option key={opt.index} value={opt.index}>
+                    {opt.name} ({opt.classGrade} - {opt.index})
                   </option>
-                );
-              })}
-            </select>
-          </div>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
