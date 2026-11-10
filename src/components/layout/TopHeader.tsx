@@ -166,24 +166,25 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
 
         // 4. Recent Broadcasts
         if (logsRes.status === 'fulfilled' && Array.isArray(logsRes.value)) {
-          logsRes.value.slice(0, 3).forEach((lg: any) => {
+          logsRes.value.slice(0, 4).forEach((lg: any) => {
             items.push({
-              id: `sms-log-${lg.id}`,
-              title: `SMS Dispatch (${lg.status || 'SENT'})`,
-              description: `${lg.message || ''} → ${lg.recipient || ''}`,
+              id: `bc-log-${lg.id}`,
+              title: lg.title ? `Broadcast: ${lg.title}` : `SMS Dispatch (${lg.status || 'SENT'})`,
+              description: `${lg.message || ''} • Target: ${lg.targetGroup || lg.recipient || 'School Cohort'}`,
               category: 'BROADCAST',
               severity: 'info',
-              timestamp: lg.timestamp ? new Date(lg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent',
+              timestamp: lg.timestamp ? new Date(lg.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' }) : 'Recent',
               href: '/admin/communications',
             });
           });
         }
       } else if (role === 'TEACHER') {
         const teacherName = (user.fullName || '').toLowerCase();
-        const [leaveRes, schemesRes, allocRes] = await Promise.allSettled([
+        const [leaveRes, schemesRes, allocRes, logsRes] = await Promise.allSettled([
           RoselandApi.hr.getLeave(),
           RoselandApi.academic.getLessonSchemes({ teacher_name: user.fullName }),
           RoselandApi.academic.getTeacherAllocation(user.email || user.username || user.id),
+          RoselandApi.notify.getLogs(),
         ]);
 
         // 1. Leave Request Decisions
@@ -252,11 +253,33 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
             });
           }
         }
+
+        // 4. Faculty & Staff Broadcasts
+        if (logsRes.status === 'fulfilled' && Array.isArray(logsRes.value)) {
+          logsRes.value
+            .filter((lg: any) => {
+              const tg = String(lg.targetGroup || lg.recipient || '').toUpperCase();
+              return tg.includes('FACULTY') || tg.includes('STAFF') || tg.includes('WHOLE SCHOOL');
+            })
+            .slice(0, 3)
+            .forEach((lg: any) => {
+              items.push({
+                id: `staff-bc-${lg.id}`,
+                title: lg.title || 'Staff Circular',
+                description: lg.message || '',
+                category: 'BROADCAST',
+                severity: 'info',
+                timestamp: lg.timestamp ? new Date(lg.timestamp).toLocaleDateString() : 'Circular',
+                href: '/teacher',
+              });
+            });
+        }
       } else if (role === 'BURSAR') {
-        const [invRes, txRes, leaveRes] = await Promise.allSettled([
+        const [invRes, txRes, leaveRes, logsRes] = await Promise.allSettled([
           RoselandApi.finance.getInvoices(),
           RoselandApi.finance.getTransactions(),
           RoselandApi.hr.getLeave(),
+          RoselandApi.notify.getLogs(),
         ]);
 
         if (invRes.status === 'fulfilled') {
@@ -313,10 +336,31 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
             });
           });
         }
+
+        if (logsRes.status === 'fulfilled' && Array.isArray(logsRes.value)) {
+          logsRes.value
+            .filter((lg: any) => {
+              const tg = String(lg.targetGroup || lg.recipient || '').toUpperCase();
+              return tg.includes('FACULTY') || tg.includes('STAFF');
+            })
+            .slice(0, 2)
+            .forEach((lg: any) => {
+              items.push({
+                id: `bursar-bc-${lg.id}`,
+                title: lg.title || 'Staff Circular',
+                description: lg.message || '',
+                category: 'BROADCAST',
+                severity: 'info',
+                timestamp: lg.timestamp ? new Date(lg.timestamp).toLocaleDateString() : 'Circular',
+                href: '/admin/finance',
+              });
+            });
+        }
       } else if (role === 'PARENT') {
-        const [stuRes, invRes] = await Promise.allSettled([
+        const [stuRes, invRes, logsRes] = await Promise.allSettled([
           RoselandApi.sis.getStudents(),
           RoselandApi.finance.getInvoices(),
+          RoselandApi.notify.getLogs(),
         ]);
 
         const allStudents = stuRes.status === 'fulfilled'
@@ -343,9 +387,15 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
           return false;
         });
 
+        let hasAnyArrears = false;
+        const myWardGrades = new Set<string>();
+
         myWards.forEach((w: any) => {
           const sIdx = w.index_no || w.index_number || w.id;
           const wName = w.full_name || `${w.first_name || ''} ${w.last_name || ''}`.trim();
+          const gradeUpper = String(w.class_grade || '').toUpperCase();
+          if (gradeUpper) myWardGrades.add(gradeUpper);
+
           items.push({
             id: `ward-status-${sIdx}`,
             title: `Academic & Attendance Pulse: ${wName}`,
@@ -359,6 +409,9 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
           const wardInvoices = allInvoices.filter(
             (inv: any) => (inv.student_index_no || inv.studentIndexNo) === sIdx && Number(inv.balance ?? 0) > 0
           );
+          if (wardInvoices.length > 0 || String(w.fee_status || '').toUpperCase() === 'OWING') {
+            hasAnyArrears = true;
+          }
           wardInvoices.forEach((inv: any) => {
             items.push({
               id: `ward-inv-${inv.id || inv.invoice_no || sIdx}`,
@@ -371,6 +424,37 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
             });
           });
         });
+
+        // Surface School Broadcasts matching the parent's ward cohort
+        if (logsRes.status === 'fulfilled' && Array.isArray(logsRes.value)) {
+          logsRes.value
+            .filter((lg: any) => {
+              const tg = String(lg.targetGroup || lg.recipient || '').toUpperCase();
+              if (tg.includes('FACULTY') || tg.includes('STAFF')) return false;
+              if (tg.includes('ALL PARENTS') || tg.includes('WHOLE SCHOOL')) return true;
+              if (tg.includes('DEFAULTER') || tg.includes('DEBTOR')) return hasAnyArrears;
+              for (const g of myWardGrades) {
+                if (tg.includes(g)) return true;
+                if (tg.includes('EARLY YEARS') && (g.includes('CRECHE') || g.includes('NURSERY') || g.includes('KG'))) return true;
+                if (tg.includes('PRIMARY') && /BASIC [1-6]/.test(g)) return true;
+                if (tg.includes('JHS') && /BASIC [7-9]/.test(g)) return true;
+                if (tg.includes('BECE') && g.includes('BASIC 9')) return true;
+              }
+              return false;
+            })
+            .slice(0, 4)
+            .forEach((lg: any) => {
+              items.push({
+                id: `parent-bc-${lg.id}`,
+                title: lg.title || 'School Announcement',
+                description: lg.message || '',
+                category: 'BROADCAST',
+                severity: 'info',
+                timestamp: lg.timestamp ? new Date(lg.timestamp).toLocaleDateString() : 'Notice',
+                href: '/parent',
+              });
+            });
+        }
       }
     } catch (err) {
       console.warn('Notification fetch error:', err);

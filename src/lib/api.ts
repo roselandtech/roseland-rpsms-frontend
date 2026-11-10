@@ -968,17 +968,22 @@ export const RoselandApi = {
         body: JSON.stringify({ phone, message: msg }),
       });
     },
-    broadcastNotice: (data: { targetGroup: string; title: string; message: string }) =>
+    getCohorts: () => apiRequest('/api/v1/notify/cohorts'),
+    broadcastNotice: (data: { targetGroup: string; title: string; message: string; channel?: string; sentBy?: string }) =>
       apiRequest('/api/v1/notify/broadcast', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    sendBroadcast: (data: { targetGroup: string; title: string; message: string }) =>
+    sendBroadcast: (data: { targetGroup: string; title: string; message: string; channel?: string; sentBy?: string }) =>
       apiRequest('/api/v1/notify/broadcast', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
     getLogs: () => apiRequest('/api/v1/notify/logs'),
+    deleteLog: (id: string) =>
+      apiRequest(`/api/v1/notify/logs/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      }),
   },
 
   // 8. Public CMS & Admissions Engine (Port 8088 via Gateway)
