@@ -161,18 +161,18 @@ export default function Sidebar({
                     <Link 
                       href={item.href}
                       onClick={() => setIsOpen(false)}
-                      className={`w-full flex items-center rounded-xl font-semibold text-xs transition-all ${
+                      className={`w-full flex items-center rounded-xl text-xs transition-colors outline-none focus:outline-none ${
                         isCollapsed 
                           ? 'justify-center p-3' 
                           : 'justify-between px-3.5 py-2.5'
                       } ${
                         isActive 
-                          ? 'bg-brand-violet text-white shadow-md shadow-brand-violet/20' 
-                          : 'text-brand-textMuted hover:bg-brand-violetLight/60 hover:text-brand-violet'
+                          ? 'bg-brand-violetLight text-brand-violet font-bold' 
+                          : 'font-semibold text-brand-textMuted hover:bg-gray-100 hover:text-brand-textMain'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <i className={`${item.icon} text-lg shrink-0 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-brand-violet'}`}></i>
+                        <i className={`${item.icon} text-lg shrink-0 ${isActive ? 'text-brand-violet' : 'text-gray-400 group-hover:text-brand-textMain'}`}></i>
                         {!isCollapsed && <span className="truncate">{item.name}</span>}
                       </div>
 
@@ -245,18 +245,18 @@ export default function Sidebar({
                   <Link 
                     href={item.href}
                     onClick={() => setIsOpen(false)}
-                    className={`w-full flex items-center rounded-xl font-semibold text-xs transition-all ${
+                    className={`w-full flex items-center rounded-xl text-xs transition-colors outline-none focus:outline-none ${
                       isCollapsed 
                         ? 'justify-center p-3' 
                         : 'justify-between px-3.5 py-2.5'
                     } ${
                       isActive 
-                        ? 'bg-brand-violet text-white shadow-md shadow-brand-violet/20' 
-                        : 'text-brand-textMuted hover:bg-brand-violetLight/60 hover:text-brand-violet'
+                        ? 'bg-brand-violetLight text-brand-violet font-bold' 
+                        : 'font-semibold text-brand-textMuted hover:bg-gray-100 hover:text-brand-textMain'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <i className={`${item.icon} text-lg shrink-0 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-brand-violet'}`}></i>
+                      <i className={`${item.icon} text-lg shrink-0 ${isActive ? 'text-brand-violet' : 'text-gray-400 group-hover:text-brand-textMain'}`}></i>
                       {!isCollapsed && <span className="truncate">{item.name}</span>}
                     </div>
                     {!isCollapsed && item.badge && (
