@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { RoselandApi } from '@/lib/api';
 import { AuthService } from '@/lib/auth';
+import Modal from '@/components/ui/Modal';
 
 interface RemedialCase {
   id: string;
@@ -235,12 +236,16 @@ export default function TeacherRemedial() {
       )}
 
       {/* LOG REMEDIAL SESSION MODAL */}
-      {isModalOpen && selectedScholar && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-100 animate-modal-pop relative">
+      <Modal
+        isOpen={Boolean(isModalOpen && selectedScholar)}
+        onClose={() => setIsModalOpen(false)}
+        className="max-w-md"
+      >
+        {selectedScholar && (
+          <div className="bg-white rounded-3xl w-full p-6 sm:p-8 shadow-2xl border border-gray-100 relative">
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center text-base"
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center text-base cursor-pointer"
             >
               ✕
             </button>
@@ -285,14 +290,14 @@ export default function TeacherRemedial() {
 
               <button
                 onClick={handleLogSession}
-                className="w-full py-3 bg-brand-violet text-white font-bold rounded-xl hover:bg-brand-violetDark shadow-md transition-all mt-2"
+                className="w-full py-3 bg-brand-violet text-white font-bold rounded-xl hover:bg-brand-violetDark shadow-md transition-all mt-2 cursor-pointer"
               >
                 Record Intervention Log
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
     </div>
   );

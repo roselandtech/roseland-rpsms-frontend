@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { RoselandApi } from '@/lib/api';
 import { AuthService } from '@/lib/auth';
 import CbtAssessmentBuilderModal from '@/components/cbt/CbtAssessmentBuilderModal';
+import Modal from '@/components/ui/Modal';
 
 interface Assignment {
   id: string;
@@ -365,79 +366,71 @@ export default function TeacherAssignments() {
       )}
 
       {/* CREATE HOMEWORK MODAL */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-100 animate-modal-pop relative">
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center text-base cursor-pointer"
-            >
-              ✕
-            </button>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Publish New Homework"
+        subtitle="Formative Task Builder"
+        size="md"
+      >
+        <div className="space-y-4 text-xs">
+          <div>
+            <label className="block font-bold text-brand-textMain uppercase mb-1">Homework Title *</label>
+            <input
+              type="text"
+              placeholder="e.g. Fractions Practice (Page 44)"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              className="w-full bg-brand-bg border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-violet font-semibold"
+            />
+          </div>
 
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-violet">Formative Task Builder</span>
-            <h3 className="text-xl font-serif font-bold text-brand-textMain mt-1 mb-4">Publish New Homework</h3>
-
-            <div className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-brand-textMain uppercase mb-1">Homework Title *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Fractions Practice (Page 44)"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full bg-brand-bg border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-violet font-semibold"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-brand-textMain uppercase mb-1">Subject</label>
-                  <select
-                    value={newSubject}
-                    onChange={(e) => setNewSubject(e.target.value)}
-                    className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2.5 outline-none focus:border-brand-violet font-bold"
-                  >
-                    {availableSubjects.length > 0 ? (
-                      availableSubjects.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))
-                    ) : (
-                      <option value="">No Subjects Found</option>
-                    )}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-brand-textMain uppercase mb-1">Max Score</label>
-                  <input
-                    type="number"
-                    value={newMaxScore}
-                    onChange={(e) => setNewMaxScore(Number(e.target.value))}
-                    className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2.5 outline-none focus:border-brand-violet font-bold"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-brand-textMain uppercase mb-1">Submission Due Date *</label>
-                <input
-                  type="date"
-                  value={newDueDate}
-                  onChange={(e) => setNewDueDate(e.target.value)}
-                  className="w-full bg-brand-bg border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-violet font-semibold"
-                />
-              </div>
-
-              <button
-                onClick={handleCreateAssignment}
-                className="w-full py-3 bg-brand-violet text-white font-bold rounded-xl hover:bg-brand-violetDark shadow-md transition-all mt-2 cursor-pointer"
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-brand-textMain uppercase mb-1">Subject</label>
+              <select
+                value={newSubject}
+                onChange={(e) => setNewSubject(e.target.value)}
+                className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2.5 outline-none focus:border-brand-violet font-bold"
               >
-                Publish & Notify Parents
-              </button>
+                {availableSubjects.length > 0 ? (
+                  availableSubjects.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))
+                ) : (
+                  <option value="">No Subjects Found</option>
+                )}
+              </select>
+            </div>
+            <div>
+              <label className="block font-bold text-brand-textMain uppercase mb-1">Max Score</label>
+              <input
+                type="number"
+                value={newMaxScore}
+                onChange={(e) => setNewMaxScore(Number(e.target.value))}
+                className="w-full bg-brand-bg border border-gray-200 rounded-xl px-3 py-2.5 outline-none focus:border-brand-violet font-bold"
+              />
             </div>
           </div>
+
+          <div>
+            <label className="block font-bold text-brand-textMain uppercase mb-1">Submission Due Date *</label>
+            <input
+              type="date"
+              value={newDueDate}
+              onChange={(e) => setNewDueDate(e.target.value)}
+              className="w-full bg-brand-bg border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-brand-violet font-semibold"
+            />
+          </div>
+
+          <button
+            onClick={handleCreateAssignment}
+            className="w-full py-3 bg-brand-violet text-white font-bold rounded-xl hover:bg-brand-violetDark shadow-md transition-all mt-2 cursor-pointer"
+          >
+            Publish & Notify Parents
+          </button>
         </div>
-      )}
+      </Modal>
 
       {/* CBT ASSESSMENT BUILDER MODAL */}
       <CbtAssessmentBuilderModal

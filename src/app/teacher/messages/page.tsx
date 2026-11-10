@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { RoselandApi } from '@/lib/api';
 import { AuthService } from '@/lib/auth';
+import Modal from '@/components/ui/Modal';
 
 interface Message {
   id: string;
@@ -342,50 +343,52 @@ export default function TeacherMessages() {
       )}
 
       {/* CLASS-WIDE BROADCAST MODAL */}
-      {isBroadcastModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-100 animate-modal-pop relative">
-            <button
-              onClick={() => setIsBroadcastModal(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center text-base"
-            >
-              ✕
-            </button>
+      <Modal
+        isOpen={isBroadcastModal}
+        onClose={() => setIsBroadcastModal(false)}
+        className="max-w-md"
+      >
+        <div className="bg-white rounded-3xl w-full p-6 sm:p-8 shadow-2xl border border-gray-100 relative">
+          <button
+            onClick={() => setIsBroadcastModal(false)}
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center text-base cursor-pointer"
+          >
+            ✕
+          </button>
 
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-violet">Classroom SMS Gateway</span>
-            <h3 className="text-xl font-serif font-bold text-brand-textMain mt-1 mb-1">Dispatch Class Bulletin</h3>
-            <p className="text-xs text-brand-textMuted mb-4">
-              Sending official SMS bulletin to all parents of <strong>{assignedClass}</strong> ({threads.length} recipients).
-            </p>
+          <span className="text-xs font-bold uppercase tracking-wider text-brand-violet">Classroom SMS Gateway</span>
+          <h3 className="text-xl font-serif font-bold text-brand-textMain mt-1 mb-1">Dispatch Class Bulletin</h3>
+          <p className="text-xs text-brand-textMuted mb-4">
+            Sending official SMS bulletin to all parents of <strong>{assignedClass}</strong> ({threads.length} recipients).
+          </p>
 
-            <div className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-brand-textMain uppercase mb-1">Bulletin Text</label>
-                <textarea
-                  rows={4}
-                  value={broadcastMessage}
-                  onChange={(e) => setBroadcastMessage(e.target.value)}
-                  placeholder="e.g. Reminder: Tomorrow is our Science Practical Workshop. Kindly ensure scholars bring their experiment sketchbooks..."
-                  className="w-full bg-brand-bg border border-gray-200 rounded-xl p-3 outline-none focus:border-brand-violet leading-relaxed"
-                ></textarea>
-              </div>
-
-              <div className="flex justify-between items-center text-[10px] text-gray-400 font-mono">
-                <span>{broadcastMessage.length} characters (1 SMS unit)</span>
-                <span>{threads.length} Messages to Queue</span>
-              </div>
-
-              <button
-                disabled={sendingSms}
-                onClick={handleBroadcast}
-                className="w-full py-3 bg-brand-violet text-white font-bold rounded-xl hover:bg-brand-violetDark shadow-md transition-all mt-2 disabled:opacity-50"
-              >
-                {sendingSms ? "Broadcasting..." : "Dispatch SMS Bulletin"}
-              </button>
+          <div className="space-y-4 text-xs">
+            <div>
+              <label className="block font-bold text-brand-textMain uppercase mb-1">Bulletin Text</label>
+              <textarea
+                rows={4}
+                value={broadcastMessage}
+                onChange={(e) => setBroadcastMessage(e.target.value)}
+                placeholder="e.g. Reminder: Tomorrow is our Science Practical Workshop. Kindly ensure scholars bring their experiment sketchbooks..."
+                className="w-full bg-brand-bg border border-gray-200 rounded-xl p-3 outline-none focus:border-brand-violet leading-relaxed"
+              ></textarea>
             </div>
+
+            <div className="flex justify-between items-center text-[10px] text-gray-400 font-mono">
+              <span>{broadcastMessage.length} characters (1 SMS unit)</span>
+              <span>{threads.length} Messages to Queue</span>
+            </div>
+
+            <button
+              disabled={sendingSms}
+              onClick={handleBroadcast}
+              className="w-full py-3 bg-brand-violet text-white font-bold rounded-xl hover:bg-brand-violetDark shadow-md transition-all mt-2 disabled:opacity-50 cursor-pointer"
+            >
+              {sendingSms ? "Broadcasting..." : "Dispatch SMS Bulletin"}
+            </button>
           </div>
         </div>
-      )}
+      </Modal>
 
     </div>
   );

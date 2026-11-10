@@ -32,8 +32,8 @@ button {
 
 /* Animations & Fast Responsive Transitions */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: none; }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 @keyframes backdropFade {
@@ -53,7 +53,7 @@ button {
 }
 
 .animate-fade-in {
-    animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: fadeIn 0.18s ease-out;
 }
 
 .animate-backdrop-fade {
