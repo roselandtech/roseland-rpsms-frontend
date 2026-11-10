@@ -159,7 +159,7 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
               category: 'ACADEMIC',
               severity: 'warning',
               timestamp: sc.created_at ? new Date(sc.created_at).toLocaleDateString() : 'Awaiting Vetting',
-              href: '/admin/academics/schemes',
+              href: '/headmaster/inspections',
             });
           });
         }
@@ -274,7 +274,7 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
               category: 'FINANCE',
               severity: 'warning',
               timestamp: 'Live Ledger',
-              href: '/bursar',
+              href: '/admin/finance',
             });
           }
         }
@@ -293,7 +293,7 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
               category: 'FINANCE',
               severity: 'success',
               timestamp: tx.created_at ? new Date(tx.created_at).toLocaleDateString() : 'Recorded',
-              href: '/bursar',
+              href: '/admin/finance',
             });
           });
         }
@@ -309,7 +309,7 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
               category: 'HR',
               severity: 'info',
               timestamp: l.status,
-              href: '/bursar',
+              href: '/admin/hr',
             });
           });
         }
