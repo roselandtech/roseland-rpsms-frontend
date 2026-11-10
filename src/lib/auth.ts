@@ -137,8 +137,14 @@ export const AuthService = {
       return defaultPortal;
     }
 
-    // ADMIN and HEADMASTER can navigate across /admin, /headmaster, and /teacher
-    if (user.role === 'ADMIN' || user.role === 'HEADMASTER' || user.role === 'SUPER_ADMIN') {
+    // Staff roles (ADMIN, HEADMASTER, TEACHER, BURSAR) can navigate to any route allowed by their permissions
+    if (
+      user.role === 'ADMIN' ||
+      user.role === 'HEADMASTER' ||
+      user.role === 'SUPER_ADMIN' ||
+      user.role === 'TEACHER' ||
+      user.role === 'BURSAR'
+    ) {
       if (
         redirectQuery.startsWith('/admin') ||
         redirectQuery.startsWith('/headmaster') ||

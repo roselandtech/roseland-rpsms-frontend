@@ -16,8 +16,8 @@ export const ITEM_PERMISSION_MAP: Record<string, string[]> = {
   '/teacher/grading': ['can_teach'],
   '/teacher/remedial': ['can_teach'],
   '/teacher/appraisal': ['can_teach'],
-  '/teacher/messages': ['can_teach', 'manage_communications'],
-  '/teacher/assignments': ['manage_cbt'],
+  '/teacher/messages': ['can_teach'],
+  '/teacher/assignments': ['can_teach', 'manage_cbt'],
 
   // Executive & Academics
   '/headmaster': ['view_executive'],
@@ -62,6 +62,12 @@ export function isHrefAllowedByPermissions(
   if (!Array.isArray(permissions)) {
     if (cleanHref === '/admin/permissions') return role === 'ADMIN';
     if (cleanHref.startsWith('/teacher')) return role !== 'ADMIN' && role !== 'BURSAR';
+    if (role === 'TEACHER') {
+      return cleanHref.startsWith('/teacher') || cleanHref === '/admin/cbt';
+    }
+    if (role === 'BURSAR') {
+      return cleanHref === '/admin/finance' || cleanHref === '/admin/students';
+    }
     return true;
   }
 
@@ -78,7 +84,7 @@ export function filterNavGroupsByPermissions(
   role?: string,
   permissions?: string[]
 ): NavGroup[] {
-  return groups
+  const filtered = groups
     .map((group) => {
       const visibleItems = group.items.filter((item) =>
         isHrefAllowedByPermissions(item.href, role, permissions)
@@ -89,6 +95,17 @@ export function filterNavGroupsByPermissions(
       };
     })
     .filter((group) => group.items.length > 0);
+
+  // For TEACHER role, always place "My Teaching Desk" at the very top of the sidebar
+  if (role === 'TEACHER') {
+    return [...filtered].sort((a, b) => {
+      if (a.title === 'My Teaching Desk') return -1;
+      if (b.title === 'My Teaching Desk') return 1;
+      return 0;
+    });
+  }
+
+  return filtered;
 }
 
 export function filterNavItemsByPermissions(
@@ -114,8 +131,14 @@ export const executiveNavGroups: NavGroup[] = [
     items: [
       { name: 'Classroom Cockpit', href: '/teacher', icon: 'ph ph-chalkboard-teacher' },
       { name: 'My Class Roster', href: '/teacher/roster', icon: 'ph ph-users-three' },
+      { name: 'Daily Attendance', href: '/teacher/attendance', icon: 'ph ph-calendar-check' },
+      { name: 'GES Lesson Studio', href: '/teacher/lessons', icon: 'ph ph-book-open-text' },
       { name: 'Dynamic CA Tracker', href: '/teacher/ca-tracker', icon: 'ph ph-chart-bar' },
-      { name: 'SBA Gradebook', href: '/teacher/grading', icon: 'ph ph-exam' }
+      { name: 'SBA Gradebook', href: '/teacher/grading', icon: 'ph ph-exam' },
+      { name: 'Assignments & CBT', href: '/teacher/assignments', icon: 'ph ph-notebook' },
+      { name: 'Parent Messages', href: '/teacher/messages', icon: 'ph ph-chats-circle' },
+      { name: 'Remedial Registry', href: '/teacher/remedial', icon: 'ph ph-trend-up' },
+      { name: 'My Appraisal & CPD', href: '/teacher/appraisal', icon: 'ph ph-certificate' },
     ]
   },
   {

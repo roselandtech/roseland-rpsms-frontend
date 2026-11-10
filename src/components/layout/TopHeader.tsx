@@ -2,8 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import toast from 'react-hot-toast';
 import { AuthService, RoselandUser } from '@/lib/auth';
 import { RoselandApi } from '@/lib/api';
+import Modal from '@/components/ui/Modal';
 
 interface TopHeaderProps {
   toggleSidebar: () => void;
@@ -31,6 +34,18 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [loadingNotifs, setLoadingNotifs] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Account Dropdown & My Account Modal State
+  const [currentUser, setCurrentUser] = useState<RoselandUser | null>(null);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [accountModalTab, setAccountModalTab] = useState<'profile' | 'security'>('profile');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState(false);
+  const [isChangingPwd, setIsChangingPwd] = useState(false);
+  const accountDropdownRef = useRef<HTMLDivElement>(null);
 
   const getHeaderInfo = () => {
     const path = pathname.split('/').pop() || 'dashboard';
@@ -471,17 +486,30 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
 
   // Close dropdown on outside click or Escape key
   useEffect(() => {
+    setCurrentUser(AuthService.getCurrentUser());
+    const handlePermsSync = () => {
+      setCurrentUser(AuthService.getCurrentUser());
+    };
+    window.addEventListener('roseland:permissions-updated', handlePermsSync);
+    return () => window.removeEventListener('roseland:permissions-updated', handlePermsSync);
+  }, [pathname]);
+
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsNotifOpen(false);
+      }
+      if (accountDropdownRef.current && !accountDropdownRef.current.contains(e.target as Node)) {
+        setIsAccountOpen(false);
       }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setIsNotifOpen(false);
+        setIsAccountOpen(false);
       }
     };
-    if (isNotifOpen) {
+    if (isNotifOpen || isAccountOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       window.addEventListener('keydown', handleKeyDown);
     }
@@ -489,7 +517,65 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
       document.removeEventListener('mousedown', handleClickOutside);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isNotifOpen]);
+  }, [isNotifOpen, isAccountOpen]);
+
+  const handleChangeOwnPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword || !newPassword) {
+      toast.error('Please enter your current and new password.');
+      return;
+    }
+    if (newPassword.trim().length < 6) {
+      toast.error('New password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('New password and confirmation do not match.');
+      return;
+    }
+    const identifier = currentUser?.email || currentUser?.username || '';
+    if (!identifier) {
+      toast.error('Could not identify your account. Please sign in again.');
+      return;
+    }
+    setIsChangingPwd(true);
+    try {
+      await RoselandApi.auth.changePassword({
+        identifier,
+        currentPassword,
+        newPassword: newPassword.trim(),
+      });
+      toast.success('Your password has been updated!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setIsAccountModalOpen(false);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to change password');
+    } finally {
+      setIsChangingPwd(false);
+    }
+  };
+
+  const userInitials = (currentUser?.fullName || currentUser?.username || 'RP')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join('');
+
+  const displayRoleLabel =
+    currentUser?.role === 'ADMIN'
+      ? 'System Administrator'
+      : currentUser?.role === 'HEADMASTER' || currentUser?.role === 'SUPER_ADMIN'
+      ? currentUser?.assignedClass
+        ? `Headmaster • ${currentUser.assignedClass}`
+        : 'Headmaster & School Leader'
+      : currentUser?.assignedClass
+      ? `${currentUser.assignedClass} Form Master`
+      : currentUser?.role
+      ? currentUser.role.replace(/_/g, ' ')
+      : 'Staff Member';
 
   const unreadNotifications = notifications.filter((n) => !readIds.has(n.id));
   const displayedNotifications = notifTab === 'unread' ? unreadNotifications : notifications;
@@ -575,6 +661,7 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
             onClick={() => {
               const nextOpen = !isNotifOpen;
               setIsNotifOpen(nextOpen);
+              setIsAccountOpen(false);
               if (nextOpen) fetchNotifications();
             }}
             aria-label="Open notifications"
@@ -721,7 +808,331 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
             </div>
           )}
         </div>
+
+        {/* Account Menu Icon Button & Dropdown */}
+        <div className="relative" ref={accountDropdownRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setIsAccountOpen((prev) => !prev);
+              setIsNotifOpen(false);
+            }}
+            aria-label="Open account menu"
+            className={`flex items-center gap-2 p-1.5 pr-2.5 rounded-full border transition-colors cursor-pointer outline-none focus:outline-none ${
+              isAccountOpen
+                ? 'bg-brand-violetLight border-brand-violet/30 text-brand-violet'
+                : 'bg-gray-50/80 hover:bg-gray-100 border-gray-200/70 text-brand-textMain'
+            }`}
+          >
+            <div className="w-7 h-7 rounded-full bg-brand-violet/15 text-brand-violet font-serif font-bold text-xs flex items-center justify-center">
+              {userInitials || 'RP'}
+            </div>
+            <span className="hidden sm:inline text-xs font-bold truncate max-w-[110px]">
+              {currentUser?.fullName?.split(' ')[0] || 'Account'}
+            </span>
+            <i className={`ph-bold ph-caret-down text-[11px] text-gray-400 transition-transform ${isAccountOpen ? 'rotate-180 text-brand-violet' : ''}`}></i>
+          </button>
+
+          {/* Account Dropdown Menu */}
+          {isAccountOpen && (
+            <div className="fixed sm:absolute right-3 sm:right-0 left-3 sm:left-auto mt-2.5 sm:w-72 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in">
+              {/* Identity Header */}
+              <div className="p-4 bg-gray-50/70 border-b border-gray-100 flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-brand-violetLight text-brand-violet font-serif font-bold text-sm flex items-center justify-center border border-brand-violet/20 shrink-0">
+                  {userInitials || 'RP'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-brand-textMain truncate">
+                    {currentUser?.fullName || 'Institutional User'}
+                  </p>
+                  <p className="text-[11px] font-semibold text-brand-violet truncate">
+                    {displayRoleLabel}
+                  </p>
+                  <p className="text-[10px] font-mono text-gray-400 truncate mt-0.5">
+                    {currentUser?.email || currentUser?.username || ''}
+                  </p>
+                </div>
+              </div>
+
+              {/* Menu Options */}
+              <div className="p-2 space-y-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAccountOpen(false);
+                    setAccountModalTab('profile');
+                    setIsAccountModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-brand-textMain hover:bg-brand-violetLight/50 hover:text-brand-violet transition-colors text-left cursor-pointer"
+                >
+                  <i className="ph-bold ph-user-circle-gear text-base text-brand-violet"></i>
+                  <div>
+                    <span className="block font-bold">My Account & Profile</span>
+                    <span className="text-[10px] text-gray-400 block">View identity, role & permissions</span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAccountOpen(false);
+                    setAccountModalTab('security');
+                    setIsAccountModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-brand-textMain hover:bg-brand-violetLight/50 hover:text-brand-violet transition-colors text-left cursor-pointer"
+                >
+                  <i className="ph-bold ph-key text-base text-brand-violet"></i>
+                  <div>
+                    <span className="block font-bold">Change Password</span>
+                    <span className="text-[10px] text-gray-400 block">Update your login credentials</span>
+                  </div>
+                </button>
+
+                <Link
+                  href="/"
+                  onClick={() => setIsAccountOpen(false)}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-brand-textMain hover:bg-gray-100 transition-colors"
+                >
+                  <i className="ph-bold ph-globe text-base text-gray-400"></i>
+                  <div>
+                    <span className="block font-bold">Public School Website</span>
+                    <span className="text-[10px] text-gray-400 block">Return to roselandprep.edu.gh</span>
+                  </div>
+                </Link>
+              </div>
+
+              {/* Sign Out Footer */}
+              <div className="p-2 border-t border-gray-100 bg-gray-50/40">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAccountOpen(false);
+                    AuthService.logout('/login');
+                  }}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <i className="ph-bold ph-sign-out text-base"></i>
+                    Sign Out
+                  </span>
+                  <span className="text-[10px] font-mono text-rose-400">End Session</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* My Account & Security Full-Viewport Modal */}
+      <Modal
+        isOpen={isAccountModalOpen}
+        onClose={() => setIsAccountModalOpen(false)}
+        title="My Account & Security"
+        subtitle={`${currentUser?.fullName || 'Account'} • ${displayRoleLabel}`}
+        size="lg"
+      >
+        <div className="space-y-6">
+          {/* Modal Navigation Tabs */}
+          <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-2xl">
+            <button
+              type="button"
+              onClick={() => setAccountModalTab('profile')}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                accountModalTab === 'profile'
+                  ? 'bg-white text-brand-violet shadow-xs'
+                  : 'text-gray-500 hover:text-brand-textMain'
+              }`}
+            >
+              <i className="ph-bold ph-identification-card text-sm"></i>
+              Profile & Role Details
+            </button>
+            <button
+              type="button"
+              onClick={() => setAccountModalTab('security')}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                accountModalTab === 'security'
+                  ? 'bg-white text-brand-violet shadow-xs'
+                  : 'text-gray-500 hover:text-brand-textMain'
+              }`}
+            >
+              <i className="ph-bold ph-lock-key text-sm"></i>
+              Password & Security
+            </button>
+          </div>
+
+          {accountModalTab === 'profile' ? (
+            <div className="space-y-5">
+              {/* Profile Card */}
+              <div className="p-4 rounded-2xl bg-brand-bg border border-gray-100 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-brand-violetLight text-brand-violet font-serif font-bold text-lg flex items-center justify-center border border-brand-violet/20 shrink-0">
+                  {userInitials || 'RP'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-serif font-bold text-base text-brand-textMain truncate">
+                    {currentUser?.fullName || 'Institutional User'}
+                  </h4>
+                  <p className="text-xs font-bold text-brand-violet">{displayRoleLabel}</p>
+                  <p className="text-[11px] font-mono text-gray-500 mt-0.5">
+                    ID: {currentUser?.username || currentUser?.email || 'Verified'}
+                  </p>
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
+                  Active Session
+                </span>
+              </div>
+
+              {/* Account Metadata Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="p-3.5 rounded-2xl border border-gray-100 bg-white">
+                  <span className="text-[10px] font-bold uppercase text-gray-400 block mb-1">
+                    Email / Login Identifier
+                  </span>
+                  <strong className="font-mono text-brand-textMain break-all">
+                    {currentUser?.email || currentUser?.username || 'Not set'}
+                  </strong>
+                </div>
+
+                <div className="p-3.5 rounded-2xl border border-gray-100 bg-white">
+                  <span className="text-[10px] font-bold uppercase text-gray-400 block mb-1">
+                    Primary Role
+                  </span>
+                  <strong className="text-brand-textMain">
+                    {currentUser?.role || 'STAFF'}
+                  </strong>
+                </div>
+
+                <div className="p-3.5 rounded-2xl border border-gray-100 bg-white">
+                  <span className="text-[10px] font-bold uppercase text-gray-400 block mb-1">
+                    Assigned Class / Scope
+                  </span>
+                  <strong className="text-brand-textMain">
+                    {currentUser?.assignedClass || 'Whole-School / Departmental'}
+                  </strong>
+                </div>
+
+                <div className="p-3.5 rounded-2xl border border-gray-100 bg-white">
+                  <span className="text-[10px] font-bold uppercase text-gray-400 block mb-1">
+                    Phone Contact
+                  </span>
+                  <strong className="font-mono text-brand-textMain">
+                    {currentUser?.phone || '+233 (Institutional Contact)'}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Active Role Capabilities */}
+              {Array.isArray(currentUser?.permissions) && currentUser.permissions.length > 0 && (
+                <div className="p-4 rounded-2xl border border-gray-100 bg-gray-50/60 space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
+                    Granted Portal Capabilities ({currentUser.permissions.length})
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {currentUser.permissions.map((perm) => (
+                      <span
+                        key={perm}
+                        className="px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-[11px] font-semibold text-gray-700"
+                      >
+                        ✓ {perm.replace(/_/g, ' ')}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setAccountModalTab('security')}
+                  className="px-4 py-2.5 rounded-xl bg-brand-violetLight text-brand-violet text-xs font-bold hover:bg-brand-violet hover:text-white transition-colors"
+                >
+                  Change My Password →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAccountModalOpen(false);
+                    AuthService.logout('/login');
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-rose-50 text-rose-700 text-xs font-bold hover:bg-rose-100 transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleChangeOwnPassword} className="space-y-4">
+              <div className="p-3.5 rounded-2xl bg-brand-violetLight/50 border border-brand-violet/15 text-xs text-brand-textMain">
+                Your password is encrypted with <strong>bcrypt</strong> before storage. Choose a strong password of at least 6 characters.
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Current Password</label>
+                <input
+                  type={showPasswords ? 'text' : 'password'}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
+                  placeholder="Enter your current password"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">
+                  New Password (min. 6 characters)
+                </label>
+                <input
+                  type={showPasswords ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
+                  placeholder="Enter new password"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">Confirm New Password</label>
+                <input
+                  type={showPasswords ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-violet"
+                  placeholder="Re-enter new password"
+                  required
+                />
+              </div>
+
+              <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={showPasswords}
+                  onChange={(e) => setShowPasswords(e.target.checked)}
+                  className="rounded border-gray-300 text-brand-violet focus:ring-brand-violet"
+                />
+                Show passwords
+              </label>
+
+              <div className="pt-3 flex justify-end gap-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAccountModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isChangingPwd}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-brand-violet hover:bg-brand-violetDark text-white shadow-sm disabled:opacity-50 cursor-pointer"
+                >
+                  {isChangingPwd ? 'Updating Password...' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </Modal>
     </header>
   );
 }

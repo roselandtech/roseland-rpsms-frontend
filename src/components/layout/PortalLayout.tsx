@@ -138,7 +138,11 @@ export default function PortalLayout({
 
   const resolvedPortalName = currentUser?.role === 'ADMIN'
     ? 'System Admin'
-    : portalName;
+    : currentUser?.role === 'TEACHER'
+      ? 'Teacher Portal'
+      : currentUser?.role === 'BURSAR'
+        ? 'Bursar Portal'
+        : portalName;
 
   // Filter navGroups and navItems dynamically based on the user's role & configured permissions
   const filteredNavGroups = navGroups
