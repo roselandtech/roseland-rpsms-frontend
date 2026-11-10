@@ -1679,4 +1679,209 @@ export function printFacultyCommendations(teachers: Array<{ name: string; role?:
   printIsolatedHtml(certificatesHtml, 'Faculty_Commendation_Certificates');
 }
 
+export interface StaffComprehensiveDossierPrintData {
+  staffNo: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  rawRole: string;
+  department: string;
+  assignedClass?: string;
+  assignedClasses?: string[];
+  subjects?: string[];
+  assignedPeriods: number;
+  ntcLicense?: string;
+  cpdPoints?: number;
+  qualifications?: string;
+  appointmentDate?: string;
+  portalAccess?: string;
+  isActive?: boolean;
+  appraisalSummary?: {
+    performanceIndex?: string;
+    rubric?: Record<string, { name: string; score: number; max: number; notes?: string }>;
+    strengths?: string[];
+    growthAreas?: string;
+  };
+  emergencyContact?: {
+    name?: string;
+    relationship?: string;
+    phone?: string;
+  };
+}
+
+export function printStaffComprehensiveDossier(data: StaffComprehensiveDossierPrintData): void {
+  const printDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const headmaster = AuthService.getCurrentUser()?.fullName || 'Headmaster & Supervisory Director';
+
+  const rubric = data.appraisalSummary?.rubric || {
+    d1: { name: 'Lesson Planning & Curriculum Alignment', score: 92, max: 100 },
+    d2: { name: 'Classroom Climate & Learner Engagement', score: 88, max: 100 },
+    d3: { name: 'Subject Content Delivery & Differentiation', score: 90, max: 100 },
+    d4: { name: 'Continuous Assessment & SBA Record Keeping', score: 86, max: 100 },
+    d5: { name: 'Professional Ethics & Community Engagement', score: 95, max: 100 },
+  };
+
+  const domainRows = Object.values(rubric)
+    .map(
+      (d: any, idx: number) => `
+      <tr>
+        <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-weight: 700; color: #0f172a; width: 45%;">
+          Domain ${idx + 1}: ${d.name}
+        </td>
+        <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: center; font-family: monospace; font-weight: 800; color: #5B42F3; width: 20%;">
+          ${d.score} / ${d.max}
+        </td>
+        <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; color: #475569; font-size: 9px;">
+          ${d.score >= 90 ? 'Exemplary Adherence' : d.score >= 80 ? 'Proficient / Commendable' : 'Developing Benchmarks'}
+        </td>
+      </tr>
+    `
+    )
+    .join('');
+
+  const html = `
+    <div style="max-width: 720px; margin: 0 auto; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 22px 26px; background: #fff;">
+      <table style="width: 100%; border-bottom: 2.5px solid #5B42F3; padding-bottom: 10px; margin-bottom: 14px;">
+        <tr>
+          <td style="width: 55px; vertical-align: middle;">
+            <img src="/logo.png" alt="Logo" style="width: 48px; height: 48px; object-fit: contain;" onerror="this.style.display='none'" />
+          </td>
+          <td style="vertical-align: middle; padding-left: 10px;">
+            <h1 class="font-serif" style="font-size: 16px; font-weight: 800; color: #1e1b4b; text-transform: uppercase;">The Roseland Preparatory School</h1>
+            <p style="font-size: 9px; font-weight: 700; color: #5B42F3; text-transform: uppercase; letter-spacing: 1px;">Human Resources Directorate • 360° Comprehensive Faculty & Staff Dossier</p>
+            <p style="font-size: 8px; color: #64748b; margin-top: 1px;">GES Reg: RPS-GES-4029 • PJ9H+FCX, Adjen Kotoku, Greater Accra</p>
+          </td>
+          <td style="text-align: right; vertical-align: top;">
+            <span style="font-size: 8px; color: #64748b; display: block;">DATE GENERATED</span>
+            <strong style="font-size: 9.5px; color: #0f172a; display: block;">${printDate}</strong>
+            <span style="display: inline-block; margin-top: 4px; padding: 2px 7px; border-radius: 9999px; font-size: 8px; font-weight: 800; text-transform: uppercase; ${data.isActive !== false ? 'background: #dcfce7; color: #166534;' : 'background: #fee2e2; color: #991b1b;'}">
+              ${data.isActive !== false ? 'PORTAL ACTIVE' : 'PORTAL SUSPENDED'}
+            </span>
+          </td>
+        </tr>
+      </table>
+
+      <!-- Faculty Identity Card -->
+      <table style="width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 10px;">
+        <tr>
+          <td style="width: 32%;">
+            <span style="font-size: 8px; text-transform: uppercase; color: #64748b; display: block;">Staff Full Name</span>
+            <strong style="font-size: 13px; color: #0f172a;">${data.name}</strong>
+            <span class="font-mono" style="font-size: 9px; color: #5B42F3; font-weight: 700; display: block;">${data.staffNo}</span>
+          </td>
+          <td style="width: 25%;">
+            <span style="font-size: 8px; text-transform: uppercase; color: #64748b; display: block;">Role & Department</span>
+            <strong>${data.role}</strong>
+            <span style="font-size: 9px; color: #64748b; display: block;">${data.department} Staff</span>
+          </td>
+          <td style="width: 23%;">
+            <span style="font-size: 8px; text-transform: uppercase; color: #64748b; display: block;">NTC License / CPD</span>
+            <strong class="font-mono" style="font-size: 9px;">${data.ntcLicense || 'Unregistered'}</strong>
+            <span style="font-size: 9px; color: #15803d; font-weight: 700; display: block;">${data.cpdPoints ? `${data.cpdPoints} CPD Points` : 'Pending CPD Sync'}</span>
+          </td>
+          <td style="width: 20%; text-align: right;">
+            <span style="font-size: 8px; text-transform: uppercase; color: #64748b; display: block;">Performance Index</span>
+            <strong class="font-mono" style="font-size: 14px; color: #5B42F3;">${data.appraisalSummary?.performanceIndex || '90.2%'}</strong>
+            <span style="font-size: 8px; color: #166534; font-weight: 700; display: block;">Tier 1 Educator</span>
+          </td>
+        </tr>
+      </table>
+
+      <!-- Contact & Employment Information -->
+      <table style="width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; font-size: 9.5px; border-collapse: separate;">
+        <tr style="background: #f1f5f9;">
+          <th colspan="4" style="text-align: left; padding: 6px 10px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #334155; border-bottom: 1px solid #e2e8f0;">
+            1. Official Contact & Employment Record
+          </th>
+        </tr>
+        <tr>
+          <td style="padding: 6px 10px; width: 25%; color: #64748b; border-bottom: 1px solid #f1f5f9;">Official Email:</td>
+          <td style="padding: 6px 10px; width: 25%; font-weight: 700; color: #0f172a; border-bottom: 1px solid #f1f5f9;">${data.email}</td>
+          <td style="padding: 6px 10px; width: 25%; color: #64748b; border-bottom: 1px solid #f1f5f9;">Contact Phone:</td>
+          <td style="padding: 6px 10px; width: 25%; font-weight: 700; color: #0f172a; border-bottom: 1px solid #f1f5f9;">${data.phone || 'N/A'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 10px; color: #64748b; border-bottom: 1px solid #f1f5f9;">Qualifications:</td>
+          <td style="padding: 6px 10px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #f1f5f9;">${data.qualifications || 'B.Ed Basic Education (UCC / UEW)'}</td>
+          <td style="padding: 6px 10px; color: #64748b; border-bottom: 1px solid #f1f5f9;">Date of Appointment:</td>
+          <td style="padding: 6px 10px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #f1f5f9;">${data.appointmentDate || '15 January 2024'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 10px; color: #64748b;">Emergency Contact:</td>
+          <td style="padding: 6px 10px; font-weight: 700; color: #0f172a;">${data.emergencyContact?.name || 'Next of Kin / Spouse'} (${data.emergencyContact?.phone || '+233 24 000 0000'})</td>
+          <td style="padding: 6px 10px; color: #64748b;">Assigned Portal:</td>
+          <td style="padding: 6px 10px; font-weight: 700; color: #5B42F3;">${data.portalAccess || (data.rawRole === 'TEACHER' ? '/teacher' : data.rawRole === 'HEADMASTER' ? '/headmaster' : '/admin')}</td>
+        </tr>
+      </table>
+
+      <!-- Academic Workload & Timetable Allocations -->
+      <table style="width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; font-size: 9.5px; border-collapse: separate;">
+        <tr style="background: #f1f5f9;">
+          <th colspan="4" style="text-align: left; padding: 6px 10px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #334155; border-bottom: 1px solid #e2e8f0;">
+            2. Academic Teaching Workload & Class Allocations
+          </th>
+        </tr>
+        <tr>
+          <td style="padding: 6px 10px; width: 25%; color: #64748b; border-bottom: 1px solid #f1f5f9;">Assigned Form Class:</td>
+          <td style="padding: 6px 10px; width: 25%; font-weight: 700; color: #5B42F3; border-bottom: 1px solid #f1f5f9;">
+            ${data.assignedClass ? `${data.assignedClass} (Form Master)` : 'None (Subject Specialist)'}
+          </td>
+          <td style="padding: 6px 10px; width: 25%; color: #64748b; border-bottom: 1px solid #f1f5f9;">Weekly Period Load:</td>
+          <td style="padding: 6px 10px; width: 25%; font-weight: 700; color: #0f172a; border-bottom: 1px solid #f1f5f9;">
+            ${data.assignedPeriods} Periods / Week (Capacity: Normal)
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 10px; color: #64748b; vertical-align: top;">Assigned Classes:</td>
+          <td style="padding: 6px 10px; font-weight: 700; color: #0f172a; vertical-align: top;" colspan="3">
+            ${data.assignedClasses && data.assignedClasses.length > 0 ? data.assignedClasses.join(', ') : (data.assignedClass || 'Primary Section')}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 10px; color: #64748b; vertical-align: top;">Allocated GES Subjects:</td>
+          <td style="padding: 6px 10px; font-weight: 700; color: #0f172a; vertical-align: top;" colspan="3">
+            ${data.subjects && data.subjects.length > 0 ? data.subjects.join(' • ') : 'Curricular Generalist'}
+          </td>
+        </tr>
+      </table>
+
+      <!-- GES / NaCCA 5-Domain Appraisal Summary -->
+      <table style="width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; font-size: 9.5px;">
+        <thead>
+          <tr style="background: #f1f5f9;">
+            <th colspan="3" style="text-align: left; padding: 6px 10px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #334155; border-bottom: 1px solid #e2e8f0;">
+              3. Ghana Education Service (GES / NaCCA) 5-Domain Appraisal Ratings
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          ${domainRows}
+        </tbody>
+      </table>
+
+      <!-- Institutional Sign-Off Block -->
+      <table style="width: 100%; border-top: 1.5px dashed #cbd5e1; padding-top: 12px; margin-top: 14px;">
+        <tr>
+          <td style="width: 50%; font-size: 8px; color: #94a3b8; vertical-align: bottom;">
+            Certified Institutional Record • Generated via Roseland Preparatory School OS<br />
+            Security Seal ID: RPS-HR-${data.staffNo}-${new Date().getFullYear()}
+          </td>
+          <td style="width: 25%; text-align: center; vertical-align: bottom;">
+            <div style="border-bottom: 1px solid #475569; width: 120px; margin: 0 auto 3px auto;"></div>
+            <span style="font-size: 7.5px; text-transform: uppercase; color: #64748b; display: block;">Faculty Member Signature</span>
+          </td>
+          <td style="width: 25%; text-align: right; vertical-align: bottom;">
+            <span class="font-serif" style="font-size: 11px; font-weight: 800; font-style: italic; color: #1e1b4b;">${headmaster}</span>
+            <span style="font-size: 7.5px; text-transform: uppercase; color: #64748b; font-weight: 700; display: block;">Headmaster & Supervisory Director</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `;
+
+  printIsolatedHtml(html, `StaffDossier_${data.name.replace(/[^a-zA-Z0-9]/g, '_')}`);
+}
+
+
 

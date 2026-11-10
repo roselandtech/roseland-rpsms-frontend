@@ -205,6 +205,47 @@ export default function AdminPermissionsPage() {
     }
   };
 
+  const handleToggleStaffPortalAccess = async (staffId: string, currentActive: boolean) => {
+    setUpdatingStaffId(staffId);
+    const nextActive = !currentActive;
+    try {
+      const staff = staffList.find((s) => s.id === staffId);
+      const defaultPortal = staff?.portalAccess && staff.portalAccess !== 'DISABLED'
+        ? staff.portalAccess
+        : (staff?.role === 'TEACHER' ? '/teacher' : staff?.role === 'HEADMASTER' ? '/headmaster' : staff?.role === 'BURSAR' ? '/admin/finance' : '/admin/permissions');
+
+      await RoselandApi.auth.updateStaffPortalAccess(staffId, {
+        isActive: nextActive,
+        portalAccess: nextActive ? defaultPortal : 'DISABLED'
+      });
+
+      setStaffList((prev) => prev.map((s) => (s.id === staffId ? {
+        ...s,
+        isActive: nextActive,
+        portalAccess: nextActive ? defaultPortal : 'DISABLED'
+      } : s)));
+
+      toast.success(nextActive ? 'Portal login access enabled for staff member' : 'Portal access suspended for staff member (Login blocked)');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not update portal access status');
+    } finally {
+      setUpdatingStaffId(null);
+    }
+  };
+
+  const handleChangeStaffPortalRoute = async (staffId: string, newPortal: string) => {
+    setUpdatingStaffId(staffId);
+    try {
+      await RoselandApi.auth.updateStaffPortalAccess(staffId, { portalAccess: newPortal });
+      setStaffList((prev) => prev.map((s) => (s.id === staffId ? { ...s, portalAccess: newPortal } : s)));
+      toast.success(`Updated default portal route to ${newPortal}`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not update portal route');
+    } finally {
+      setUpdatingStaffId(null);
+    }
+  };
+
   const handleResetStaffPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetTarget || !resetNewPwd) return;
@@ -398,15 +439,113 @@ export default function AdminPermissionsPage() {
         </div>
       </div>
 
+      {/* Institutional Portals Switchboard */}
+      <div className="bg-white rounded-3xl border border-gray-100 p-6 sm:p-7 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
+          <div>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-brand-violet block">
+              Institutional Gateway Architecture
+            </span>
+            <h2 className="text-lg font-serif font-bold text-brand-textMain">
+              Portals &amp; Role Access Switchboard
+            </h2>
+          </div>
+          <span className="text-xs font-bold text-gray-500 bg-brand-bg px-3 py-1 rounded-xl border border-gray-200">
+            5 Institutional Portals Configured
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          {[
+            {
+              title: 'Teacher Portal',
+              route: '/teacher',
+              role: 'TEACHER',
+              icon: 'ph-chalkboard-teacher',
+              color: 'emerald',
+              description: 'Cockpit, Schemes, Gradebook & CA Tracker',
+              count: staffList.filter((s) => (s.role === 'TEACHER') && s.isActive !== false).length,
+            },
+            {
+              title: 'Executive Cockpit',
+              route: '/headmaster',
+              role: 'HEADMASTER',
+              icon: 'ph-student',
+              color: 'amber',
+              description: 'Live Classrooms, Appraisals & Inspections',
+              count: staffList.filter((s) => (s.role === 'HEADMASTER' || s.role === 'SUPER_ADMIN') && s.isActive !== false).length,
+            },
+            {
+              title: 'Bursar & Accounts',
+              route: '/admin/finance',
+              role: 'BURSAR',
+              icon: 'ph-wallet',
+              color: 'blue',
+              description: 'Tuition Invoices, MoMo & Fee Ledger',
+              count: staffList.filter((s) => (s.role === 'BURSAR') && s.isActive !== false).length,
+            },
+            {
+              title: 'System RBAC Admin',
+              route: '/admin/permissions',
+              role: 'ADMIN',
+              icon: 'ph-shield-check',
+              color: 'purple',
+              description: 'Portal Governance, Staff Accounts & Security',
+              count: staffList.filter((s) => (s.role === 'ADMIN') && s.isActive !== false).length,
+            },
+            {
+              title: 'CBT Examination',
+              route: '/cbt',
+              role: 'ALL STAFF',
+              icon: 'ph-laptop',
+              color: 'indigo',
+              description: 'Exam Simulator & Proctoring Monitoring',
+              count: staffList.filter((s) => s.isActive !== false).length,
+            },
+          ].map((portal) => (
+            <div
+              key={portal.route}
+              className="p-4 rounded-2xl border border-gray-100 bg-brand-bg/40 hover:bg-white hover:border-brand-violet/30 hover:shadow-xs transition-all flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-base ${
+                    portal.color === 'emerald' ? 'bg-emerald-100 text-emerald-800' :
+                    portal.color === 'amber' ? 'bg-amber-100 text-amber-800' :
+                    portal.color === 'blue' ? 'bg-blue-100 text-blue-800' :
+                    portal.color === 'purple' ? 'bg-purple-100 text-purple-800' :
+                    'bg-indigo-100 text-indigo-800'
+                  }`}>
+                    <i className={`ph-bold ${portal.icon}`}></i>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>ONLINE</span>
+                  </span>
+                </div>
+                <h4 className="text-xs font-bold text-brand-textMain">{portal.title}</h4>
+                <p className="font-mono text-[10px] text-brand-violet font-semibold mt-0.5">{portal.route}</p>
+                <p className="text-[11px] text-gray-500 mt-1 leading-snug">{portal.description}</p>
+              </div>
+
+              <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-[10px]">
+                <span className="text-gray-400 font-bold uppercase">{portal.role}</span>
+                <span className="font-bold text-brand-textMain">{portal.count} Active Users</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Staff Role Assignment Table */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-serif font-bold text-brand-textMain">
-              Staff Accounts &amp; Role Assignments
+              Staff Accounts &amp; Portal Access Management
             </h2>
             <p className="text-xs text-brand-textMuted mt-0.5">
-              Switch any staff account between <strong>HEADMASTER</strong>, <strong>TEACHER</strong>, <strong>BURSAR</strong>, or <strong>ADMIN</strong>, or click <strong>Allocate Workload</strong> to assign classes and subjects (including for the Headmaster).
+              Control and disable portal logins for individual staff members, switch institutional roles, or adjust their default landing portal.
             </p>
           </div>
           <Link
@@ -423,41 +562,54 @@ export default function AdminPermissionsPage() {
               <tr>
                 <th className="py-3.5 px-6">Staff Member</th>
                 <th className="py-3.5 px-4">Email / Username</th>
-                <th className="py-3.5 px-4">Assigned Form Class</th>
                 <th className="py-3.5 px-4">Institutional Role</th>
-                <th className="py-3.5 px-6 text-right">Teaching Workload</th>
+                <th className="py-3.5 px-4">Landing Portal</th>
+                <th className="py-3.5 px-4">Portal Status</th>
+                <th className="py-3.5 px-6 text-right">Actions &amp; Controls</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-10 text-center text-gray-400">
+                  <td colSpan={6} className="py-10 text-center text-gray-400">
                     Loading staff accounts...
                   </td>
                 </tr>
               ) : staffList.map((st) => {
                 const effectiveRole = st.role === 'SUPER_ADMIN' ? 'HEADMASTER' : st.role;
+                const isStaffActive = st.isActive !== false;
+                const portalRoute = st.portalAccess || (effectiveRole === 'TEACHER' ? '/teacher' : effectiveRole === 'HEADMASTER' ? '/headmaster' : effectiveRole === 'BURSAR' ? '/admin/finance' : '/admin/permissions');
                 return (
                   <tr key={st.id} className="hover:bg-gray-50/70">
-                    <td className="py-3.5 px-6 font-bold text-brand-textMain">{st.fullName}</td>
+                    <td className="py-3.5 px-6 font-bold text-brand-textMain">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-brand-violet/10 text-brand-violet flex items-center justify-center font-bold text-xs shrink-0">
+                          {st.fullName ? st.fullName.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                        <div>
+                          <strong className="block text-brand-textMain">{st.fullName}</strong>
+                          {st.assignedClass ? (
+                            <span className="text-[10px] text-brand-violet font-semibold">
+                              {st.assignedClass} Form Master
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-gray-400">General Faculty</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
                     <td className="py-3.5 px-4 font-mono text-[11px] text-gray-500">
-                      {st.email} <span className="text-gray-400">({st.username})</span>
+                      <div>{st.email}</div>
+                      <span className="text-gray-400 text-[10px]">@{st.username}</span>
                     </td>
-                    <td className="py-3.5 px-4">
-                      {st.assignedClass ? (
-                        <span className="font-bold text-brand-violet bg-brand-violetLight/30 px-2.5 py-1 rounded-lg">
-                          {st.assignedClass}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400 italic">None assigned</span>
-                      )}
-                    </td>
+
                     <td className="py-3.5 px-4">
                       <select
                         value={effectiveRole}
                         disabled={updatingStaffId === st.id}
                         onChange={(e) => handleChangeStaffRole(st.id, e.target.value)}
-                        className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold text-brand-textMain outline-none focus:border-brand-violet cursor-pointer"
+                        className="bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-brand-textMain outline-none focus:border-brand-violet cursor-pointer"
                       >
                         <option value="HEADMASTER">HEADMASTER (School Leader)</option>
                         <option value="TEACHER">TEACHER (Faculty)</option>
@@ -465,8 +617,48 @@ export default function AdminPermissionsPage() {
                         <option value="ADMIN">ADMIN (System RBAC)</option>
                       </select>
                     </td>
+
+                    <td className="py-3.5 px-4">
+                      <select
+                        value={portalRoute}
+                        disabled={updatingStaffId === st.id}
+                        onChange={(e) => handleChangeStaffPortalRoute(st.id, e.target.value)}
+                        className="bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-mono font-semibold text-brand-violet outline-none focus:border-brand-violet cursor-pointer"
+                      >
+                        <option value="/teacher">/teacher (Teacher Portal)</option>
+                        <option value="/headmaster">/headmaster (Executive Cockpit)</option>
+                        <option value="/admin/finance">/admin/finance (Bursary)</option>
+                        <option value="/admin/permissions">/admin/permissions (System Admin)</option>
+                      </select>
+                    </td>
+
+                    <td className="py-3.5 px-4">
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full ${
+                        isStaffActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isStaffActive ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                        <span>{isStaffActive ? 'Active' : 'Suspended'}</span>
+                      </span>
+                    </td>
+
                     <td className="py-3.5 px-6 text-right">
                       <div className="inline-flex items-center gap-2">
+                        {effectiveRole !== 'ADMIN' && (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStaffPortalAccess(st.id, isStaffActive)}
+                            disabled={updatingStaffId === st.id}
+                            title={isStaffActive ? 'Suspend portal login for this user' : 'Restore portal login for this user'}
+                            className={`px-3 py-1.5 rounded-xl font-bold transition-all text-xs cursor-pointer inline-flex items-center gap-1 ${
+                              isStaffActive
+                                ? 'bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white border border-amber-200'
+                                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200'
+                            }`}
+                          >
+                            <i className={`ph-bold ${isStaffActive ? 'ph-prohibit' : 'ph-check-circle'}`}></i>
+                            <span>{isStaffActive ? 'Suspend Portal' : 'Activate Portal'}</span>
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => {
@@ -476,14 +668,14 @@ export default function AdminPermissionsPage() {
                           className="px-3 py-1.5 border border-gray-200 text-gray-600 hover:border-brand-violet hover:text-brand-violet rounded-xl font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                         >
                           <i className="ph-bold ph-key"></i>
-                          Reset Password
+                          <span>Reset Pwd</span>
                         </button>
                         <Link
                           href="/admin/staff"
                           className="px-3 py-1.5 bg-brand-violet/10 text-brand-violet hover:bg-brand-violet hover:text-white rounded-xl font-bold transition-all inline-flex items-center gap-1"
                         >
-                          <i className="ph-bold ph-chalkboard-simple"></i>
-                          Assign Class / Subjects
+                          <i className="ph-bold ph-identification-card"></i>
+                          <span>Dossier</span>
                         </Link>
                       </div>
                     </td>

@@ -213,8 +213,13 @@ export const RoselandApi = {
         body: JSON.stringify(staffData),
       }),
     getStaffDirectory: () => apiRequest('/api/v1/auth/staff-directory'),
-    updateStaffAllocation: (userId: string, data: { assignedClass?: string; role?: string; phone?: string }) =>
+    updateStaffAllocation: (userId: string, data: { assignedClass?: string; role?: string; phone?: string; isActive?: boolean; portalAccess?: string }) =>
       apiRequest(`/api/v1/auth/staff/${userId}/allocation`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    updateStaffPortalAccess: (userId: string, data: { isActive?: boolean; portalAccess?: string }) =>
+      apiRequest(`/api/v1/auth/staff/${userId}/portal-access`, {
         method: 'PATCH',
         body: JSON.stringify(data),
       }),
