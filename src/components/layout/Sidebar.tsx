@@ -55,7 +55,6 @@ export default function Sidebar({
   const displayRole = currentUser?.assignedClass 
     ? `${currentUser.assignedClass} Form Master` 
     : (currentUser?.role ? currentUser.role.replace(/_/g, ' ') : userRole);
-  const displayAvatar = currentUser?.avatar || userAvatar;
 
   return (
     <aside 
@@ -75,7 +74,7 @@ export default function Sidebar({
           </div>
           {!isCollapsed && (
             <div className="min-w-0 flex-1 overflow-hidden">
-              <h1 className="font-bold text-base leading-tight text-brand-textMain font-serif truncate">Roseland Prep</h1>
+              <h1 className="font-bold text-base leading-tight text-black font-serif truncate">Roseland Prep</h1>
               <p className="text-[10px] text-brand-violet font-bold uppercase tracking-wider truncate">Roselyn {portalName}</p>
             </div>
           )}
@@ -100,7 +99,7 @@ export default function Sidebar({
           navGroups.map((group, gIdx) => (
             <div key={group.title || gIdx} className="space-y-1">
               {!isCollapsed ? (
-                <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 truncate">
+                <p className="px-3 text-[10px] font-bold text-gray-800 uppercase tracking-widest mb-1.5 truncate">
                   {group.title}
                 </p>
               ) : (
@@ -129,12 +128,16 @@ export default function Sidebar({
                       } ${
                         isActive 
                           ? 'bg-brand-violetLight text-brand-violet font-bold' 
-                          : 'font-semibold text-brand-textMuted hover:bg-gray-100 hover:text-brand-textMain'
+                          : 'font-semibold text-black hover:bg-gray-100 hover:text-black'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <i className={`${item.icon} text-lg shrink-0 ${isActive ? 'text-brand-violet' : 'text-gray-400 group-hover:text-brand-textMain'}`}></i>
-                        {!isCollapsed && <span className="truncate">{item.name}</span>}
+                        <i className={`${item.icon} text-lg shrink-0 ${isActive ? 'text-brand-violet' : 'text-gray-900 group-hover:text-black'}`}></i>
+                        {!isCollapsed && (
+                          <span className={`truncate ${isActive ? 'text-brand-violet font-bold' : 'text-black font-semibold'}`}>
+                            {item.name}
+                          </span>
+                        )}
                       </div>
 
                       {!isCollapsed && item.badge && (
@@ -161,7 +164,7 @@ export default function Sidebar({
                             key={sub.href} 
                             href={sub.href} 
                             onClick={() => setIsOpen(false)}
-                            className="block px-3 py-2 text-xs font-semibold text-gray-500 hover:text-brand-violet hover:bg-brand-violetLight/40 rounded-lg transition-colors"
+                            className="block px-3 py-2 text-xs font-semibold text-black hover:text-brand-violet hover:bg-brand-violetLight/40 rounded-lg transition-colors"
                           >
                             {sub.name}
                           </Link>
@@ -197,7 +200,7 @@ export default function Sidebar({
         ) : (
           <div className="space-y-1">
             {!isCollapsed && (
-              <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Main Menu</p>
+              <p className="px-3 text-[10px] font-bold text-gray-800 uppercase tracking-widest mb-2">Main Menu</p>
             )}
             {navItems?.map((item) => {
               const isActive = pathname === item.href;
@@ -213,12 +216,16 @@ export default function Sidebar({
                     } ${
                       isActive 
                         ? 'bg-brand-violetLight text-brand-violet font-bold' 
-                        : 'font-semibold text-brand-textMuted hover:bg-gray-100 hover:text-brand-textMain'
+                        : 'font-semibold text-black hover:bg-gray-100 hover:text-black'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <i className={`${item.icon} text-lg shrink-0 ${isActive ? 'text-brand-violet' : 'text-gray-400 group-hover:text-brand-textMain'}`}></i>
-                      {!isCollapsed && <span className="truncate">{item.name}</span>}
+                      <i className={`${item.icon} text-lg shrink-0 ${isActive ? 'text-brand-violet' : 'text-gray-900 group-hover:text-black'}`}></i>
+                      {!isCollapsed && (
+                        <span className={`truncate ${isActive ? 'text-brand-violet font-bold' : 'text-black font-semibold'}`}>
+                          {item.name}
+                        </span>
+                      )}
                     </div>
                     {!isCollapsed && item.badge && (
                       <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-brand-yellowLight text-yellow-900 shrink-0">
@@ -235,7 +242,7 @@ export default function Sidebar({
                           key={sub.href} 
                           href={sub.href} 
                           onClick={() => setIsOpen(false)}
-                          className="block px-3 py-2 text-xs font-semibold text-gray-500 hover:text-brand-violet hover:bg-brand-violetLight/40 rounded-lg transition-colors"
+                          className="block px-3 py-2 text-xs font-semibold text-black hover:text-brand-violet hover:bg-brand-violetLight/40 rounded-lg transition-colors"
                         >
                           {sub.name}
                         </Link>
@@ -291,7 +298,7 @@ export default function Sidebar({
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0 text-left">
-              <p className="text-xs font-bold text-brand-textMain truncate">{displayName}</p>
+              <p className="text-xs font-bold text-black truncate">{displayName}</p>
               <p className="text-[10px] font-semibold text-brand-violet truncate">{displayRole}</p>
             </div>
           )}
