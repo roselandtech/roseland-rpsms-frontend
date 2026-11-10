@@ -59,28 +59,24 @@ export default function Sidebar({
 
   return (
     <aside 
-      className={`bg-slate-900 text-slate-200 h-full border-r border-slate-800/80 flex flex-col fixed inset-y-0 left-0 lg:static z-50 lg:z-20 transition-all duration-300 ease-in-out shadow-2xl lg:shadow-none ${
+      className={`bg-white h-full border-r border-gray-100 flex flex-col fixed inset-y-0 left-0 lg:static z-50 lg:z-20 transition-all duration-300 ease-in-out shadow-2xl lg:shadow-none ${
         isCollapsed ? 'lg:w-20' : 'lg:w-72'
       } ${
         isOpen ? 'w-72 translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}
     >
       {/* Logo Area */}
-      <div className={`h-20 flex items-center border-b border-slate-800/80 shrink-0 ${
+      <div className={`h-20 flex items-center border-b border-gray-100 shrink-0 ${
         isCollapsed ? 'justify-center px-2' : 'justify-between px-6'
       }`}>
         <Link href="/" className="flex items-center gap-3 group min-w-0 flex-1">
-          <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center p-1.5 shadow-md border border-white/15 backdrop-blur-md group-hover:scale-105 transition-transform shrink-0 overflow-hidden">
+          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center p-1 shadow-md border border-gray-100 group-hover:scale-105 transition-transform shrink-0 overflow-hidden">
             <img src="/logo.png" alt="Roseland Crest" className="w-full h-full object-contain" />
           </div>
           {!isCollapsed && (
             <div className="min-w-0 flex-1 overflow-hidden">
-              <h1 className="font-bold text-base leading-tight text-white font-serif tracking-tight truncate">
-                Roseland Prep
-              </h1>
-              <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wider truncate">
-                Roselyn {portalName}
-              </p>
+              <h1 className="font-bold text-base leading-tight text-brand-textMain font-serif truncate">Roseland Prep</h1>
+              <p className="text-[10px] text-brand-violet font-bold uppercase tracking-wider truncate">Roselyn {portalName}</p>
             </div>
           )}
         </Link>
@@ -89,7 +85,7 @@ export default function Sidebar({
         <button 
           type="button"
           aria-label="Close menu"
-          className="lg:hidden text-slate-400 hover:text-white p-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
+          className="lg:hidden text-gray-500 hover:text-brand-violet p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
           onClick={() => setIsOpen(false)}
         >
           <i className="ph-bold ph-x text-lg"></i>
@@ -104,11 +100,11 @@ export default function Sidebar({
           navGroups.map((group, gIdx) => (
             <div key={group.title || gIdx} className="space-y-1">
               {!isCollapsed ? (
-                <p className="px-3 text-[10px] font-bold text-slate-400/90 uppercase tracking-widest mb-1.5 truncate">
+                <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 truncate">
                   {group.title}
                 </p>
               ) : (
-                <div className="w-6 h-0.5 bg-slate-800 mx-auto my-2 rounded"></div>
+                <div className="w-6 h-0.5 bg-gray-100 mx-auto my-2 rounded"></div>
               )}
 
               {group.items.map((item) => {
@@ -128,23 +124,23 @@ export default function Sidebar({
                       onClick={() => setIsOpen(false)}
                       className={`w-full flex items-center rounded-xl text-xs transition-colors outline-none focus:outline-none ${
                         isCollapsed 
-                          ? 'justify-center p-2.5' 
+                          ? 'justify-center p-3' 
                           : 'justify-between px-3.5 py-2.5'
                       } ${
                         isActive 
-                          ? 'bg-brand-violet text-white font-semibold' 
-                          : 'font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                          ? 'bg-brand-violetLight text-brand-violet font-bold' 
+                          : 'font-semibold text-brand-textMuted hover:bg-gray-100 hover:text-brand-textMain'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <i className={`${item.icon} text-lg shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`}></i>
+                        <i className={`${item.icon} text-lg shrink-0 ${isActive ? 'text-brand-violet' : 'text-gray-400 group-hover:text-brand-textMain'}`}></i>
                         {!isCollapsed && <span className="truncate">{item.name}</span>}
                       </div>
 
                       {!isCollapsed && item.badge && (
                         <span 
                           className={`px-2 py-0.5 text-[10px] font-bold rounded-full shrink-0 ${
-                            item.badgeColor || 'bg-amber-400 text-slate-950 font-extrabold'
+                            item.badgeColor || 'bg-brand-yellowLight text-yellow-900'
                           }`}
                         >
                           {item.badge}
@@ -153,7 +149,7 @@ export default function Sidebar({
 
                       {/* Small Dot indicator if collapsed */}
                       {isCollapsed && item.badge && (
-                        <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-400 border border-slate-900"></span>
+                        <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-400 border border-white"></span>
                       )}
                     </Link>
 
@@ -165,7 +161,7 @@ export default function Sidebar({
                             key={sub.href} 
                             href={sub.href} 
                             onClick={() => setIsOpen(false)}
-                            className="block px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                            className="block px-3 py-2 text-xs font-semibold text-gray-500 hover:text-brand-violet hover:bg-brand-violetLight/40 rounded-lg transition-colors"
                           >
                             {sub.name}
                           </Link>
@@ -175,18 +171,18 @@ export default function Sidebar({
 
                     {/* Floating Tooltip / Flyout in Collapsed Mode */}
                     {isCollapsed && !item.subItems && (
-                      <div className="fixed left-20 ml-2 hidden group-hover:flex items-center gap-2 bg-slate-950 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl border border-slate-800 z-50 whitespace-nowrap pointer-events-none animate-fade-in">
+                      <div className="fixed left-20 ml-2 hidden group-hover:flex items-center gap-2 bg-gray-900 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none animate-fade-in">
                         <span>{item.name}</span>
                       </div>
                     )}
                     {isCollapsed && item.subItems && (
-                      <div className="fixed left-20 ml-2 hidden group-hover:flex flex-col bg-slate-950 text-white text-xs font-semibold p-2 rounded-xl shadow-xl border border-slate-800 z-50 animate-fade-in gap-1">
-                        <div className="text-[10px] text-slate-400 uppercase tracking-widest px-2 pb-1 border-b border-slate-800 mb-1">{item.name}</div>
+                      <div className="fixed left-20 ml-2 hidden group-hover:flex flex-col bg-gray-900 text-white text-xs font-semibold p-2 rounded-xl shadow-xl z-50 animate-fade-in gap-1">
+                        <div className="text-[10px] text-gray-400 uppercase tracking-widest px-2 pb-1 border-b border-gray-700 mb-1">{item.name}</div>
                         {item.subItems.map((sub) => (
                           <Link 
                             key={sub.href} 
-                            href={sub.href} 
-                            className="px-3 py-1.5 hover:bg-slate-800 rounded-lg whitespace-nowrap transition-colors"
+                            href={sub.href}
+                            className="px-3 py-1.5 hover:bg-gray-800 rounded-lg whitespace-nowrap transition-colors"
                           >
                             {sub.name}
                           </Link>
@@ -201,31 +197,31 @@ export default function Sidebar({
         ) : (
           <div className="space-y-1">
             {!isCollapsed && (
-              <p className="px-3 text-[10px] font-bold text-slate-400/90 uppercase tracking-widest mb-2">Main Menu</p>
+              <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Main Menu</p>
             )}
             {navItems?.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <div key={item.href} className="relative group">
                   <Link 
-                    href={item.href} 
+                    href={item.href}
                     onClick={() => setIsOpen(false)}
                     className={`w-full flex items-center rounded-xl text-xs transition-colors outline-none focus:outline-none ${
                       isCollapsed 
-                        ? 'justify-center p-2.5' 
+                        ? 'justify-center p-3' 
                         : 'justify-between px-3.5 py-2.5'
                     } ${
                       isActive 
-                        ? 'bg-brand-violet text-white font-semibold' 
-                        : 'font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                        ? 'bg-brand-violetLight text-brand-violet font-bold' 
+                        : 'font-semibold text-brand-textMuted hover:bg-gray-100 hover:text-brand-textMain'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <i className={`${item.icon} text-lg shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`}></i>
+                      <i className={`${item.icon} text-lg shrink-0 ${isActive ? 'text-brand-violet' : 'text-gray-400 group-hover:text-brand-textMain'}`}></i>
                       {!isCollapsed && <span className="truncate">{item.name}</span>}
                     </div>
                     {!isCollapsed && item.badge && (
-                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-400 text-slate-950 shrink-0">
+                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-brand-yellowLight text-yellow-900 shrink-0">
                         {item.badge}
                       </span>
                     )}
@@ -239,7 +235,7 @@ export default function Sidebar({
                           key={sub.href} 
                           href={sub.href} 
                           onClick={() => setIsOpen(false)}
-                          className="block px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                          className="block px-3 py-2 text-xs font-semibold text-gray-500 hover:text-brand-violet hover:bg-brand-violetLight/40 rounded-lg transition-colors"
                         >
                           {sub.name}
                         </Link>
@@ -249,18 +245,18 @@ export default function Sidebar({
 
                   {/* Floating Tooltip / Flyout in Collapsed Mode */}
                   {isCollapsed && !item.subItems && (
-                    <div className="fixed left-20 ml-2 hidden group-hover:flex items-center gap-2 bg-slate-950 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl border border-slate-800 z-50 whitespace-nowrap pointer-events-none animate-fade-in">
+                    <div className="fixed left-20 ml-2 hidden group-hover:flex items-center gap-2 bg-gray-900 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xl z-50 whitespace-nowrap pointer-events-none animate-fade-in">
                       <span>{item.name}</span>
                     </div>
                   )}
                   {isCollapsed && item.subItems && (
-                    <div className="fixed left-20 ml-2 hidden group-hover:flex flex-col bg-slate-950 text-white text-xs font-semibold p-2 rounded-xl shadow-xl border border-slate-800 z-50 animate-fade-in gap-1">
-                      <div className="text-[10px] text-slate-400 uppercase tracking-widest px-2 pb-1 border-b border-slate-800 mb-1">{item.name}</div>
+                    <div className="fixed left-20 ml-2 hidden group-hover:flex flex-col bg-gray-900 text-white text-xs font-semibold p-2 rounded-xl shadow-xl z-50 animate-fade-in gap-1">
+                      <div className="text-[10px] text-gray-400 uppercase tracking-widest px-2 pb-1 border-b border-gray-700 mb-1">{item.name}</div>
                       {item.subItems.map((sub) => (
                         <Link 
                           key={sub.href} 
-                          href={sub.href} 
-                          className="px-3 py-1.5 hover:bg-slate-800 rounded-lg whitespace-nowrap transition-colors"
+                          href={sub.href}
+                          className="px-3 py-1.5 hover:bg-gray-800 rounded-lg whitespace-nowrap transition-colors"
                         >
                           {sub.name}
                         </Link>
@@ -275,13 +271,13 @@ export default function Sidebar({
       </nav>
 
       {/* Collapse Toggle & User Profile (Bottom) */}
-      <div className="p-3 border-t border-slate-800/80 shrink-0 bg-slate-950/40 space-y-2">
+      <div className="p-3 border-t border-gray-100 shrink-0 bg-gray-50/50 space-y-2">
         {/* Desktop Collapse / Expand Button */}
         {setIsCollapsed && (
           <button
             type="button"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:flex w-full items-center justify-center py-2 text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-xl border border-transparent hover:border-slate-700 transition-all gap-2 cursor-pointer"
+            className="hidden lg:flex w-full items-center justify-center py-2 text-xs font-bold text-gray-500 hover:text-brand-violet hover:bg-white rounded-xl border border-transparent hover:border-gray-200 transition-all gap-2"
             title={isCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
           >
             <i className={`ph-bold ${isCollapsed ? 'ph-caret-double-right' : 'ph-caret-double-left'} text-sm`}></i>
@@ -289,14 +285,14 @@ export default function Sidebar({
           </button>
         )}
 
-        <div className={`flex items-center rounded-2xl bg-slate-800/40 border border-slate-800 ${isCollapsed ? 'justify-center p-2' : 'gap-3 p-2.5'}`}>
-          <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0 shadow-sm">
-            <i className="ph-bold ph-user-circle text-slate-300 text-2xl"></i>
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-2 py-1'}`}>
+          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden border border-gray-200 shadow-sm shrink-0">
+            <i className="ph-bold ph-user-circle text-gray-400 text-2xl"></i>
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0 text-left">
-              <p className="text-xs font-bold text-white truncate">{displayName}</p>
-              <p className="text-[10px] font-semibold text-amber-400 truncate">{displayRole}</p>
+              <p className="text-xs font-bold text-brand-textMain truncate">{displayName}</p>
+              <p className="text-[10px] font-semibold text-brand-violet truncate">{displayRole}</p>
             </div>
           )}
         </div>
