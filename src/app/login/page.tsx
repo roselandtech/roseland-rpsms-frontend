@@ -44,6 +44,13 @@ function LoginForm() {
     }
   ];
 
+  // Notice when session is revoked / account deactivated
+  useEffect(() => {
+    if (searchParams.get('suspended') === 'true') {
+      setErrorMsg('Your session has ended because your account access was suspended by administration. Please contact the System Administrator.');
+    }
+  }, [searchParams]);
+
   // Auto-rotate hero slides every 8 seconds
   useEffect(() => {
     const timer = setInterval(() => {

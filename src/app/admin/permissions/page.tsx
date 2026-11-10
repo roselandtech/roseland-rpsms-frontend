@@ -250,6 +250,17 @@ export default function AdminPermissionsPage() {
         portalAccess: nextActive ? defaultPortal : 'DISABLED'
       } : s)));
 
+      // If portal access was revoked, immediately broadcast session termination
+      if (!nextActive && typeof window !== 'undefined') {
+        localStorage.setItem('roseland_session_revoke', JSON.stringify({
+          userId: staffId,
+          timestamp: Date.now()
+        }));
+        if (currentUser && currentUser.id === staffId) {
+          AuthService.logout('/login?suspended=true');
+        }
+      }
+
       toast.success(nextActive ? 'Portal login access enabled for staff member' : 'Portal access suspended for staff member (Login blocked)');
     } catch (err: any) {
       toast.error(err?.message || 'Could not update portal access status');

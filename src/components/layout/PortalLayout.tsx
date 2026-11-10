@@ -38,7 +38,7 @@ export default function PortalLayout({
   const [currentUser, setCurrentUser] = useState<RoselandUser | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(true);
 
-  // Authentication barrier
+  // Authentication barrier & live session integrity gatekeeper
   useEffect(() => {
     const user = AuthService.getCurrentUser();
     const token = AuthService.getToken();
@@ -51,6 +51,44 @@ export default function PortalLayout({
 
     setCurrentUser(user);
     setIsAuthenticating(false);
+
+    // 1. Immediately verify active account status with the Auth Microservice
+    const checkLiveSession = () => {
+      RoselandApi.auth.me()
+        .then((res: any) => {
+          if (!res || !res.user) {
+            AuthService.logout('/login?suspended=true');
+            return;
+          }
+          if (res.user.isActive === false || res.user.portalAccess === 'DISABLED' || res.user.portalAccess === 'SUSPENDED') {
+            AuthService.logout('/login?suspended=true');
+          }
+        })
+        .catch(() => {
+          // If 401 Unauthorized or deactivated, immediately revoke session
+          AuthService.logout('/login?suspended=true');
+        });
+    };
+
+    checkLiveSession();
+
+    // 2. Periodic heartbeat (every 10s) and window focus check
+    const heartbeat = setInterval(checkLiveSession, 10000);
+    const onFocus = () => checkLiveSession();
+    window.addEventListener('focus', onFocus);
+
+    // 3. Listen for immediate cross-tab session revocation broadcast
+    const handleStorageRevoke = (e: StorageEvent) => {
+      if (e.key === 'roseland_session_revoke') {
+        try {
+          const data = JSON.parse(e.newValue || '{}');
+          if (data.userId === user.id || data.all) {
+            AuthService.logout('/login?suspended=true');
+          }
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageRevoke);
 
     // Sync live role permissions from the backend RBAC matrix so any permission
     // changes saved by the System Admin take effect immediately in the sidebar
@@ -84,7 +122,12 @@ export default function PortalLayout({
     };
 
     window.addEventListener('roseland:permissions-updated', handlePermissionsUpdated);
-    return () => window.removeEventListener('roseland:permissions-updated', handlePermissionsUpdated);
+    return () => {
+      clearInterval(heartbeat);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('storage', handleStorageRevoke);
+      window.removeEventListener('roseland:permissions-updated', handlePermissionsUpdated);
+    };
   }, [router, pathname]);
 
   // Close mobile sidebar automatically on route navigation

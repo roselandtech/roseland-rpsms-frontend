@@ -161,6 +161,19 @@ export async function apiRequest<T = any>(
             (Array.isArray(errBody.detail)
               ? errBody.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ')
               : `API Error ${response.status}: ${response.statusText}`);
+
+      if (response.status === 401 && isBrowser && !endpoint.includes('/api/v1/auth/login')) {
+        try {
+          localStorage.removeItem('roseland_token');
+          localStorage.removeItem('roseland_user');
+          document.cookie = 'roseland_token=; path=/; max-age=0; SameSite=Lax';
+          document.cookie = 'roseland_role=; path=/; max-age=0; SameSite=Lax';
+          if (!window.location.pathname.startsWith('/login')) {
+            window.location.href = '/login?suspended=true';
+          }
+        } catch {}
+      }
+
       throw new Error(message);
     } catch (err: any) {
       lastError = err instanceof Error ? err : new Error(String(err));

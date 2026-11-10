@@ -232,6 +232,17 @@ export default function AdminStaffPage() {
         });
       }
 
+      // If portal access was revoked, immediately broadcast session termination
+      if (!nextStatus && typeof window !== 'undefined') {
+        localStorage.setItem('roseland_session_revoke', JSON.stringify({
+          userId: staff.id,
+          timestamp: Date.now()
+        }));
+        if (currentUser && currentUser.id === staff.id) {
+          AuthService.logout('/login?suspended=true');
+        }
+      }
+
       toast.success(nextStatus ? `Portal login activated for ${staff.name}` : `Portal access suspended for ${staff.name} (Login disabled)`);
     } catch (err: any) {
       toast.error(err?.message || 'Could not update portal access status');
