@@ -6,6 +6,7 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { AuthService, RoselandUser } from '@/lib/auth';
 import { RoselandApi } from '@/lib/api';
+import { isHrefAllowedByPermissions } from '@/lib/executiveNav';
 import Modal from '@/components/ui/Modal';
 
 interface TopHeaderProps {
@@ -269,10 +270,12 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
           }
         }
 
-        // 4. Faculty & Staff Broadcasts
+        // 4. Faculty & Staff Broadcasts (or all broadcasts if teacher has manage_communications)
         if (logsRes.status === 'fulfilled' && Array.isArray(logsRes.value)) {
+          const canManageComms = isHrefAllowedByPermissions('/admin/communications', user.role, user.permissions);
           logsRes.value
             .filter((lg: any) => {
+              if (canManageComms) return true;
               const tg = String(lg.targetGroup || lg.recipient || '').toUpperCase();
               return tg.includes('FACULTY') || tg.includes('STAFF') || tg.includes('WHOLE SCHOOL');
             })
@@ -280,12 +283,12 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
             .forEach((lg: any) => {
               items.push({
                 id: `staff-bc-${lg.id}`,
-                title: lg.title || 'Staff Circular',
-                description: lg.message || '',
+                title: lg.title ? `Broadcast: ${lg.title}` : 'Staff Circular',
+                description: `${lg.message || ''}${lg.targetGroup ? ` • Target: ${lg.targetGroup}` : ''}`,
                 category: 'BROADCAST',
                 severity: 'info',
                 timestamp: lg.timestamp ? new Date(lg.timestamp).toLocaleDateString() : 'Circular',
-                href: '/teacher',
+                href: '/admin/communications',
               });
             });
         }
@@ -353,21 +356,23 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
         }
 
         if (logsRes.status === 'fulfilled' && Array.isArray(logsRes.value)) {
+          const canManageComms = isHrefAllowedByPermissions('/admin/communications', user.role, user.permissions);
           logsRes.value
             .filter((lg: any) => {
+              if (canManageComms) return true;
               const tg = String(lg.targetGroup || lg.recipient || '').toUpperCase();
               return tg.includes('FACULTY') || tg.includes('STAFF');
             })
-            .slice(0, 2)
+            .slice(0, 3)
             .forEach((lg: any) => {
               items.push({
                 id: `bursar-bc-${lg.id}`,
-                title: lg.title || 'Staff Circular',
-                description: lg.message || '',
+                title: lg.title ? `Broadcast: ${lg.title}` : 'Staff Circular',
+                description: `${lg.message || ''}${lg.targetGroup ? ` • Target: ${lg.targetGroup}` : ''}`,
                 category: 'BROADCAST',
                 severity: 'info',
                 timestamp: lg.timestamp ? new Date(lg.timestamp).toLocaleDateString() : 'Circular',
-                href: '/admin/finance',
+                href: '/admin/communications',
               });
             });
         }
@@ -595,8 +600,17 @@ export default function TopHeader({ toggleSidebar, headerContent, onOpenCommandP
   const handleNotificationClick = (notif: PortalNotification) => {
     handleMarkAsRead(notif.id);
     setIsNotifOpen(false);
-    if (notif.href && notif.href !== pathname) {
-      router.push(notif.href);
+    const latestUser = AuthService.getCurrentUser();
+    let destination = notif.href;
+
+    if (latestUser && latestUser.role !== 'PARENT' && latestUser.role !== 'STUDENT') {
+      if (!isHrefAllowedByPermissions(destination, latestUser.role, latestUser.permissions)) {
+        destination = AuthService.getPortalUrlForUser(latestUser);
+      }
+    }
+
+    if (destination && destination !== pathname) {
+      router.push(destination);
     }
   };
 

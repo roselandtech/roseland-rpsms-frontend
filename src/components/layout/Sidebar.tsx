@@ -108,8 +108,15 @@ export default function Sidebar({
               )}
 
               {group.items.map((item) => {
-                const isActive = pathname === item.href || 
-                  (pathname.startsWith(item.href + '/') && item.href !== '/admin' && item.href !== '/headmaster' && item.href !== '/admin/academics');
+                const isActive =
+                  pathname === item.href ||
+                  (pathname.startsWith(item.href + '/') &&
+                    item.href !== '/admin' &&
+                    item.href !== '/headmaster' &&
+                    item.href !== '/teacher' &&
+                    item.href !== '/parent' &&
+                    item.href !== '/bursar' &&
+                    item.href !== '/admin/academics');
                 return (
                   <div key={item.href} className="relative group">
                     <Link 
