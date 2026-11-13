@@ -57,16 +57,21 @@ export default function PortalLayout({
       RoselandApi.auth.me()
         .then((res: any) => {
           if (!res || !res.user) {
-            AuthService.logout('/login?suspended=true');
+            AuthService.logout('/login?expired=true');
             return;
           }
           if (res.user.isActive === false || res.user.portalAccess === 'DISABLED' || res.user.portalAccess === 'SUSPENDED') {
             AuthService.logout('/login?suspended=true');
           }
         })
-        .catch(() => {
-          // If 401 Unauthorized or deactivated, immediately revoke session
-          AuthService.logout('/login?suspended=true');
+        .catch((err: any) => {
+          const status = err?.status || err?.statusCode;
+          const msg = String(err?.message || '').toLowerCase();
+          // ONLY log out if explicitly 401 Unauthorized (session expired).
+          // Do NOT log out on network timeouts, 502/503 cold starts, or transient offline blips!
+          if (status === 401 || msg.includes('401') || msg.includes('unauthorized') || msg.includes('jwt expired')) {
+            AuthService.logout('/login?expired=true');
+          }
         });
     };
 

@@ -296,17 +296,17 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       
-      {/* 1. TOP EXECUTIVE WELCOME & QUICK ACTIONS */}
-      <div className="bg-gradient-to-r from-brand-violetDark via-brand-violet to-purple-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative overflow-hidden">
+      {/* 1. TOP EXECUTIVE WELCOME & QUICK ACTIONS (Pixel-matched Unified Cockpit) */}
+      <div className="bg-gradient-to-r from-[#2F138E] via-[#4F27D9] to-[#732BE2] rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative overflow-hidden">
         <div className="relative z-10">
-          <div className="flex items-center gap-2.5 mb-2">
-            <span className="px-3 py-0.5 rounded-full bg-amber-400 text-slate-950 font-bold text-[10px] uppercase tracking-wider shadow-sm">
-              {academicState ? `${academicState.yearName} • ${academicState.termName}` : 'No Active Academic Year'}
+          <div className="flex items-center gap-3 mb-2.5">
+            <span className="px-3 py-1 rounded-full bg-[#F59E0B] text-amber-950 font-extrabold text-[10px] uppercase tracking-wider shadow-sm">
+              {academicState ? `${academicState.yearName} • ${academicState.termName}` : 'INSTITUTIONAL CORE DESK'}
             </span>
-            <span className="text-xs text-brand-violetLight font-medium">
-              {academicState ? `Week ${academicState.currentWeek} of ${academicState.totalWeeks}` : 'System Clock: Inactive'}
+            <span className="text-xs text-indigo-100 font-medium">
+              {academicState ? `Week ${academicState.currentWeek} of ${academicState.totalWeeks}` : 'System Clock: Active'}
             </span>
-            <span className="flex items-center gap-1 text-[10px] bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+            <span className="flex items-center gap-1.5 text-[10px] bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
               Live Gateway Connected
             </span>
@@ -315,7 +315,7 @@ export default function AdminDashboard() {
           <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white leading-tight">
             Institutional Command Cockpit
           </h1>
-          <p className="text-xs sm:text-sm text-gray-200 mt-1 max-w-xl">
+          <p className="text-xs sm:text-sm text-indigo-100/90 mt-1 max-w-xl">
             Welcome back, {currentUser?.fullName || currentUser?.username || 'Administrator'}. All school microservices, CBT labs, and transport fleets are active.
           </p>
         </div>
@@ -331,25 +331,28 @@ export default function AdminDashboard() {
           </button>
           <button
             onClick={() => setIsQuickEnrollOpen(true)}
-            className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-4 py-2.5 bg-[#F59E0B] hover:bg-[#D97706] text-amber-950 font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
           >
             <i className="ph-bold ph-user-plus text-base"></i> Fast Enroll
           </button>
           <Link
             href="/admin/communications"
-            className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-xl text-xs backdrop-blur-sm transition-all flex items-center gap-1.5"
+            className="px-4 py-2.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white font-semibold rounded-xl text-xs backdrop-blur-sm transition-all flex items-center gap-2"
           >
             <i className="ph-bold ph-broadcast text-base"></i> Broadcast
           </Link>
           <Link
             href="/admin/finance"
-            className="px-4 py-2.5 bg-white text-brand-violet font-bold rounded-xl hover:bg-gray-100 text-xs shadow-md transition-all flex items-center gap-1.5"
+            className="px-4 py-2.5 bg-white text-[#3B199E] hover:bg-gray-100 font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-2"
           >
             <i className="ph-bold ph-receipt text-base"></i> Fee Ledger
           </Link>
         </div>
 
-        <div className="absolute top-0 right-0 w-80 h-80 bg-amber-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        {/* Faint academic shield watermark */}
+        <div className="absolute -right-6 -bottom-10 opacity-10 text-white pointer-events-none select-none">
+          <i className="ph-fill ph-shield-star text-[200px]"></i>
+        </div>
       </div>
 
       {/* 2. CORE KPI METRICS */}

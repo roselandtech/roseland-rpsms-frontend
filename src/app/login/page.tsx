@@ -44,10 +44,12 @@ function LoginForm() {
     }
   ];
 
-  // Notice when session is revoked / account deactivated
+  // Notice when session is revoked / account deactivated or session expired
   useEffect(() => {
     if (searchParams.get('suspended') === 'true') {
       setErrorMsg('Your session has ended because your account access was suspended by administration. Please contact the System Administrator.');
+    } else if (searchParams.get('expired') === 'true') {
+      setErrorMsg('Your session has expired. Please sign in to continue.');
     }
   }, [searchParams]);
 

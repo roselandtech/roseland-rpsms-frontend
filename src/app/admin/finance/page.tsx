@@ -469,35 +469,27 @@ export default function AdminFinancePage() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       
-      {/* Header */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-brand-violet block mb-1">
-            Bursary & Accounts Desk
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-brand-textMain">
+      {/* 1. TOP BURSAR COCKPIT HERO BANNER (Unified Cockpit Design) */}
+      <div className="bg-gradient-to-r from-[#2F138E] via-[#4F27D9] to-[#732BE2] rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative overflow-hidden">
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-2.5">
+            <span className="px-3 py-1 rounded-full bg-[#F59E0B] text-amber-950 font-extrabold text-[10px] uppercase tracking-wider shadow-sm">
+              BURSARY & ACCOUNTS DESK • FISCAL RECONCILIATION
+            </span>
+            <span className="text-xs text-indigo-100 font-medium">
+              Term Session Active • Real-Time Cashless Flow
+            </span>
+          </div>
+          
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white leading-tight">
             Fee Ledger & Financial Cockpit
           </h1>
-          <p className="text-xs sm:text-sm text-brand-textMuted mt-1">
-            Reconcile digital mobile money payments, track fee collection velocity, and manage debt recovery.
+          <p className="text-xs sm:text-sm text-indigo-100/90 mt-1 max-w-xl">
+            Reconcile digital mobile money payments, track fee collection velocity, and manage debt recovery in real-time.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => setIsBatchInvoiceModalOpen(true)}
-            className="px-4 py-2.5 bg-brand-bg hover:bg-gray-100 text-brand-textMain font-bold rounded-xl text-xs border border-gray-200 shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
-          >
-            <i className="ph-bold ph-files"></i> Bill Cohort / Generate Invoices
-          </button>
-
-          <button
-            onClick={handleBulkSmsReminders}
-            className="px-4 py-2.5 bg-amber-400 text-slate-950 font-bold rounded-xl text-xs hover:bg-amber-300 shadow-md flex items-center gap-1.5 cursor-pointer"
-          >
-            <i className="ph-bold ph-chat-centered-text"></i> Bulk Debt Recovery SMS ({debtors.length})
-          </button>
-
+        <div className="flex flex-wrap items-center gap-3 relative z-10 shrink-0">
           <button
             onClick={() => {
               setSelectedStudentId('');
@@ -509,32 +501,83 @@ export default function AdminFinancePage() {
               setStudentSearchQuery('');
               setIsReceiptModalOpen(true);
             }}
-            className="px-4 py-2.5 bg-brand-violet text-white font-bold rounded-xl text-xs hover:bg-brand-violetDark shadow-md flex items-center gap-1.5 cursor-pointer"
+            className="px-4 py-2.5 bg-[#F59E0B] hover:bg-[#D97706] text-amber-950 font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
           >
-            <i className="ph-bold ph-receipt"></i> Record Fee Payment
+            <i className="ph-bold ph-receipt text-base"></i> Record Fee Payment
           </button>
+
+          <button
+            onClick={handleBulkSmsReminders}
+            className="px-4 py-2.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white font-semibold rounded-xl text-xs backdrop-blur-sm transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <i className="ph-bold ph-chat-centered-text text-base"></i> Bulk Debt SMS ({debtors.length})
+          </button>
+
+          <button
+            onClick={() => setIsBatchInvoiceModalOpen(true)}
+            className="px-4 py-2.5 bg-white text-[#3B199E] hover:bg-gray-100 font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <i className="ph-bold ph-files text-base"></i> Bill Cohort / Invoices
+          </button>
+        </div>
+
+        {/* Faint watermark wallet / finance icon */}
+        <div className="absolute -right-6 -bottom-10 opacity-10 text-white pointer-events-none select-none">
+          <i className="ph-fill ph-wallet text-[200px]"></i>
         </div>
       </div>
 
-      {/* Financial KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Term Revenue</span>
-          <h3 className="text-2xl font-serif font-bold text-brand-textMain mt-1">{kpis.totalRevenue}</h3>
-          <span className="text-xs text-emerald-600 font-semibold">{kpis.collectedPct} collection velocity</span>
+      {/* 2. CORE FINANCIAL METRICS (4-COLUMN KPI CARDS) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        
+        {/* Total Term Revenue */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-indigo-50 text-indigo-600">
+            <i className="ph-fill ph-wallet"></i>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Term Revenue</p>
+            <h3 className="text-2xl font-serif font-bold text-gray-900 mt-0.5">{kpis.totalRevenue}</h3>
+            <p className="text-[11px] font-semibold text-emerald-600 mt-0.5">{kpis.collectedPct} collection rate</p>
+          </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Outstanding Arrears</span>
-          <h3 className="text-2xl font-serif font-bold text-rose-600 mt-1">{kpis.totalArrears}</h3>
-          <span className="text-xs text-brand-textMuted font-semibold">Across {kpis.arrearsAccounts} student accounts</span>
+        {/* Outstanding Arrears */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-rose-50 text-rose-600">
+            <i className="ph-fill ph-warning-circle"></i>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Outstanding Arrears</p>
+            <h3 className="text-2xl font-serif font-bold text-rose-600 mt-0.5">{kpis.totalArrears}</h3>
+            <p className="text-[11px] font-semibold text-gray-500 mt-0.5">{kpis.arrearsAccounts} student accounts</p>
+          </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">MoMo & Cashless Rate</span>
-          <h3 className="text-2xl font-serif font-bold text-brand-violet mt-1">{kpis.cashlessRate}</h3>
-          <span className="text-xs text-brand-violet font-semibold">MTN MoMo / Telecel Cash / Bank Channel</span>
+        {/* Cashless Velocity */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-emerald-50 text-emerald-600">
+            <i className="ph-fill ph-device-mobile"></i>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">MoMo & Cashless Rate</p>
+            <h3 className="text-2xl font-serif font-bold text-gray-900 mt-0.5">{kpis.cashlessRate}</h3>
+            <p className="text-[11px] font-semibold text-emerald-600 mt-0.5">MTN MoMo / Telecel Cash</p>
+          </div>
         </div>
+
+        {/* Active Ledger Invoices */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-amber-50 text-amber-600">
+            <i className="ph-fill ph-receipt"></i>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Transactions</p>
+            <h3 className="text-2xl font-serif font-bold text-gray-900 mt-0.5">{transactions.length} Records</h3>
+            <p className="text-[11px] font-semibold text-amber-600 mt-0.5">Audited Ledger Records</p>
+          </div>
+        </div>
+
       </div>
 
       {/* Search & Tabs */}

@@ -200,19 +200,27 @@ export default function CATrackerPage() {
   };
 
   const handleSaveScore = async (assessmentId: string) => {
-    const scoresToSubmit = Object.keys(scoresMap[assessmentId] || {}).map(studentId => ({
+    const rawScores = scoresMap[assessmentId] || {};
+    const scoresToSubmit = Object.entries(rawScores)
+      .filter(([studentId, score]) => studentId && typeof score === 'number' && !isNaN(score))
+      .map(([studentId, score]) => ({
         student_index_no: studentId,
-        score: scoresMap[assessmentId][studentId]
-    }));
+        score: Math.max(0, Number(score))
+      }));
+
+    if (scoresToSubmit.length === 0) {
+      toast.error("Please enter at least one scholar score before saving.");
+      return;
+    }
 
     setSavingIds(prev => new Set(prev).add(assessmentId));
     const toastId = toast.loading("Saving and syncing to Gradebook...");
 
     try {
-      await RoselandApi.academic.caTracker.saveAssessmentScores(assessmentId, scoresToSubmit);
-      toast.success("Scores saved and auto-normalized to Gradebook!", { id: toastId });
-    } catch (err) {
-      toast.error("Failed to save scores", { id: toastId });
+      const res: any = await RoselandApi.academic.caTracker.saveAssessmentScores(assessmentId, scoresToSubmit);
+      toast.success(res?.message || "Scores saved and auto-normalized to Gradebook!", { id: toastId });
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save scores", { id: toastId });
     } finally {
       setSavingIds(prev => {
         const next = new Set(prev);

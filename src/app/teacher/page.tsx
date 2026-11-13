@@ -231,57 +231,66 @@ export default function TeacherDashboard() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto animate-fade-in">
       
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-brand-violet to-brand-violetDark rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="absolute -right-12 -top-12 w-56 h-56 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+      {/* 1. TOP TEACHER COCKPIT HERO BANNER (Unified Cockpit Design) */}
+      <div className="bg-gradient-to-r from-[#2F138E] via-[#4F27D9] to-[#732BE2] rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative overflow-hidden">
         <div className="relative z-10">
-          <span className="text-brand-yellow font-bold text-xs uppercase tracking-widest block mb-1">
-            {user?.assignedClass ? `${user.assignedClass} Form Master` : 'Subject Specialist (Floating Faculty)'} • {assignedClass || 'Active Class'}
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold mb-2">
-            Welcome back, {teacherName}!
+          <div className="flex items-center gap-3 mb-2.5">
+            <span className="px-3 py-1 rounded-full bg-[#F59E0B] text-amber-950 font-extrabold text-[10px] uppercase tracking-wider shadow-sm">
+              CLASSROOM PEDAGOGICAL COCKPIT • {assignedClass || 'PRIMARY COHORT'}
+            </span>
+            <span className="text-xs text-indigo-100 font-medium">
+              {user?.assignedClass ? `${user.assignedClass} Form Master` : 'Subject Specialist (Floating Faculty)'}
+            </span>
+          </div>
+          
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white leading-tight">
+            Classroom Leadership Cockpit
           </h1>
-          <p className="text-xs sm:text-sm text-brand-violetLight max-w-xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-indigo-100/90 mt-1 max-w-xl">
             {enrollmentCount > 0 
               ? `${presentCount} of ${enrollmentCount} scholars marked present today (${attendanceRate}% attendance). Manage curriculum schemes, continuous assessments, and parent interactions below.`
-              : `Classroom registry ready. Select or configure your assigned class to manage attendance and assessments.`
+              : 'Classroom registry active. Select or configure your assigned class stream to record attendance and continuous assessment scores.'
             }
           </p>
         </div>
 
-        <div className="relative z-10 flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 relative z-10 shrink-0">
           {classList.length > 0 && (
             <select
               value={assignedClass}
               onChange={(e) => setAssignedClass(e.target.value)}
-              className="bg-white/10 border border-white/20 text-white rounded-2xl px-4 py-2.5 text-xs font-bold outline-none backdrop-blur-xs"
+              className="bg-white/10 hover:bg-white/15 border border-white/20 text-white rounded-xl px-3.5 py-2.5 text-xs font-bold outline-none backdrop-blur-sm cursor-pointer"
             >
               {classList.map(c => (
-                <option key={c.id} value={c.name} className="text-brand-textMain">{c.name}</option>
+                <option key={c.id} value={c.name} className="text-slate-900 font-semibold">{c.name}</option>
               ))}
             </select>
           )}
 
           <Link
             href="/teacher/attendance"
-            className="px-5 py-3 bg-white text-brand-violet font-bold rounded-2xl hover:bg-brand-violetLight text-xs shadow-md transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-[#F59E0B] hover:bg-[#D97706] text-amber-950 font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
           >
-            Take Daily Roll
+            <i className="ph-bold ph-calendar-check text-base"></i> Take Daily Roll
           </Link>
           <Link
             href="/teacher/lessons"
-            className="px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl text-xs backdrop-blur-xs border border-white/20 transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white font-semibold rounded-xl text-xs backdrop-blur-sm transition-all flex items-center gap-2"
           >
-            Lesson Studio
+            <i className="ph-bold ph-book-open text-base"></i> Lesson Studio
           </Link>
           <button
             type="button"
             onClick={() => setIsLeaveModalOpen(true)}
-            className="px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl text-xs backdrop-blur-xs border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2.5 bg-white text-[#3B199E] hover:bg-gray-100 font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
           >
-            <i className="ph-bold ph-calendar-plus"></i>
-            Request Leave
+            <i className="ph-bold ph-calendar-plus text-base"></i> Request Leave
           </button>
+        </div>
+
+        {/* Faint watermark teacher chalkboard icon */}
+        <div className="absolute -right-6 -bottom-10 opacity-10 text-white pointer-events-none select-none">
+          <i className="ph-fill ph-chalkboard-teacher text-[200px]"></i>
         </div>
       </div>
 
@@ -311,33 +320,59 @@ export default function TeacherDashboard() {
         </div>
       )}
 
-      {/* Quick Stat Metric Triad */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Class Enrollment</span>
-          <h3 className="text-2xl font-serif font-bold text-brand-textMain mt-1">{enrollmentCount} Pupils</h3>
-          <span className="text-xs text-green-600 font-semibold">{presentCount} Present Today ({attendanceRate}%)</span>
+      {/* 2. CORE ACADEMIC STATS (4-COLUMN KPI CARDS) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        
+        {/* Class Enrollment */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-indigo-50 text-indigo-600">
+            <i className="ph-fill ph-users-three"></i>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Class Enrollment</p>
+            <h3 className="text-2xl font-serif font-bold text-gray-900 mt-0.5">{enrollmentCount} Pupils</h3>
+            <p className="text-[11px] font-semibold text-indigo-600 mt-0.5">{presentCount} Present Today ({attendanceRate}%)</p>
+          </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Assigned Class</span>
-          <h3 className="text-2xl font-serif font-bold text-brand-violet mt-1 truncate">{assignedClass || 'Primary'}</h3>
-          <span className="text-xs text-brand-textMuted font-semibold">Active Session</span>
+        {/* Assigned Class */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-emerald-50 text-emerald-600">
+            <i className="ph-fill ph-chalkboard"></i>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Assigned Stream</p>
+            <h3 className="text-2xl font-serif font-bold text-gray-900 mt-0.5 truncate">{assignedClass || 'Primary'}</h3>
+            <p className="text-[11px] font-semibold text-emerald-600 mt-0.5">Form Mastery Active</p>
+          </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Curriculum Scheme</span>
-          <h3 className="text-2xl font-serif font-bold text-emerald-600 mt-1">
-            {isSchemeApproved ? "Approved" : "Under Review"}
-          </h3>
-          <span className="text-xs text-brand-textMuted font-semibold">GES Aligned</span>
+        {/* Curriculum Scheme */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-amber-50 text-amber-600">
+            <i className="ph-fill ph-book-open-text"></i>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Curriculum Scheme</p>
+            <h3 className="text-2xl font-serif font-bold text-gray-900 mt-0.5">
+              {isSchemeApproved ? "Approved" : "Under Review"}
+            </h3>
+            <p className="text-[11px] font-semibold text-amber-600 mt-0.5">GES / NaCCA Aligned</p>
+          </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Welfare Alerts</span>
-          <h3 className="text-2xl font-serif font-bold text-amber-600 mt-1">{welfareAlerts.length} Flagged</h3>
-          <span className="text-xs text-amber-700 font-semibold">Medical & Special Needs</span>
+        {/* Welfare Alerts */}
+        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 bg-rose-50 text-rose-600">
+            <i className="ph-fill ph-warning-circle"></i>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Welfare Alerts</p>
+            <h3 className="text-2xl font-serif font-bold text-gray-900 mt-0.5">{welfareAlerts.length} Flagged</h3>
+            <p className="text-[11px] font-semibold text-rose-600 mt-0.5">Medical & Special Care</p>
+          </div>
         </div>
+
       </div>
 
       {/* Main Grid: Today's Schedule & Tasks / Medical Alerts */}
